@@ -1,0 +1,242 @@
+// ============================================================
+// XTCMP — Diccionario de Datos (DBML)
+// Módulo: Cloud Management Platform Foundational DB
+// Compatible con: https://dbdocs.io
+// ============================================================
+
+Project MetaXT {
+  database_type: 'SQL Server'
+  Note: '''
+    Cloud Management Platform Foundational DB.
+    Convenciones:
+    - Tablas SQL: snake_case plural con prefijo de módulo
+    - PK: id integer autoincrement en toda tabla
+    - Booleans nativos (no SmallInt)
+    - Fechas unificadas en datetime
+  '''
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Estados de Inquilinos
+// ─────────────────────────────────────────────
+
+Table cfg_tenant_statuses {
+  id int [primary key, increment, note: 'Identificador único del estado']
+  code varchar [unique, not null, note: 'Código interno del estado (ej. ACTIVE, SUSPENDED)']
+  name varchar [not null, note: 'Nombre descriptivo del estado']
+  Note: 'Catálogo de estados posibles para los inquilinos (Tenants)'
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Tipos de Inquilinos
+// ─────────────────────────────────────────────
+
+Table cfg_tenant_types {
+  id int [primary key, increment, note: 'Identificador único del tipo de tenant']
+  code varchar [unique, not null, note: 'Código interno del tipo (ej. TEMPLATE, DEMO, TEST, PROD)']
+  name varchar [not null, note: 'Nombre descriptivo del tipo']
+  Note: 'Clasificación de inquilinos con base lógica y de propósito'
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Niveles de Suscripción
+// ─────────────────────────────────────────────
+
+Table cfg_subscription_tiers {
+  id int [primary key, increment, note: 'Identificador único del nivel de suscripción']
+  code varchar [unique, not null, note: 'Código interno del nivel (ej. BASIC, PREMIUM)']
+  name varchar [not null, note: 'Nombre comercial del nivel de suscripción']
+  maxUsers int [note: 'Límite máximo de usuarios permitidos. Null implica ilimitados']
+  Note: 'Niveles de suscripción ofrecidos en la plataforma'
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Socios
+// ─────────────────────────────────────────────
+
+Table cmp_partners {
+  id varchar [primary key, default: `uuid()`, note: 'Identificador único del socio (UUID)']
+  name varchar [not null, note: 'Nombre de la empresa o entidad socia']
+  contactEmail varchar [not null, note: 'Correo electrónico de contacto principal del socio']
+  Note: 'Registro de socios (Partners) que gestionan clientes'
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Clientes
+// ─────────────────────────────────────────────
+
+Table cmp_clients {
+  id varchar [primary key, default: `uuid()`, note: 'Identificador único del cliente (UUID)']
+  name varchar [not null, note: 'Razón social o nombre del cliente']
+  taxId varchar [unique, note: 'Identificación fiscal única del cliente (CUIT/RUT)']
+  partnerId varchar [ref: > cmp_partners.id, note: 'Referencia al socio (Partner) que gestiona al cliente']
+  Note: 'Registro central de clientes que contratan servicios'
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Contratos
+// ─────────────────────────────────────────────
+
+Table cmp_contracts {
+  id varchar [primary key, default: `uuid()`, note: 'Identificador único del contrato (UUID)']
+  clientId varchar [not null, ref: > cmp_clients.id, note: 'Referencia vinculante al cliente']
+  tierId int [not null, ref: > cfg_subscription_tiers.id, note: 'Nivel de suscripción contratado']
+  startDate datetime [not null, note: 'Fecha de inicio de vigencia del contrato']
+  endDate datetime [note: 'Fecha de finalización o expiración del contrato']
+  isActive boolean [not null, default: true, note: 'Indica si el contrato está actualmente activo']
+  Note: 'Contratos que vinculan a clientes con niveles de suscripción'
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Pools Elásticos
+// ─────────────────────────────────────────────
+
+Table inf_elastic_pools {
+  id varchar [primary key, default: `uuid()`, note: 'Identificador único del Elastic Pool (UUID)']
+  name varchar [not null, note: 'Nombre identificativo del pool']
+  serverUrl varchar [not null, note: 'URL de conexión o servidor que aloja el pool']
+  capacity int [not null, note: 'Capacidad máxima de DTUs o recursos del pool']
+  Note: 'Pools elásticos de infraestructura para alojar las bases de datos de inquilinos'
+}
+
+// ─────────────────────────────────────────────
+// CONFIGURACIÓN — Inquilinos
+// ─────────────────────────────────────────────
+
+Table cmp_tenants {
+  id varchar [primary key, default: `uuid()`, note: 'Identificador único del inquilino (UUID)']
+  name varchar [not null, note: 'Nombre descriptivo del inquilino u organización']
+  dbName varchar [unique, not null, note: 'Nombre real de la base de datos física asociada']
+  typeId int [not null, ref: > cfg_tenant_types.id, note: 'Clasificación lógica del inquilino']
+  clientId varchar [not null, ref: > cmp_clients.id, note: 'Cliente propietario de este inquilino']
+  poolId varchar [not null, ref: > inf_elastic_pools.id, note: 'Pool elástico donde reside la base de datos']
+  statusId int [not null, ref: > cfg_tenant_statuses.id, note: 'Estado operativo actual del inquilino']
+  Note: 'Instancias lógicas de las bases de datos (Tenants) asignadas a los clientes'
+}
+
+// ─────────────────────────────────────────────
+// SEGURIDAD — Tipos de Usuarios Globales
+// ─────────────────────────────────────────────
+
+Table cfg_user_types {
+  id int [primary key, increment, note: 'Identificador único del tipo de usuario global']
+  code varchar [unique, not null, note: 'Código interno del tipo (ej. INTERNAL, CLIENT, PARTNER)']
+  name varchar [not null, note: 'Nombre descriptivo del tipo']
+  Note: 'Tipificación de los usuarios globales MetaXT'
+}
+
+// ─────────────────────────────────────────────
+// SEGURIDAD — Usuarios Globales
+// ─────────────────────────────────────────────
+
+Table sec_global_users {
+  id Int [primary key, increment, note: 'Identificador único del usuario global']
+  username varchar(50) [unique, not null, note: 'Nombre de usuario']
+  name varchar(40) [not null, note: 'Nombre completo']
+  email varchar(80) [unique, not null, note: 'Correo electrónico único usado para iniciar sesión']
+  passwordHash varchar(255) [not null, note: 'Hash de la contraseña del usuario']
+  languageId Int [default: 1, note: 'Idioma preferido']
+  timezone varchar(50) [default: 'America/Argentina/Buenos_Aires', note: 'Huso horario']
+  photoUrl varchar(255) [note: 'URL de la foto de perfil']
+  isLocked boolean [default: false, note: 'Indica si la cuenta está bloqueada']
+  mustChangePass boolean [default: false, note: 'Indica si debe cambiar la contraseña']
+  isActive boolean [default: true, note: 'Indica si el usuario está activo']
+  expiresAt datetime [note: 'Fecha límite de vigencia de acceso para usuarios externos/demo']
+  typeId Int [not null, ref: > cfg_user_types.id, note: 'Tipificación del usuario']
+  Note: 'Usuarios consolidados a nivel plataforma global MetaXT'
+}
+
+// ─────────────────────────────────────────────
+// SEGURIDAD — Roles
+// ─────────────────────────────────────────────
+
+Table sec_roles {
+  id Int [primary key, increment, note: 'Identificador único del rol']
+  name varchar(50) [unique, not null, note: 'Nombre del rol']
+  description varchar(200) [note: 'Descripción del rol']
+  isSystem boolean [default: false, note: 'Roles indelebles del sistema']
+  isDefault boolean [default: false, note: 'Rol asignado por defecto a nuevos usuarios']
+  Note: 'Roles de acceso para la plataforma CMP'
+}
+
+Table sec_role_permissions {
+  roleId Int [ref: > sec_roles.id, note: 'ID del rol']
+  resource varchar(50) [note: 'Recurso al que se aplica el permiso']
+  action varchar(20) [note: 'Acción permitida (ej. read, write, *)']
+
+  indexes {
+    (roleId, resource, action) [pk]
+  }
+}
+
+Table sec_user_roles {
+  userId Int [ref: > sec_global_users.id, note: 'ID del usuario']
+  roleId Int [ref: > sec_roles.id, note: 'ID del rol asignado']
+
+  indexes {
+    (userId, roleId) [pk]
+  }
+}
+
+// ─────────────────────────────────────────────
+// NAVEGACIÓN — Menú y Estadísticas
+// ─────────────────────────────────────────────
+
+Table nav_menu {
+  id Int [primary key, note: 'ID predefinido del menú']
+  key varchar(50) [unique, note: 'Llave única del menú']
+  label varchar(50) [note: 'Etiqueta a mostrar']
+  path varchar(100) [note: 'Ruta de Next.js']
+  icon varchar(30) [note: 'Nombre del ícono (Lucide)']
+  parentId Int [ref: > nav_menu.id, note: 'ID del padre (si aplica)']
+  category varchar(20) [note: 'Categoría para hubs']
+  order Int [note: 'Orden de visualización']
+  requiredPermission varchar(50) [note: 'Permiso requerido para visualizar este menú']
+  availableActions varchar(100) [note: 'Acciones CSV (read,write) disponibles en esta pantalla']
+  showChildren boolean [note: 'Indica si los hijos se muestran como dropdown o tabs']
+  Note: 'Estructura arborescente del menú principal y hubs'
+}
+
+Table nav_usage_stats {
+  id Int [primary key, increment, note: 'Identificador único de estadística']
+  userId Int [ref: > sec_global_users.id, note: 'ID del usuario que navegó']
+  menuKey varchar(50) [note: 'Llave del menú visitado']
+  executedAt datetime [note: 'Fecha y hora de acceso']
+  metadata varchar(200) [note: 'Metadata adicional']
+  Note: 'Estadísticas de uso por pantalla y usuario'
+}
+
+// ─────────────────────────────────────────────
+// SEGURIDAD — Acceso de Usuarios a Inquilinos
+// ─────────────────────────────────────────────
+
+Table sec_user_tenant_access {
+  userId Int [ref: > sec_global_users.id, note: 'ID del usuario global']
+  tenantId varchar [ref: > cmp_tenants.id, note: 'ID del inquilino (Tenant) al que tiene acceso']
+  indexes {
+    (userId, tenantId) [pk]
+  }
+  Note: 'Matriz de ruteo: Define a qué bases de datos puede ingresar el usuario'
+}
+
+// ─────────────────────────────────────────────
+// LICENCIAMIENTO — Módulos del Ecosistema
+// ─────────────────────────────────────────────
+
+Table cfg_modules {
+  id          int     [primary key, increment, note: 'Identificador único del módulo']
+  code        varchar [unique, not null, note: 'Código técnico del módulo (ej. CORE, TIME, PAYROLL)']
+  name        varchar [not null, note: 'Nombre comercial del módulo (ej. Kaivia Time)']
+  description varchar [note: 'Descripción breve de la funcionalidad']
+  isActive    boolean [default: true, note: 'Indica si el módulo está disponible para comercializar']
+  Note: 'Catálogo global de aplicaciones y módulos del ecosistema Kaivia'
+}
+
+Table cmp_contract_modules {
+  contractId varchar [ref: > cmp_contracts.id, note: 'ID del contrato']
+  moduleId   int     [ref: > cfg_modules.id,   note: 'ID del módulo licenciado']
+  indexes {
+    (contractId, moduleId) [pk]
+  }
+  Note: 'Matriz de licenciamiento: Define qué módulos están habilitados en cada contrato'
+}
