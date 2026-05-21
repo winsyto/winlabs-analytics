@@ -111,7 +111,17 @@ importers:
         version: 5.9.3
 
   packages/auth:
+    dependencies:
+      '@prisma/client':
+        specifier: ^6.8.2
+        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
+      '@wla/db':
+        specifier: workspace:*
+        version: link:../db
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.19
       '@wla/config':
         specifier: workspace:*
         version: link:../config
@@ -127,6 +137,9 @@ importers:
         specifier: ^6.8.2
         version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
     devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.19.19
       '@wla/config':
         specifier: workspace:*
         version: link:../config
@@ -1148,6 +1161,9 @@ packages:
 
   '@types/node@20.19.41':
     resolution: {integrity: sha512-ECymXOukMnOoVkC2bb1Vc/w/836DXncOg5m8Xj1RH7xSHZJWNYY6Zh7EH477vcnD5egKNNfy2RpNOmuChhFPgQ==}
+
+  '@types/node@22.19.19':
+    resolution: {integrity: sha512-dyh/xO2Fh5bYrfWaaqGrRQQGkNdmYw6AmaAUvYeUMNTWQtvb796ikLdmTchRmOlOiIJ1TDXfWgVx1QkUlQ6Hew==}
 
   '@types/react-dom@19.2.3':
     resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
@@ -3556,6 +3572,10 @@ snapshots:
   '@types/json5@0.0.29': {}
 
   '@types/node@20.19.41':
+    dependencies:
+      undici-types: 6.21.0
+
+  '@types/node@22.19.19':
     dependencies:
       undici-types: 6.21.0
 
