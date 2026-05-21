@@ -8,7 +8,6 @@
     "./tenant-context": "./src/tenant-context.ts"
   },
   "scripts": {
-    "lint": "eslint src/",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
