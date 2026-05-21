@@ -9,15 +9,15 @@ datasource db {
 }
 
 // =============================================================================
-// TENANTS — registro de clientes (multi-tenancy)
+// TENANTS
 // =============================================================================
 model Tenant {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug      String   @unique           // ej: "empresa-abc" (para URLs / identificación)
-  name      String                     // nombre visible
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  slug      String   @unique
+  name      String
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   users     User[]
   roles     Role[]
@@ -27,51 +27,50 @@ model Tenant {
 }
 
 // =============================================================================
-// INTERNAL USERS — usuarios internos de WinLabs (acceden al CMP)
-// Tabla separada de Users (decisión D-077)
+// INTERNAL USERS — usuarios WinLabs (acceden al CMP)
 // =============================================================================
 model InternalUser {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email        String   @unique
-  passwordHash String
+  passwordHash String   @map("password_hash")
   name         String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("internal_users")
 }
 
 // =============================================================================
-// USERS — usuarios de clientes (acceden a la app cliente por tenant)
+// USERS — usuarios de clientes
 // =============================================================================
 model User {
   id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String   @db.Uuid
+  tenantId     String   @db.Uuid @map("tenant_id")
   email        String
-  passwordHash String
+  passwordHash String   @map("password_hash")
   name         String
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userRoles UserRole[]
 
-  @@unique([tenantId, email])   // email único por tenant, no globalmente
+  @@unique([tenantId, email])
   @@map("users")
 }
 
 // =============================================================================
-// ROLES — roles definidos por tenant
+// ROLES
 // =============================================================================
 model Role {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String   @db.Uuid
-  name        String                   // ej: "admin", "analyst", "viewer"
+  tenantId    String   @db.Uuid @map("tenant_id")
+  name        String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   userRoles UserRole[]
@@ -81,14 +80,14 @@ model Role {
 }
 
 // =============================================================================
-// USER_ROLES — asignación de roles a usuarios (N:M)
+// USER_ROLES
 // =============================================================================
 model UserRole {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @db.Uuid           // desnormalizado para facilitar RLS
-  userId    String   @db.Uuid
-  roleId    String   @db.Uuid
-  createdAt DateTime @default(now())
+  tenantId  String   @db.Uuid @map("tenant_id")
+  userId    String   @db.Uuid @map("user_id")
+  roleId    String   @db.Uuid @map("role_id")
+  createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
@@ -98,18 +97,18 @@ model UserRole {
 }
 
 // =============================================================================
-// AUDIT_LOG — registro de todas las acciones (append-only)
+// AUDIT_LOG
 // =============================================================================
 model AuditLog {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String   @db.Uuid
-  userId     String?  @db.Uuid          // null si la acción es del sistema/internal
-  action     String                     // ej: "user.created", "report.exported"
-  entityType String?                    // ej: "User", "Tenant"
-  entityId   String?                    // id de la entidad afectada
-  metadata   Json?                      // datos extra del evento
-  ipAddress  String?
-  createdAt  DateTime @default(now())
+  tenantId   String   @db.Uuid @map("tenant_id")
+  userId     String?  @db.Uuid @map("user_id")
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  metadata   Json?
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
