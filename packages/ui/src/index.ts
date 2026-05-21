@@ -1,2 +1,11 @@
-// Componentes UI compartidos (shadcn/ui se instala en el Paso 4)
+// Componentes UI compartidos (shadcn/ui)
+export * from "./components/button";
+export * from "./components/card";
+export * from "./components/input";
+export * from "./components/label";
+
+// Utilidades
+export * from "./lib/utils";
+
+// Design tokens
 export * from "./tokens";
