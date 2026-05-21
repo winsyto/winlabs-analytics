@@ -1,0 +1,15 @@
+{
+  "name": "@wla/types",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@wla/config": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}
