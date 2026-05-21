@@ -1,0 +1,119 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// =============================================================================
+// TENANTS — registro de clientes (multi-tenancy)
+// =============================================================================
+model Tenant {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug      String   @unique           // ej: "empresa-abc" (para URLs / identificación)
+  name      String                     // nombre visible
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  roles     Role[]
+  auditLogs AuditLog[]
+
+  @@map("tenants")
+}
+
+// =============================================================================
+// INTERNAL USERS — usuarios internos de WinLabs (acceden al CMP)
+// Tabla separada de Users (decisión D-077)
+// =============================================================================
+model InternalUser {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String   @unique
+  passwordHash String
+  name         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("internal_users")
+}
+
+// =============================================================================
+// USERS — usuarios de clientes (acceden a la app cliente por tenant)
+// =============================================================================
+model User {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId     String   @db.Uuid
+  email        String
+  passwordHash String
+  name         String
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles UserRole[]
+
+  @@unique([tenantId, email])   // email único por tenant, no globalmente
+  @@map("users")
+}
+
+// =============================================================================
+// ROLES — roles definidos por tenant
+// =============================================================================
+model Role {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId    String   @db.Uuid
+  name        String                   // ej: "admin", "analyst", "viewer"
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  userRoles UserRole[]
+
+  @@unique([tenantId, name])
+  @@map("roles")
+}
+
+// =============================================================================
+// USER_ROLES — asignación de roles a usuarios (N:M)
+// =============================================================================
+model UserRole {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId  String   @db.Uuid           // desnormalizado para facilitar RLS
+  userId    String   @db.Uuid
+  roleId    String   @db.Uuid
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+// =============================================================================
+// AUDIT_LOG — registro de todas las acciones (append-only)
+// =============================================================================
+model AuditLog {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId   String   @db.Uuid
+  userId     String?  @db.Uuid          // null si la acción es del sistema/internal
+  action     String                     // ej: "user.created", "report.exported"
+  entityType String?                    // ej: "User", "Tenant"
+  entityId   String?                    // id de la entidad afectada
+  metadata   Json?                      // datos extra del evento
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([tenantId, entityType, entityId])
+  @@map("audit_log")
+}

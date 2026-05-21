@@ -4,13 +4,13 @@
   "private": true,
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema/index.ts",
     "./client": "./src/client.ts"
   },
   "scripts": {
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/seed/index.ts",
     "typecheck": "tsc --noEmit"
@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@wla/config": "workspace:*",
+    "dotenv-cli": "^8.0.0",
     "prisma": "^6.8.2",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3"
