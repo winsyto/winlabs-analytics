@@ -11,6 +11,7 @@
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:prod": "dotenv -e .env.production.local -- prisma migrate deploy",
     "db:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/seed/index.ts",
