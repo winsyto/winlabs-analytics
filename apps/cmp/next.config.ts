@@ -4,7 +4,7 @@ import { withSentryConfig } from "@sentry/nextjs";
 const nextConfig: NextConfig = {
   // Los packages workspace exportan TypeScript directo (sin compilar),
   // Next.js necesita transpilárlos en el build.
-  transpilePackages: ["@wla/ui", "@wla/db", "@wla/auth"],
+  transpilePackages: ["@wla/ui", "@wla/db", "@wla/auth", "@wla/email"],
 };
 
 export default withSentryConfig(nextConfig, {

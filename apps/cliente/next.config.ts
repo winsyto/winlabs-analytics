@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@wla/ui", "@wla/db", "@wla/auth"],
+  transpilePackages: ["@wla/ui", "@wla/db", "@wla/auth", "@wla/email"],
 };
 
 export default withSentryConfig(nextConfig, {

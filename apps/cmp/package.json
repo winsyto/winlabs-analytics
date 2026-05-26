@@ -13,6 +13,7 @@
   "dependencies": {
     "@sentry/nextjs": "^9",
     "@wla/auth": "workspace:*",
+    "@wla/email": "workspace:*",
     "@wla/db": "workspace:*",
     "@wla/ui": "workspace:*",
     "bcryptjs": "^2.4.3",

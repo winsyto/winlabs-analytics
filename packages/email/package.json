@@ -1,0 +1,19 @@
+{
+  "name": "@wla/email",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "resend": "^4"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@wla/config": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}
