@@ -11,6 +11,7 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
+    "@sentry/nextjs": "^9",
     "@wla/auth": "workspace:*",
     "@wla/db": "workspace:*",
     "@wla/ui": "workspace:*",
