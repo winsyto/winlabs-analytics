@@ -19,8 +19,10 @@
     "@prisma/client": "^6.8.2"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^22.0.0",
     "@wla/config": "workspace:*",
+    "bcryptjs": "^2.4.3",
     "dotenv-cli": "^8.0.0",
     "prisma": "^6.8.2",
     "tsx": "^4.19.4",
