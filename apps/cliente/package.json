@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev --turbopack --port 3000",
     "build": "next build",
     "start": "next start --port 3000",
     "lint": "eslint .",
@@ -17,6 +17,7 @@
     "@wla/db": "workspace:*",
     "@wla/ui": "workspace:*",
     "bcryptjs": "^2.4.3",
+    "lucide-react": "^0.511.0",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.29",
     "react": "19.2.4",
