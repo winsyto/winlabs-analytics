@@ -56,7 +56,8 @@
 ### UI-1: Tokens y tipografía base
 - [ ] Instalar `geist` en `apps/cmp` y `apps/cliente`
 - [ ] Actualizar `globals.css` en ambas apps con los tokens de color definidos en la spec
-  - Primary: `#2563eb`, Sidebar: `#1e2530`, Topbar: `#2c3540`, Background: `#f6f7f5`
+  - Primary: `#dc2626` (rojo), Sidebar: `#1e2530`, Topbar: `#2c3540`, Background: `#f6f7f5`
+  - Active nav bg: `#fff1f1`, Active nav fg: `#1e2530`
   - Variables CSS: `--sidebar`, `--topbar`, `--sidebar-border`, `--sidebar-active-bg`, etc.
 - [ ] Configurar Geist Sans como fuente base en ambas apps
 - [ ] typecheck verde en ambas apps
@@ -75,11 +76,14 @@
   - `sidebar-nav.tsx` — dark sidebar con logo, nav items, footer usuario
   - `topbar.tsx` — dark topbar con tenant switcher + notif + user menu
 - [ ] Actualizar `apps/cliente/app/(dashboard)/layout.tsx` con los nuevos componentes
-  - Sidebar con nav groups: Dashboards (expandible), Integraciones, Settings
-  - Item activo: bg `#f0f4ff`, texto oscuro, font-weight 600
-  - Footer: avatar iniciales + nombre + email truncado
+  - Sidebar colapsado por default (64px iconos) / expandido (220px con labels)
+  - Toggle hamburguesa/flecha para expandir/colapsar
+  - Item activo: bg `#fff1f1`, texto `#1e2530`, font-weight 600
+  - **Sin footer de usuario en sidebar**
+  - Topbar: TenantSwitcher + Bell + UserMenu (avatar + nombre + dropdown con logout)
 - [ ] Actualizar `apps/cmp/app/(dashboard)/layout.tsx` con los nuevos componentes
-  - Sidebar con nav: Dashboard, Tenants, Usuarios internos
+  - Sidebar colapsado por default, nav: Dashboard, Tenants, Usuarios internos
+  - Topbar: Bell + UserMenu (sin TenantSwitcher en CMP)
 - [ ] typecheck verde en ambas apps
 
 ### UI-4: Componentes base del design system
