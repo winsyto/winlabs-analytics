@@ -41,6 +41,53 @@ jobs:
       - name: Build
         run: pnpm build
 
+  test-rls:
+    name: RLS Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: ci
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: wla_test
+          POSTGRES_PASSWORD: wla_test
+          POSTGRES_DB: winlabs_analytics_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://wla_test:wla_test@localhost:5432/winlabs_analytics_test
+      DIRECT_URL: postgresql://wla_test:wla_test@localhost:5432/winlabs_analytics_test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Prisma migrations on test DB
+        run: pnpm --filter @wla/db db:migrate:test
+
+      - name: Run RLS tests
+        run: pnpm --filter @wla/db test
+
   e2e:
     name: E2E Smoke Tests
     runs-on: ubuntu-latest

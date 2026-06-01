@@ -80,6 +80,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session({ session, token }) {
+      // token.sub = user.id (NextAuth lo setea automáticamente desde authorize)
+      session.user.id = token.sub!;
       session.user.tenantId = token.tenantId as string;
       session.user.tenantSlug = token.tenantSlug as string;
       return session;
