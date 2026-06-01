@@ -38,15 +38,62 @@
 
 ---
 
-## PRE-M1 — Organización técnica 🔄 EN CURSO
-
-> Trabajo de preparación antes de entrar a M1. No genera features visibles.
+## PRE-M1 — Organización técnica ✅ CERRADO
 
 - [x] `CLAUDE.md` raíz + por app/package
 - [x] `BACKLOG.md` estructurado
-- [ ] UI/UX: definir paleta de colores y actualizar tokens en `packages/ui`
-- [ ] UI/UX: configurar dark/light mode
-- [ ] UI/UX: tipografía y espaciado base
+- [x] Skills en `.claude/skills/` (add-table, add-crud, add-integration, add-dashboard, generate-docs)
+- [x] DBML inicial + docs/database/changelog.md
+
+---
+
+## UI/UX — Rediseño AppShell 🔄 PRÓXIMO (primera sesión Claude Code)
+
+> Implementar el diseño basado en AI-GEO-platform con primary azul y Geist Sans.
+> **Spec completa:** `proyecto/iniciativa/ui-ux-spec.md`
+> **Antes de empezar:** leer `CLAUDE.md`, esta sección, y la spec de UI/UX.
+
+### UI-1: Tokens y tipografía base
+- [ ] Instalar `geist` en `apps/cmp` y `apps/cliente`
+- [ ] Actualizar `globals.css` en ambas apps con los tokens de color definidos en la spec
+  - Primary: `#2563eb`, Sidebar: `#1e2530`, Topbar: `#2c3540`, Background: `#f6f7f5`
+  - Variables CSS: `--sidebar`, `--topbar`, `--sidebar-border`, `--sidebar-active-bg`, etc.
+- [ ] Configurar Geist Sans como fuente base en ambas apps
+- [ ] typecheck verde en ambas apps
+
+### UI-2: Login pages (split layout)
+- [ ] Rediseñar `apps/cliente/app/login/page.tsx` con split layout (hero izq + form der)
+  - Hero: fondo oscuro `#1a1f24`, logo `WL` azul, headline, 2 KPI preview cards
+  - Form: eyebrow azul "Acceso seguro", título, subtítulo, 3 campos, botón azul full-width
+- [ ] Rediseñar `apps/cmp/app/login/page.tsx` con split layout (hero izq + form der)
+  - Igual pero con eyebrow "Console interna WinLabs" y solo 2 campos (email + password)
+- [ ] Login responsive: en mobile el hero se oculta, solo queda el form
+- [ ] typecheck verde en ambas apps
+
+### UI-3: AppShell — sidebar + topbar
+- [ ] Crear componentes en `packages/ui/src/components/layout/`:
+  - `sidebar-nav.tsx` — dark sidebar con logo, nav items, footer usuario
+  - `topbar.tsx` — dark topbar con tenant switcher + notif + user menu
+- [ ] Actualizar `apps/cliente/app/(dashboard)/layout.tsx` con los nuevos componentes
+  - Sidebar con nav groups: Dashboards (expandible), Integraciones, Settings
+  - Item activo: bg `#f0f4ff`, texto oscuro, font-weight 600
+  - Footer: avatar iniciales + nombre + email truncado
+- [ ] Actualizar `apps/cmp/app/(dashboard)/layout.tsx` con los nuevos componentes
+  - Sidebar con nav: Dashboard, Tenants, Usuarios internos
+- [ ] typecheck verde en ambas apps
+
+### UI-4: Componentes base del design system
+- [ ] `PageHeader` en `packages/ui` — eyebrow (color primary) + title + slot actions
+- [ ] `KpiCard` en `packages/ui` — label muted + valor grande + delta con color
+- [ ] `EmptyState` en `packages/ui` — icon Lucide + texto + CTA opcional
+- [ ] Actualizar página `/dashboard` del cliente usando `KpiCard` y `EmptyState`
+- [ ] Actualizar página `/tenants` del CMP usando `PageHeader`
+- [ ] typecheck verde en ambas apps
+
+### UI-5: Validación final
+- [ ] Correr smoke tests E2E: `pnpm --filter @wla/e2e e2e`
+- [ ] Revisar visualmente en browser: login cliente, login CMP, dashboard cliente, dashboard CMP, /tenants
+- [ ] Commit: `feat(ui): AppShell rediseño — Geist Sans, split login, dark sidebar`
 
 ---
 
