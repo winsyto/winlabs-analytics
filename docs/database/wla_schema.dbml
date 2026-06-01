@@ -1,0 +1,104 @@
+// WinLabs Analytics — Diccionario de datos
+// Fuente única de verdad para el schema de BD.
+// Sincronizado con packages/db/prisma/schema.prisma
+// Visualizar en: https://dbdiagram.io
+
+// ============================================================
+// PLATAFORMA (sin prefijo — tablas de M0, sin RLS)
+// ============================================================
+
+Table tenants {
+  id         uuid        [pk, note: 'UUID generado por gen_random_uuid()']
+  slug       varchar(32) [not null, unique, note: 'Identificador único URL-safe del tenant. Ej: acme, globo-corp']
+  name       varchar(80) [not null, note: 'Nombre visible del tenant']
+  is_active  bool        [not null, default: true, note: 'false = tenant desactivado, no puede loguearse']
+  created_at timestamptz [not null, default: `now()`]
+  updated_at timestamptz [not null, default: `now()`]
+
+  Note: 'Tenants de la plataforma. Sin RLS — visible para service role.'
+}
+
+Table internal_users {
+  id            uuid        [pk]
+  email         varchar(255)[not null, unique, note: 'Email del usuario interno WinLabs']
+  name          varchar(80) [not null]
+  password_hash varchar     [not null, note: 'bcrypt hash. NUNCA hashear dentro de transaction.']
+  is_active     bool        [not null, default: true]
+  created_at    timestamptz [not null, default: `now()`]
+  updated_at    timestamptz [not null, default: `now()`]
+
+  Note: 'Usuarios internos de WinLabs para el CMP. Sin RLS.'
+}
+
+Table users {
+  id            uuid        [pk]
+  tenant_id     uuid        [not null, ref: > tenants.id, note: 'RLS — tenant owner']
+  email         varchar(255)[not null, note: 'Email único por tenant']
+  name          varchar(80) [not null]
+  password_hash varchar     [not null, note: 'bcrypt hash. NUNCA hashear dentro de transaction.']
+  is_active     bool        [not null, default: true]
+  created_at    timestamptz [not null, default: `now()`]
+  updated_at    timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, email) [unique, name: 'uq_users_tenant_email']
+  }
+
+  Note: 'Usuarios de cada tenant. RLS por tenant_id.'
+}
+
+Table roles {
+  id          uuid        [pk]
+  tenant_id   uuid        [not null, ref: > tenants.id]
+  name        varchar(50) [not null, note: 'admin | analyst | viewer']
+  description varchar(200)
+  created_at  timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, name) [unique, name: 'uq_roles_tenant_name']
+  }
+
+  Note: 'Roles por tenant. RLS por tenant_id. Creados automáticamente al crear un tenant.'
+}
+
+Table user_roles {
+  id         uuid        [pk]
+  tenant_id  uuid        [not null, ref: > tenants.id]
+  user_id    uuid        [not null, ref: > users.id]
+  role_id    uuid        [not null, ref: > roles.id]
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (user_id, role_id) [unique, name: 'uq_user_roles_user_role']
+  }
+
+  Note: 'Asignación de roles a usuarios. RLS por tenant_id.'
+}
+
+Table audit_log {
+  id         uuid        [pk]
+  tenant_id  uuid        [ref: > tenants.id, note: 'null = evento global / cross-tenant']
+  actor_id   uuid        [note: 'ID del usuario o internal_user que ejecutó la acción']
+  actor_type varchar(20) [not null, note: 'user | internal_user | system | agent']
+  action     varchar(100)[not null, note: 'Ej: user.create, tenant_integration.update']
+  target_type varchar(50)
+  target_id  varchar(100)
+  payload    jsonb       [note: 'Contexto de la acción: before/after, diff, etc.']
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, created_at)
+    (actor_id, created_at)
+  }
+
+  Note: 'Log de auditoría append-only. RLS por tenant_id.'
+}
+
+// ============================================================
+// NUEVAS TABLAS (M1+) — usar prefijos de dominio
+// Ver CLAUDE.md para tabla de prefijos
+// ============================================================
+
+// Las tablas de hr_, att_, pay_, int_, dsh_, ai_, cfg_
+// se agregan aquí a medida que se implementan en cada milestone.
+// Seguir el procedimiento en .claude/skills/add-table.md
