@@ -7,7 +7,7 @@ async function loginCliente(page: import("@playwright/test").Page) {
   await page.locator("#tenantSlug").fill(ACME_ADMIN.tenantSlug);
   await page.locator("#email").fill(ACME_ADMIN.email);
   await page.locator("#password").fill(ACME_ADMIN.password);
-  await page.getByRole("button", { name: /iniciar sesión/i }).click();
+  await page.getByRole("button", { name: /entrar/i }).click();
   await expect(page).toHaveURL(`${CLIENTE_URL}/dashboard`, { timeout: 15_000 });
 }
 
@@ -27,7 +27,7 @@ test.describe("Cliente — smoke", () => {
     await page.locator("#tenantSlug").fill(ACME_ADMIN.tenantSlug);
     await page.locator("#email").fill(ACME_ADMIN.email);
     await page.locator("#password").fill("contraseña-incorrecta");
-    await page.getByRole("button", { name: /iniciar sesión/i }).click();
+    await page.getByRole("button", { name: /entrar/i }).click();
     await expect(page.getByText(/email o contraseña incorrectos/i)).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
@@ -37,18 +37,20 @@ test.describe("Cliente — smoke", () => {
     await page.locator("#tenantSlug").fill("tenant-que-no-existe");
     await page.locator("#email").fill(ACME_ADMIN.email);
     await page.locator("#password").fill(ACME_ADMIN.password);
-    await page.getByRole("button", { name: /iniciar sesión/i }).click();
+    await page.getByRole("button", { name: /entrar/i }).click();
     await expect(page.getByText(/email o contraseña incorrectos/i)).toBeVisible();
   });
 
-  test("sidebar muestra nombre del tenant", async ({ page }) => {
+  test("topbar muestra nombre del tenant", async ({ page }) => {
     await loginCliente(page);
-    // El nombre aparece en el sidebar (aside) — usamos el primero que matchea
-    await expect(page.locator("aside").getByText(ACME_ADMIN.tenantName)).toBeVisible();
+    // El nombre del tenant aparece en el topbar (header)
+    await expect(page.locator("header").getByText(ACME_ADMIN.tenantName)).toBeVisible();
   });
 
   test("logout redirige a /login", async ({ page }) => {
     await loginCliente(page);
+    // El logout vive dentro del dropdown del user menu en el topbar
+    await page.locator("header").getByRole("button").last().click();
     await page.getByRole("button", { name: /cerrar sesión/i }).click();
     await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
   });

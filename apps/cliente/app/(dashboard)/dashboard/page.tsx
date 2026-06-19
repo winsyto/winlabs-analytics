@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import { prisma } from "@wla/db/client";
 import { withTenantContext } from "@wla/auth";
+import { EmptyState, KpiCard } from "@wla/ui";
+import { Sparkles } from "lucide-react";
 
 async function getTenantStats(tenantId: string) {
   const [userCount] = await withTenantContext(tenantId, async (tx) => {
@@ -34,28 +36,18 @@ export default async function DashboardPage() {
         </p>
       </div>
 
-      {/* Stats placeholder */}
+      {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-lg border bg-card p-6 space-y-1">
-          <p className="text-sm text-muted-foreground">Usuarios activos</p>
-          <p className="text-3xl font-bold text-foreground">{stats.userCount}</p>
-        </div>
-        <div className="rounded-lg border bg-card p-6 space-y-1">
-          <p className="text-sm text-muted-foreground">Reportes</p>
-          <p className="text-3xl font-bold text-foreground">—</p>
-        </div>
-        <div className="rounded-lg border bg-card p-6 space-y-1">
-          <p className="text-sm text-muted-foreground">Integraciones</p>
-          <p className="text-3xl font-bold text-foreground">—</p>
-        </div>
+        <KpiCard label="Usuarios activos" value={stats.userCount} />
+        <KpiCard label="Reportes" value="—" />
+        <KpiCard label="Integraciones" value="—" />
       </div>
 
       {/* Coming soon */}
-      <div className="rounded-lg border border-dashed bg-muted/30 p-12 text-center">
-        <p className="text-muted-foreground text-sm">
-          Los reportes y métricas de People Analytics estarán disponibles próximamente.
-        </p>
-      </div>
+      <EmptyState
+        icon={Sparkles}
+        text="Los reportes y métricas de People Analytics estarán disponibles próximamente."
+      />
     </div>
   );
 }

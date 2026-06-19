@@ -11,8 +11,10 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="tenantSlug">Organización</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="tenantSlug" className="text-xs font-medium">
+          Organización
+        </Label>
         <Input
           id="tenantSlug"
           name="tenantSlug"
@@ -20,14 +22,18 @@ export function LoginForm() {
           placeholder="mi-empresa"
           required
           autoComplete="organization"
+          className="h-10 text-sm"
+          style={{ borderRadius: "6px" }}
         />
         <p className="text-xs text-muted-foreground">
           El identificador de tu organización (ej: acme, globo-corp).
         </p>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-xs font-medium">
+          Email
+        </Label>
         <Input
           id="email"
           name="email"
@@ -35,15 +41,20 @@ export function LoginForm() {
           placeholder="usuario@empresa.com"
           required
           autoComplete="email"
+          className="h-10 text-sm"
+          style={{ borderRadius: "6px" }}
         />
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-1.5">
         <div className="flex items-center justify-between">
-          <Label htmlFor="password">Contraseña</Label>
+          <Label htmlFor="password" className="text-xs font-medium">
+            Contraseña
+          </Label>
           <a
             href="/forgot-password"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="text-xs transition-opacity hover:opacity-70"
+            style={{ color: "#dc2626", fontSize: "11px" }}
           >
             ¿Olvidaste tu contraseña?
           </a>
@@ -54,6 +65,8 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
+          className="h-10 text-sm"
+          style={{ borderRadius: "6px" }}
         />
       </div>
 
@@ -61,8 +74,13 @@ export function LoginForm() {
         <p className="text-sm font-medium text-destructive">{error}</p>
       )}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Ingresando..." : "Iniciar sesión"}
+      <Button
+        type="submit"
+        className="w-full h-10 font-semibold"
+        style={{ backgroundColor: "#dc2626", borderRadius: "6px" }}
+        disabled={isPending}
+      >
+        {isPending ? "Ingresando..." : "Entrar"}
       </Button>
     </form>
   );

@@ -6,7 +6,7 @@ async function loginCmp(page: import("@playwright/test").Page) {
   await page.goto(`${CMP_URL}/login`);
   await page.locator("#email").fill(CMP_ADMIN.email);
   await page.locator("#password").fill(CMP_ADMIN.password);
-  await page.getByRole("button", { name: /iniciar sesión/i }).click();
+  await page.getByRole("button", { name: /entrar/i }).click();
   await expect(page).toHaveURL(`${CMP_URL}/dashboard`, { timeout: 15_000 });
 }
 
@@ -25,7 +25,7 @@ test.describe("CMP — smoke", () => {
     await page.goto(`${CMP_URL}/login`);
     await page.locator("#email").fill(CMP_ADMIN.email);
     await page.locator("#password").fill("contraseña-incorrecta");
-    await page.getByRole("button", { name: /iniciar sesión/i }).click();
+    await page.getByRole("button", { name: /entrar/i }).click();
     await expect(page.getByText(/email o contraseña incorrectos/i)).toBeVisible();
     await expect(page).toHaveURL(/\/login/);
   });
@@ -45,6 +45,8 @@ test.describe("CMP — smoke", () => {
 
   test("logout redirige a /login", async ({ page }) => {
     await loginCmp(page);
+    // El logout vive dentro del dropdown del user menu en el topbar
+    await page.locator("header").getByRole("button").last().click();
     await page.getByRole("button", { name: /cerrar sesión/i }).click();
     await expect(page).toHaveURL(/\/login/, { timeout: 10_000 });
   });

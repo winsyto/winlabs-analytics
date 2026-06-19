@@ -13,16 +13,17 @@
   "dependencies": {
     "@sentry/nextjs": "^9",
     "@wla/auth": "workspace:*",
-    "@wla/email": "workspace:*",
     "@wla/db": "workspace:*",
+    "@wla/email": "workspace:*",
     "@wla/ui": "workspace:*",
     "bcryptjs": "^2.4.3",
+    "geist": "^1.7.1",
     "lucide-react": "^0.511.0",
-    "zod": "^3.25.0",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.29",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^3.25.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

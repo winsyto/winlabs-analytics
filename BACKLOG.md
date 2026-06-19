@@ -53,51 +53,51 @@
 > **Spec completa:** `proyecto/iniciativa/ui-ux-spec.md`
 > **Antes de empezar:** leer `CLAUDE.md`, esta sección, y la spec de UI/UX.
 
-### UI-1: Tokens y tipografía base
-- [ ] Instalar `geist` en `apps/cmp` y `apps/cliente`
-- [ ] Actualizar `globals.css` en ambas apps con los tokens de color definidos en la spec
+### UI-1: Tokens y tipografía base ✅
+- [x] Instalar `geist` en `apps/cmp` y `apps/cliente`
+- [x] Actualizar `globals.css` en ambas apps con los tokens de color definidos en la spec
   - Primary: `#dc2626` (rojo), Sidebar: `#1e2530`, Topbar: `#2c3540`, Background: `#f6f7f5`
   - Active nav bg: `#fff1f1`, Active nav fg: `#1e2530`
   - Variables CSS: `--sidebar`, `--topbar`, `--sidebar-border`, `--sidebar-active-bg`, etc.
-- [ ] Configurar Geist Sans como fuente base en ambas apps
-- [ ] typecheck verde en ambas apps
+- [x] Configurar Geist Sans como fuente base en ambas apps
+- [x] typecheck verde en ambas apps
 
-### UI-2: Login pages (split layout)
-- [ ] Rediseñar `apps/cliente/app/login/page.tsx` con split layout (hero izq + form der)
+### UI-2: Login pages (split layout) ✅
+- [x] Rediseñar `apps/cliente/app/login/page.tsx` con split layout (hero izq + form der)
   - Hero: fondo oscuro `#1a1f24`, logo `WL` azul, headline, 2 KPI preview cards
   - Form: eyebrow azul "Acceso seguro", título, subtítulo, 3 campos, botón azul full-width
-- [ ] Rediseñar `apps/cmp/app/login/page.tsx` con split layout (hero izq + form der)
+- [x] Rediseñar `apps/cmp/app/login/page.tsx` con split layout (hero izq + form der)
   - Igual pero con eyebrow "Console interna WinLabs" y solo 2 campos (email + password)
-- [ ] Login responsive: en mobile el hero se oculta, solo queda el form
-- [ ] typecheck verde en ambas apps
+- [x] Login responsive: en mobile el hero se oculta, solo queda el form
+- [x] typecheck verde en ambas apps
 
-### UI-3: AppShell — sidebar + topbar
-- [ ] Crear componentes en `packages/ui/src/components/layout/`:
+### UI-3: AppShell — sidebar + topbar ✅
+- [x] Crear componentes en `packages/ui/src/components/layout/`:
   - `sidebar-nav.tsx` — dark sidebar con logo, nav items, footer usuario
   - `topbar.tsx` — dark topbar con tenant switcher + notif + user menu
-- [ ] Actualizar `apps/cliente/app/(dashboard)/layout.tsx` con los nuevos componentes
+- [x] Actualizar `apps/cliente/app/(dashboard)/layout.tsx` con los nuevos componentes
   - Sidebar colapsado por default (64px iconos) / expandido (220px con labels)
   - Toggle hamburguesa/flecha para expandir/colapsar
   - Item activo: bg `#fff1f1`, texto `#1e2530`, font-weight 600
   - **Sin footer de usuario en sidebar**
   - Topbar: TenantSwitcher + Bell + UserMenu (avatar + nombre + dropdown con logout)
-- [ ] Actualizar `apps/cmp/app/(dashboard)/layout.tsx` con los nuevos componentes
+- [x] Actualizar `apps/cmp/app/(dashboard)/layout.tsx` con los nuevos componentes
   - Sidebar colapsado por default, nav: Dashboard, Tenants, Usuarios internos
   - Topbar: Bell + UserMenu (sin TenantSwitcher en CMP)
-- [ ] typecheck verde en ambas apps
+- [x] typecheck verde en ambas apps
 
-### UI-4: Componentes base del design system
-- [ ] `PageHeader` en `packages/ui` — eyebrow (color primary) + title + slot actions
-- [ ] `KpiCard` en `packages/ui` — label muted + valor grande + delta con color
-- [ ] `EmptyState` en `packages/ui` — icon Lucide + texto + CTA opcional
-- [ ] Actualizar página `/dashboard` del cliente usando `KpiCard` y `EmptyState`
-- [ ] Actualizar página `/tenants` del CMP usando `PageHeader`
-- [ ] typecheck verde en ambas apps
+### UI-4: Componentes base del design system ✅
+- [x] `PageHeader` en `packages/ui` — eyebrow (color primary) + title + slot actions
+- [x] `KpiCard` en `packages/ui` — label muted + valor grande + delta con color
+- [x] `EmptyState` en `packages/ui` — icon Lucide + texto + CTA opcional
+- [x] Actualizar página `/dashboard` del cliente usando `KpiCard` y `EmptyState`
+- [x] Actualizar página `/tenants` del CMP usando `PageHeader`
+- [x] typecheck verde en ambas apps
 
-### UI-5: Validación final
-- [ ] Correr smoke tests E2E: `pnpm --filter @wla/e2e e2e`
-- [ ] Revisar visualmente en browser: login cliente, login CMP, dashboard cliente, dashboard CMP, /tenants
-- [ ] Commit: `feat(ui): AppShell rediseño — Geist Sans, split login, dark sidebar`
+### UI-5: Validación final ✅
+- [x] Correr smoke tests E2E: `pnpm --filter @wla/e2e e2e`
+- [x] Revisar visualmente en browser: login cliente, login CMP, dashboard cliente, dashboard CMP, /tenants
+- [x] Commit: `feat(ui): AppShell rediseño — Geist Sans, split login, dark sidebar`
 
 ---
 

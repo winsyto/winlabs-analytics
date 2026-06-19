@@ -1,6 +1,11 @@
 import { auth } from "@/auth";
 import { NextResponse } from "next/server";
 
+const SESSION_COOKIE_NAMES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+];
+
 export default auth((req) => {
   // Si no hay sesión, redirigir al login
   if (!req.auth) {
@@ -8,13 +13,20 @@ export default auth((req) => {
   }
 
   /*
-   * El tenantId ya está garantizado en el JWT por el authorize() de NextAuth:
-   * sólo se crea sesión si el tenant existe y está activo.
-   * No hace falta parsearlo de la URL ni del host.
-   *
-   * Si en el futuro necesitamos datos extra del tenant en cada request,
-   * podemos leer req.auth.user.tenantId aquí.
+   * El tenantId debería venir garantizado en el JWT por el authorize() de
+   * NextAuth, pero un token emitido antes de un cambio en el callback de
+   * sesión (o corrupto por otra causa) puede llegar sin tenantId. Sin este
+   * chequeo, las queries de tenant más adelante fallan con un error no
+   * recuperable: el usuario queda trabado sin poder ni ver el botón de logout.
+   * Auto-recuperamos limpiando la cookie y mandando a /login.
    */
+  if (!req.auth.user?.tenantId) {
+    const response = NextResponse.redirect(new URL("/login", req.url));
+    for (const name of SESSION_COOKIE_NAMES) {
+      response.cookies.delete(name);
+    }
+    return response;
+  }
 });
 
 export const config = {

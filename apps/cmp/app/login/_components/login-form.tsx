@@ -11,8 +11,10 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="email" className="text-xs font-medium">
+          Email
+        </Label>
         <Input
           id="email"
           name="email"
@@ -20,17 +22,23 @@ export function LoginForm() {
           placeholder="admin@winlabs.com.ar"
           required
           autoComplete="email"
+          className="h-10 text-sm"
+          style={{ borderRadius: "6px" }}
         />
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="password">Contraseña</Label>
+      <div className="space-y-1.5">
+        <Label htmlFor="password" className="text-xs font-medium">
+          Contraseña
+        </Label>
         <Input
           id="password"
           name="password"
           type="password"
           required
           autoComplete="current-password"
+          className="h-10 text-sm"
+          style={{ borderRadius: "6px" }}
         />
       </div>
 
@@ -38,8 +46,13 @@ export function LoginForm() {
         <p className="text-sm font-medium text-destructive">{error}</p>
       )}
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "Ingresando..." : "Iniciar sesión"}
+      <Button
+        type="submit"
+        className="w-full h-10 font-semibold"
+        style={{ backgroundColor: "#dc2626", borderRadius: "6px" }}
+        disabled={isPending}
+      >
+        {isPending ? "Ingresando..." : "Entrar"}
       </Button>
     </form>
   );
