@@ -95,10 +95,283 @@ Table audit_log {
 }
 
 // ============================================================
-// NUEVAS TABLAS (M1+) — usar prefijos de dominio
-// Ver CLAUDE.md para tabla de prefijos
+// M1 — CATÁLOGOS GLOBALES (sin tenant_id, sin RLS)
 // ============================================================
 
-// Las tablas de hr_, att_, pay_, int_, dsh_, ai_, cfg_
-// se agregan aquí a medida que se implementan en cada milestone.
-// Seguir el procedimiento en .claude/skills/add-table.md
+Table cfg_org_unit_types {
+  id          int         [pk, increment, note: 'PK autoincrement']
+  code        varchar(50) [not null, unique, note: 'Código del tipo de OU. Ej: AREA, POSITION, LOCATION, COST_CENTER, BUSINESS_UNIT']
+  name        varchar(100)[not null, note: 'Nombre legible del tipo']
+  description text        [note: 'Descripción opcional del tipo']
+  is_active   bool        [not null, default: true, note: 'false = tipo desactivado, no se puede asignar a nuevas instancias']
+
+  Note: 'Catálogo global de tipos de unidad organizacional. Sin RLS. Poblado en seed. Los conectores ETL mapean sus dimensiones origen a estos tipos.'
+}
+
+Table cfg_termination_reasons {
+  id          int         [pk, increment]
+  code        varchar(50) [not null, unique, note: 'Código canónico. Ej: VOLUNTARY_RESIGNATION, DISMISSAL, END_OF_CONTRACT']
+  name        varchar(100)[not null, note: 'Nombre legible']
+  category    varchar(30) [not null, note: 'voluntary | involuntary | end_of_contract | retirement | other']
+  is_active   bool        [not null, default: true]
+
+  Note: 'Catálogo global de motivos de baja. Sin RLS — genérico entre tenants. Los ETL mapean sus códigos origen a este catálogo.'
+}
+
+Table cfg_time_entry_types {
+  id          int         [pk, increment]
+  code        varchar(50) [not null, unique, note: 'Código del tipo de hora. Ej: OVERTIME, ABSENT, HOLIDAY, NIGHT, TRAINING']
+  name        varchar(100)[not null, note: 'Nombre legible']
+  category    varchar(30) [not null, note: 'overtime | absence | special | other']
+  sign        smallint    [not null, default: 1, note: '+1 suma al total trabajado, -1 detrae. Ej: ABSENT = -1']
+  is_active   bool        [not null, default: true]
+
+  Note: 'Catálogo global de tipos de hora tipificada. Sin RLS. Los conectores ETL mapean sus tipos de hora origen a este catálogo.'
+}
+
+// ============================================================
+// M1 — PEOPLE
+// ============================================================
+
+Table hr_org_units {
+  id                  int         [pk, increment]
+  tenant_id           uuid        [not null, ref: > tenants.id, note: 'RLS — tenant owner']
+  org_unit_type_id    int         [not null, ref: > cfg_org_unit_types.id, note: 'Tipo de OU (AREA, POSITION, LOCATION, etc.)']
+  code                varchar(50) [not null, note: 'Código del sistema origen. Único por tenant + tipo']
+  name                varchar(150)[not null, note: 'Nombre de la unidad organizacional']
+  parent_org_unit_id  int         [ref: > hr_org_units.id, note: 'Self-ref para jerarquía. null = raíz']
+  level               int         [note: 'Profundidad en el árbol (0 = raíz). Calculable pero almacenado para performance']
+  is_active           bool        [not null, default: true]
+  custom_fields       jsonb       [note: 'Extensiones por tenant/cliente']
+  created_at          timestamptz [not null, default: `now()`]
+  updated_at          timestamptz [not null, default: `now()`]
+  deleted_at          timestamptz [note: 'Soft delete']
+
+  indexes {
+    (tenant_id, org_unit_type_id, code) [unique, name: 'uq_hr_org_units_tenant_type_code']
+    (tenant_id, org_unit_type_id)       [name: 'idx_hr_org_units_tenant_type']
+    (parent_org_unit_id)                [name: 'idx_hr_org_units_parent']
+  }
+
+  Note: 'Instancias de unidades organizacionales por tenant. Reemplaza hr_areas + hr_positions + hr_locations con un modelo genérico. RLS por tenant_id.'
+}
+
+Table hr_people {
+  id                     int         [pk, increment]
+  tenant_id              uuid        [not null, ref: > tenants.id, note: 'RLS — tenant owner']
+  employee_code          varchar(50) [not null, note: 'Código del empleado en el sistema origen. Único por tenant']
+  full_name              varchar(200)[not null, note: 'Nombre completo (puede ser el único campo de nombre disponible)']
+  first_name             varchar(100)[note: 'Nombre(s) — opcional, poblado cuando el origen lo provee separado']
+  last_name              varchar(100)[note: 'Apellido(s) — opcional']
+  email                  varchar(255)[note: 'Email laboral o personal']
+  birth_date             date        [note: 'Fecha de nacimiento — para cálculo de edad y segmentación']
+  gender                 varchar(20) [note: 'M | F | X | no_decl. varchar para tolerar valores variados de orígenes distintos']
+  nationality            varchar(100)[note: 'Nacionalidad — para segmentación demográfica']
+  document_type          varchar(30) [note: 'Tipo de documento principal. Ej: DNI, CUIL, RUT, CC']
+  document_number        varchar(50) [note: 'Número de documento principal']
+  hire_date              date        [not null, note: 'Fecha de ingreso — base para cálculo de antigüedad']
+  termination_date       date        [note: 'Fecha de egreso. null = activo o con estado on_leave']
+  termination_reason_id  int         [ref: > cfg_termination_reasons.id, note: 'Motivo de baja del catálogo global']
+  status                 varchar(20) [not null, note: 'active | inactive | on_leave']
+  contract_type          varchar(30) [note: 'indefinido | plazo_fijo | contractor | temporal']
+  manager_id             int         [ref: > hr_people.id, note: 'Self-ref — jefe directo. null = sin manager o top-level']
+  salary_band            varchar(50) [note: 'Banda salarial (etiqueta, no monto exacto). Ej: B3, Senior, L4']
+  custom_fields          jsonb       [note: 'Extensiones por tenant — campos del origen que no tienen columna canónica']
+  created_at             timestamptz [not null, default: `now()`]
+  updated_at             timestamptz [not null, default: `now()`]
+  deleted_at             timestamptz [note: 'Soft delete — empleados eliminados por error de carga']
+
+  indexes {
+    (tenant_id, employee_code) [unique, name: 'uq_hr_people_tenant_code']
+    (tenant_id, status)        [name: 'idx_hr_people_tenant_status']
+    (tenant_id, hire_date)     [name: 'idx_hr_people_tenant_hire_date']
+    (manager_id)               [name: 'idx_hr_people_manager']
+  }
+
+  Note: 'Empleados del tenant. Un empleado = una fila. Dimensiones organizacionales via hr_people_org_assignments. RLS por tenant_id.'
+}
+
+Table hr_people_org_assignments {
+  id             int  [pk, increment]
+  tenant_id      uuid [not null, ref: > tenants.id, note: 'RLS — denormalizado para simplificar RLS policy']
+  person_id      int  [not null, ref: > hr_people.id, note: 'Empleado asignado']
+  org_unit_id    int  [not null, ref: > hr_org_units.id, note: 'Unidad organizacional asignada']
+  is_primary     bool [not null, default: true, note: 'true = asignación principal para ese tipo de OU. Útil si un empleado pertenece a múltiples áreas']
+  created_at     timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, person_id, org_unit_id) [unique, name: 'uq_hr_people_org_assignments']
+    (tenant_id, org_unit_id)            [name: 'idx_hr_people_org_assignments_ou']
+  }
+
+  Note: 'Pivote que asigna empleados a sus unidades organizacionales (área, posición, location, etc.). N asignaciones por persona (una por tipo de OU). RLS por tenant_id.'
+}
+
+Table hr_people_history {
+  id                       int         [pk, increment]
+  tenant_id                uuid        [not null, ref: > tenants.id, note: 'RLS — tenant owner']
+  snapshot_date            date        [not null, note: 'Primer día del mes del snapshot: YYYY-MM-01']
+  person_id                int         [not null, ref: > hr_people.id, note: 'Referencia al empleado (puede estar inactivo)']
+  employee_code            varchar(50) [not null, note: 'Snapshot del código al momento del cierre']
+  status                   varchar(20) [not null, note: 'Estado al cierre del mes']
+  org_assignments_snapshot jsonb       [note: 'Array de asignaciones OU al momento del snapshot. Ej: [{type: "AREA", code: "VEN", name: "Ventas"}, ...]']
+  manager_id               int         [ref: > hr_people.id, note: 'Manager al cierre del mes']
+  salary_band              varchar(50) [note: 'Banda salarial al cierre']
+  tenure_months            int         [note: 'Antigüedad calculada en meses al cierre del mes']
+  custom_fields_snapshot   jsonb       [note: 'Snapshot de custom_fields al momento del cierre']
+  created_at               timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, snapshot_date, person_id) [unique, name: 'uq_hr_people_history_snapshot']
+    (tenant_id, snapshot_date)            [name: 'idx_hr_people_history_tenant_date']
+    (tenant_id, person_id)               [name: 'idx_hr_people_history_person']
+  }
+
+  Note: 'Snapshots mensuales del estado de cada empleado. Generados por job el día 1 de cada mes. Base para métricas históricas de headcount y turnover. RLS por tenant_id.'
+}
+
+// ============================================================
+// M1 — CONFIG POR TENANT
+// ============================================================
+
+Table cfg_absenteeism_types {
+  id                int         [pk, increment]
+  tenant_id         uuid        [not null, ref: > tenants.id, note: 'RLS — cada tenant define sus propios tipos de ausentismo']
+  code              varchar(50) [not null, note: 'Código del tipo en el sistema origen']
+  name              varchar(100)[not null, note: 'Nombre legible']
+  category          varchar(30) [not null, note: 'medical | personal | justified | unjustified | other']
+  counts_as_absence bool        [not null, default: true, note: 'false = tipo que no impacta en la tasa de ausentismo (ej: capacitación)']
+  custom_fields     jsonb
+
+  indexes {
+    (tenant_id, code) [unique, name: 'uq_cfg_absenteeism_types_tenant_code']
+  }
+
+  Note: 'Tipos de ausentismo por tenant. RLS por tenant_id — cada cliente tiene sus propios códigos mapeados desde el sistema origen.'
+}
+
+// ============================================================
+// M1 — TIME & ATTENDANCE
+// ============================================================
+
+Table att_time_daily {
+  id                    int          [pk, increment]
+  tenant_id             uuid         [not null, ref: > tenants.id, note: 'RLS']
+  person_id             int          [not null, ref: > hr_people.id]
+  date                  date         [not null, note: 'Fecha del registro diario']
+  is_working_day        bool         [not null, note: 'true = día hábil según calendario laboral del tenant/persona']
+  scheduled_hours       numeric(5,2) [not null, default: 0, note: 'Horas teóricas planificadas. 0 si is_working_day = false']
+  worked_hours          numeric(5,2) [not null, default: 0, note: 'Total horas trabajadas independientemente de su categorización']
+  has_absence           bool         [not null, default: false, note: 'Flag de conveniencia — true si existe al menos una entrada de tipo ABSENT para este día']
+  source_integration_id int          [note: 'FK int_tenant_integrations — integración que originó este registro']
+  custom_fields         jsonb
+  created_at            timestamptz  [not null, default: `now()`]
+  updated_at            timestamptz  [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, person_id, date) [unique, name: 'uq_att_time_daily_tenant_person_date']
+    (tenant_id, date)            [name: 'idx_att_time_daily_tenant_date']
+  }
+
+  Note: 'Agregado diario de asistencia por persona. Una fila por persona × día. El desglose por tipo de hora va en att_time_daily_entries. RLS por tenant_id.'
+}
+
+Table att_time_daily_entries {
+  id                  int          [pk, increment]
+  tenant_id           uuid         [not null, ref: > tenants.id, note: 'RLS — denormalizado para simplificar policy']
+  time_daily_id       int          [not null, ref: > att_time_daily.id, note: 'Día al que pertenece esta entrada']
+  time_entry_type_id  int          [not null, ref: > cfg_time_entry_types.id, note: 'Tipo de hora (OVERTIME, ABSENT, HOLIDAY, NIGHT, etc.)']
+  hours               numeric(6,2) [not null, note: 'Cantidad de horas de este tipo en el día']
+  created_at          timestamptz  [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, time_daily_id, time_entry_type_id) [unique, name: 'uq_att_time_daily_entries']
+    (tenant_id, time_entry_type_id)                [name: 'idx_att_time_daily_entries_type']
+  }
+
+  Note: 'Horas tipificadas por día y persona. N entradas por att_time_daily (una por tipo de hora presente). RLS por tenant_id.'
+}
+
+Table att_absenteeism_events {
+  id                    int          [pk, increment]
+  tenant_id             uuid         [not null, ref: > tenants.id, note: 'RLS']
+  person_id             int          [not null, ref: > hr_people.id]
+  absenteeism_type_id   int          [not null, ref: > cfg_absenteeism_types.id]
+  start_date            date         [not null]
+  end_date              date         [not null]
+  days_count            numeric(5,2) [not null, note: 'Días de duración del evento (puede ser fraccionario)']
+  hours_count           numeric(6,2) [not null, note: 'Horas totales del evento']
+  justified             bool         [not null, default: false]
+  cost_estimated        numeric(12,2)[note: 'Costo estimado del evento. Puede venir del ETL de Payroll']
+  status                varchar(20)  [not null, default: 'open', note: 'open | closed | cancelled']
+  notes                 text
+  source_integration_id int          [note: 'Integración origen']
+  custom_fields         jsonb
+  created_at            timestamptz  [not null, default: `now()`]
+  updated_at            timestamptz  [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, person_id, start_date) [name: 'idx_att_absenteeism_events_person_date']
+    (tenant_id, absenteeism_type_id)   [name: 'idx_att_absenteeism_events_type']
+  }
+
+  Note: 'Eventos de ausentismo por persona. Tabla maestra de ausencias — el agregado diario de horas ausentes también se refleja en att_time_daily_entries. RLS por tenant_id.'
+}
+
+// ============================================================
+// M1 — PAYROLL (simplificado — solo lo necesario para analytics)
+// ============================================================
+
+Table pay_periods {
+  id           int         [pk, increment]
+  tenant_id    uuid        [not null, ref: > tenants.id, note: 'RLS']
+  period_code  varchar(20) [not null, note: 'Código del período. Ej: 2026-01, 2026-Q1']
+  start_date   date        [not null]
+  end_date     date        [not null]
+  status       varchar(20) [not null, default: 'open', note: 'open | closed | cancelled']
+  created_at   timestamptz [not null, default: `now()`]
+  updated_at   timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, period_code) [unique, name: 'uq_pay_periods_tenant_code']
+  }
+
+  Note: 'Períodos de liquidación por tenant. RLS por tenant_id.'
+}
+
+Table pay_concepts {
+  id           int         [pk, increment]
+  tenant_id    uuid        [not null, ref: > tenants.id, note: 'RLS']
+  code         varchar(50) [not null, note: 'Código del concepto en el sistema origen']
+  name         varchar(100)[not null]
+  category     varchar(40) [not null, note: 'basic_salary | bonus | overtime | absence_deduction | other']
+  sign         smallint    [not null, default: 1, note: '+1 = ingreso, -1 = deducción']
+  is_active    bool        [not null, default: true]
+  custom_fields jsonb
+
+  indexes {
+    (tenant_id, code) [unique, name: 'uq_pay_concepts_tenant_code']
+  }
+
+  Note: 'Catálogo de conceptos de liquidación por tenant. RLS por tenant_id.'
+}
+
+Table pay_entries {
+  id                    int          [pk, increment]
+  tenant_id             uuid         [not null, ref: > tenants.id, note: 'RLS']
+  period_id             int          [not null, ref: > pay_periods.id]
+  person_id             int          [not null, ref: > hr_people.id]
+  concept_id            int          [not null, ref: > pay_concepts.id]
+  amount                numeric(14,2)[not null, note: 'Monto del concepto en el período']
+  hours                 numeric(6,2) [note: 'Horas asociadas al concepto (aplica para HHEE, ausentismo). null si no aplica']
+  source_integration_id int          [note: 'Integración origen']
+  custom_fields         jsonb
+  created_at            timestamptz  [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, period_id, person_id, concept_id) [unique, name: 'uq_pay_entries_period_person_concept']
+    (tenant_id, period_id, person_id)             [name: 'idx_pay_entries_period_person']
+  }
+
+  Note: 'Líneas de liquidación por persona × período × concepto. Solo conceptos relevantes para analytics (HHEE, ausentismo, básico). RLS por tenant_id.'
+}

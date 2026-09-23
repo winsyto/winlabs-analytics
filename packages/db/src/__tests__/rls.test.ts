@@ -100,6 +100,47 @@ afterAll(async () => {
 // Tests
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Helpers M1
+// ---------------------------------------------------------------------------
+
+async function seedOrgUnitType(code: string, name: string) {
+  return prisma.cfgOrgUnitType.upsert({
+    where: { code },
+    update: {},
+    create: { code, name, isActive: true },
+  });
+}
+
+async function createTestOrgUnit(
+  tenantId: string,
+  typeCode: string,
+  code: string,
+  name: string
+) {
+  return withTenantContext(tenantId, (tx) =>
+    tx.hrOrgUnit.upsert({
+      where: { uq_hr_org_units_tenant_type_code: { tenantId, orgUnitTypeCode: typeCode, code } },
+      update: {},
+      create: { tenantId, orgUnitTypeCode: typeCode, code, name, isActive: true },
+    })
+  );
+}
+
+async function createTestPerson(tenantId: string, employeeCode: string, fullName: string) {
+  return withTenantContext(tenantId, (tx) =>
+    tx.hrPerson.upsert({
+      where: { uq_hr_people_tenant_code: { tenantId, employeeCode } },
+      update: {},
+      create: { tenantId, employeeCode, fullName, hireDate: new Date("2024-01-01"), status: "active" },
+    })
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
 describe("RLS — aislamiento entre tenants", () => {
   it("tenant Alpha solo ve sus propios usuarios", async () => {
     const users = await withTenantContext(tenantAlphaId, (tx) =>
@@ -154,5 +195,61 @@ describe("RLS — aislamiento entre tenants", () => {
     );
 
     expect(users).toHaveLength(1);
+  });
+});
+
+describe("RLS M1 — hr_org_units y hr_people", () => {
+  beforeAll(async () => {
+    await seedOrgUnitType("AREA", "Área");
+    await createTestOrgUnit(tenantAlphaId, "AREA", "VENTAS", "Ventas Alpha");
+    await createTestOrgUnit(tenantBetaId, "AREA", "VENTAS", "Ventas Beta");
+    await createTestPerson(tenantAlphaId, "EMP-A-001", "Alice Empleada");
+    await createTestPerson(tenantBetaId, "EMP-B-001", "Charlie Empleado");
+  });
+
+  afterAll(async () => {
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrPerson.deleteMany({ where: { tenantId: tenantAlphaId } })
+    );
+    await withTenantContext(tenantBetaId, (tx) =>
+      tx.hrPerson.deleteMany({ where: { tenantId: tenantBetaId } })
+    );
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrOrgUnit.deleteMany({ where: { tenantId: tenantAlphaId } })
+    );
+    await withTenantContext(tenantBetaId, (tx) =>
+      tx.hrOrgUnit.deleteMany({ where: { tenantId: tenantBetaId } })
+    );
+  });
+
+  it("tenant Alpha solo ve sus propias org units", async () => {
+    const units = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrOrgUnit.findMany()
+    );
+    expect(units).toHaveLength(1);
+    expect(units[0]?.name).toBe("Ventas Alpha");
+  });
+
+  it("tenant Beta solo ve sus propias org units", async () => {
+    const units = await withTenantContext(tenantBetaId, (tx) =>
+      tx.hrOrgUnit.findMany()
+    );
+    expect(units).toHaveLength(1);
+    expect(units[0]?.name).toBe("Ventas Beta");
+  });
+
+  it("tenant Alpha solo ve sus propias personas", async () => {
+    const people = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrPerson.findMany()
+    );
+    expect(people).toHaveLength(1);
+    expect(people[0]?.employeeCode).toBe("EMP-A-001");
+  });
+
+  it("contexto Alpha no puede leer personas de Beta aunque las pida explícitamente", async () => {
+    const people = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrPerson.findMany({ where: { tenantId: tenantBetaId } })
+    );
+    expect(people).toHaveLength(0);
   });
 });

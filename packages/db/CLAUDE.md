@@ -10,9 +10,9 @@ Ver contexto completo en `../../CLAUDE.md`.
 - Tests RLS (`src/__tests__/rls.test.ts`)
 - Helper de tenant context para tests (`src/test-helpers/tenant-context.ts`)
 
-## Schema actual (M0)
+## Schema actual (M1)
 
-Tablas implementadas:
+Tablas M0 implementadas:
 - `tenants` — sin RLS
 - `internal_users` — sin RLS (usuarios del CMP)
 - `users` — RLS por tenant_id
@@ -20,11 +20,24 @@ Tablas implementadas:
 - `user_roles` — RLS por tenant_id
 - `audit_log` — RLS por tenant_id
 
-Tablas pendientes (M1):
-- `people`, `people_history`, `areas`, `positions`, `locations`
-- `time_daily`, `absenteeism_events`, `absenteeism_types`
-- `payroll_periods`, `payroll_entries`, `payroll_concepts`
-- `integration_templates`, `tenant_integrations`, `integration_runs`
+Tablas M1 implementadas:
+- `cfg_org_unit_types` — sin RLS (catálogo global)
+- `cfg_termination_reasons` — sin RLS (catálogo global)
+- `cfg_time_entry_types` — sin RLS (catálogo global)
+- `hr_org_units` — RLS por tenant_id
+- `hr_people` — RLS por tenant_id
+- `hr_people_org_assignments` — RLS por tenant_id
+- `hr_people_history` — RLS por tenant_id
+- `cfg_absenteeism_types` — RLS por tenant_id
+- `att_time_daily` — RLS por tenant_id
+- `att_time_daily_entries` — RLS por tenant_id
+- `att_absenteeism_events` — RLS por tenant_id
+- `pay_periods` — RLS por tenant_id
+- `pay_concepts` — RLS por tenant_id
+- `pay_entries` — RLS por tenant_id
+
+Tablas pendientes (M1-B):
+- `int_templates`, `int_tenant_integrations`, `int_runs`, `int_run_errors`
 
 ## RLS
 

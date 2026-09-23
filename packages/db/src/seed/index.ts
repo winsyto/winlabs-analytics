@@ -106,13 +106,15 @@ async function seedTenant(
         },
       });
 
+      const roleId = roles[u.role]?.id;
+      if (!roleId) throw new Error(`Role not found: ${u.role}`);
       await tx.userRole.upsert({
-        where: { userId_roleId: { userId: user.id, roleId: roles[u.role].id } },
+        where: { userId_roleId: { userId: user.id, roleId } },
         update: {},
         create: {
           tenantId,
           userId: user.id,
-          roleId: roles[u.role].id,
+          roleId,
         },
       });
 
