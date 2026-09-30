@@ -51,8 +51,8 @@ jobs:
       postgres:
         image: postgres:16
         env:
-          POSTGRES_USER: wla_test
-          POSTGRES_PASSWORD: wla_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
           POSTGRES_DB: winlabs_analytics_test
         ports:
           - 5432:5432
@@ -81,6 +81,15 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Create non-superuser DB role for RLS tests
+        # Los superusuarios de Postgres bypasean RLS incluso con FORCE ROW LEVEL SECURITY.
+        # Creamos wla_test como rol sin privilegios de superusuario para que RLS aplique.
+        run: |
+          psql postgresql://postgres:postgres@localhost:5432/winlabs_analytics_test \
+            -c "CREATE USER wla_test WITH PASSWORD 'wla_test' NOSUPERUSER NOCREATEDB NOCREATEROLE;" \
+            -c "GRANT ALL PRIVILEGES ON DATABASE winlabs_analytics_test TO wla_test;" \
+            -c "GRANT CREATE ON SCHEMA public TO wla_test;"
 
       - name: Run Prisma migrations on test DB
         run: pnpm --filter @wla/db db:migrate:test
