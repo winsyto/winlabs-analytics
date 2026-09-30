@@ -145,12 +145,15 @@
 - [x] 4 tests RLS nuevos — 14 tests en total, todos pasando
 - [x] Seed de 6 templates en int_templates (4 file + api_manu + api_geovictoria)
 
-### M1-C: CMP — UI de modelo de datos
+### M1-C: CMP — UI de modelo de datos ✅ CERRADO
 
-- [ ] **Página `/data-models`** en CMP
-  - Lista de modelos disponibles (People, Time, Payroll)
-  - Activar/desactivar por tenant
-  - Server action: `updateTenantDataModels`
+- [x] **Página `/data-models`** en CMP
+  - Tabla tenants × módulos (People, Time, Payroll) con badges ON/OFF
+  - Dialog editable por tenant con checkboxes
+  - Server action `updateTenantModulesAction` (Zod + revalidatePath)
+  - Campo `active_modules String[]` agregado a tabla `tenants` (migración `add_tenant_active_modules`)
+  - Fix: session callback en `apps/cmp/auth.ts` para propagar `session.user.id = token.sub`
+  - Nav item "Modelos de datos" en sidebar CMP
 
 ### M1-D: CMP — UI de integraciones
 

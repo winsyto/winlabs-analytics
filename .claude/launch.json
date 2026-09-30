@@ -1,0 +1,19 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "cmp",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@wla/cmp", "dev"],
+      "port": 3001,
+      "url": "http://localhost:3001"
+    },
+    {
+      "name": "cliente",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@wla/cliente", "dev"],
+      "port": 3000,
+      "url": "http://localhost:3000"
+    }
+  ]
+}

@@ -12,12 +12,14 @@ datasource db {
 // TENANTS
 // =============================================================================
 model Tenant {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug      String   @unique
-  name      String
-  isActive  Boolean  @default(true) @map("is_active")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug           String   @unique
+  name           String
+  isActive       Boolean  @default(true) @map("is_active")
+  /// Módulos analíticos activos. Valores posibles: people, time, payroll
+  activeModules  String[] @default([]) @map("active_modules")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   users     User[]
   roles     Role[]

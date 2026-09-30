@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarNav } from "@wla/ui";
-import { Building2, LayoutDashboard, Users } from "lucide-react";
+import { Building2, Database, LayoutDashboard, Users } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/tenants", label: "Tenants", icon: Building2 },
-  { href: "/users", label: "Usuarios internos", icon: Users },
+  { href: "/dashboard",    label: "Dashboard",         icon: LayoutDashboard },
+  { href: "/tenants",      label: "Tenants",            icon: Building2 },
+  { href: "/data-models",  label: "Modelos de datos",  icon: Database },
+  { href: "/users",        label: "Usuarios internos", icon: Users },
 ];
 
 export function AppSidebar() {
