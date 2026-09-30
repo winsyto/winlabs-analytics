@@ -1,7 +1,6 @@
 "use server";
 
 import { auth } from "@/auth";
-import { prisma } from "@wla/db/client";
 import { withTenantContext } from "@wla/auth";
 import { assertCan, type Role } from "@wla/auth";
 import { revalidatePath } from "next/cache";
