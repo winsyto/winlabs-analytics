@@ -106,27 +106,31 @@
 > **Objetivo:** schema completo del MVP en BD + framework genérico de workers.
 > **Checkpoint:** puedo activar manualmente una integración en CMP, falla con un mock pero el framework anda.
 
-### M1-A: Schema de datos (People + Time + Payroll)
+### M1-A: Schema de datos (People + Time + Payroll) ✅ CERRADO
 
-- [ ] **Migración Prisma: tablas de People**
-  - `people` (empleado: employee_code, full_name, hire_date, status, area_id, position_id, etc.)
-  - `areas` (estructura organizacional con parent/child)
-  - `positions` (cargo/puesto)
-  - `locations` (sede/oficina)
-  - `people_history` (snapshot mensual del estado de cada empleado)
+- [x] **Migración Prisma: tablas de People**
+  - `hr_people` (empleado: employee_code, full_name, hire_date, status, manager_id, etc.)
+  - `hr_org_units` (estructura OU genérica con parent/child — cubre áreas, posiciones, sedes, etc.)
+  - `cfg_org_unit_types` (catálogo global de tipos de OU: AREA, POSITION, LOCATION, etc.)
+  - `cfg_termination_reasons` (catálogo global de motivos de baja)
+  - `hr_people_org_assignments` (asignación persona → org unit, histórica)
+  - `hr_people_history` (snapshot mensual del estado de cada empleado)
 
-- [ ] **Migración Prisma: tablas de Time & Attendance**
-  - `time_daily` (agregado diario: horas normales, extras, ausencias)
-  - `absenteeism_events` (evento individual de ausentismo)
-  - `absenteeism_types` (catálogo por tenant: enfermedad, licencia, etc.)
+- [x] **Migración Prisma: tablas de Time & Attendance**
+  - `att_time_daily` (agregado diario por persona)
+  - `att_time_daily_entries` (detalle tipado de horas — reemplaza columnas fijas)
+  - `cfg_time_entry_types` (catálogo global de tipos: OVERTIME, ABSENT, HOLIDAY, etc.)
+  - `att_absenteeism_events` (evento individual de ausentismo)
+  - `cfg_absenteeism_types` (catálogo por tenant: enfermedad, licencia, etc.)
 
-- [ ] **Migración Prisma: tablas de Payroll**
-  - `payroll_periods` (período de liquidación)
-  - `payroll_entries` (línea de liquidación por empleado/período)
-  - `payroll_concepts` (catálogo de conceptos: sueldo básico, horas extras, etc.)
+- [x] **Migración Prisma: tablas de Payroll**
+  - `pay_periods` (período de liquidación)
+  - `pay_entries` (línea de liquidación por empleado/período)
+  - `pay_concepts` (catálogo de conceptos por tenant)
 
-- [ ] **RLS policies** para todas las tablas nuevas
-- [ ] **Tests RLS** actualizados para cubrir nuevas tablas
+- [x] **RLS policies** con `FORCE ROW LEVEL SECURITY` para todas las tablas de tenant
+- [x] **Tests RLS** — 4 tests nuevos M1 + 6 M0 = 10 en total, pasando en CI
+- [ ] Seed de catálogos globales: `cfg_org_unit_types` y `cfg_time_entry_types`
 - [ ] Aplicar migraciones en Supabase (prod)
 
 ### M1-B: Tablas de integración
