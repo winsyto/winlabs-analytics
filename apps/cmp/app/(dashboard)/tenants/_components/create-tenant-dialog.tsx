@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import {
   Button,
   Dialog,
@@ -28,11 +28,15 @@ export function CreateTenantDialog() {
     initialState
   );
 
-  // Cerrar el dialog cuando la creación es exitosa
+  // Cerrar el dialog cuando la creación es exitosa.
+  // Se usa un ref para comparar con el valor previo y evitar setState síncrono en el effect.
+  const prevSuccess = useRef(state.success);
   useEffect(() => {
-    if (state.success) {
-      setOpen(false);
+    if (state.success && !prevSuccess.current) {
+      prevSuccess.current = true;
+      setTimeout(() => setOpen(false), 0);
     }
+    if (!state.success) prevSuccess.current = false;
   }, [state.success]);
 
   return (
