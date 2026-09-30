@@ -25,4 +25,9 @@ export type {
   PayPeriod,
   PayConcept,
   PayEntry,
+  // M1-B — Integraciones
+  IntTemplate,
+  IntTenantIntegration,
+  IntRun,
+  IntRunError,
 } from "@prisma/client";

@@ -133,16 +133,17 @@
 - [ ] Seed de catálogos globales: `cfg_org_unit_types` y `cfg_time_entry_types`
 - [ ] Aplicar migraciones en Supabase (prod)
 
-### M1-B: Tablas de integración
+### M1-B: Tablas de integración ✅ CERRADO
 
-- [ ] **Migración Prisma: tablas de integraciones**
-  - `integration_templates` (catálogo global: file_people, file_time, api_manu, etc.)
-  - `tenant_integrations` (qué integraciones tiene activas cada tenant + config)
-  - `integration_runs` (historial de ejecuciones: status, started_at, finished_at, error)
-  - `integration_run_errors` (detalle de errores por fila/registro)
+- [x] **Migración Prisma: tablas de integraciones**
+  - `int_templates` (catálogo global sin RLS: file_people, file_time, file_absenteeism, file_payroll, api_manu, api_geovictoria)
+  - `int_tenant_integrations` (integraciones activas por tenant + config JSON)
+  - `int_runs` (historial de ejecuciones con contadores de filas)
+  - `int_run_errors` (errores y warnings a nivel de fila por run)
 
-- [ ] RLS policies para tablas de integración
-- [ ] Seed de templates de integración (file_people, file_time_attendance, file_absenteeism, file_payroll)
+- [x] RLS policies con FORCE ROW LEVEL SECURITY para las 3 tablas de tenant
+- [x] 4 tests RLS nuevos — 14 tests en total, todos pasando
+- [x] Seed de 6 templates en int_templates (4 file + api_manu + api_geovictoria)
 
 ### M1-C: CMP — UI de modelo de datos
 

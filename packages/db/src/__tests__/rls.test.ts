@@ -253,3 +253,105 @@ describe("RLS M1 — hr_org_units y hr_people", () => {
     expect(people).toHaveLength(0);
   });
 });
+
+describe("RLS M1-B — int_tenant_integrations, int_runs, int_run_errors", () => {
+  let integrationAlphaId: number;
+  let integrationBetaId: number;
+  let runAlphaId: number;
+
+  beforeAll(async () => {
+    // Aseguramos que el template global exista
+    await prisma.intTemplate.upsert({
+      where: { code: "file_people" },
+      update: {},
+      create: { code: "file_people", name: "Archivo: Personas", category: "file", targetModel: "people", isActive: true },
+    });
+
+    const intAlpha = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intTenantIntegration.create({
+        data: { tenantId: tenantAlphaId, integrationTemplateCode: "file_people", name: "Personas Alpha", config: {} },
+      })
+    );
+    integrationAlphaId = intAlpha.id;
+
+    const intBeta = await withTenantContext(tenantBetaId, (tx) =>
+      tx.intTenantIntegration.create({
+        data: { tenantId: tenantBetaId, integrationTemplateCode: "file_people", name: "Personas Beta", config: {} },
+      })
+    );
+    integrationBetaId = intBeta.id;
+
+    const run = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intRun.create({
+        data: {
+          tenantId: tenantAlphaId,
+          tenantIntegrationId: integrationAlphaId,
+          status: "success",
+          triggerSource: "manual",
+          startedAt: new Date(),
+          finishedAt: new Date(),
+          rowsLoaded: 10,
+        },
+      })
+    );
+    runAlphaId = run.id;
+
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intRunError.create({
+        data: {
+          tenantId: tenantAlphaId,
+          runId: runAlphaId,
+          errorCode: "VALIDATION_ERROR",
+          errorMessage: "Campo requerido vacío",
+          severity: "error",
+        },
+      })
+    );
+  });
+
+  afterAll(async () => {
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intRunError.deleteMany({ where: { tenantId: tenantAlphaId } })
+    );
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intRun.deleteMany({ where: { tenantId: tenantAlphaId } })
+    );
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intTenantIntegration.deleteMany({ where: { tenantId: tenantAlphaId } })
+    );
+    await withTenantContext(tenantBetaId, (tx) =>
+      tx.intTenantIntegration.deleteMany({ where: { tenantId: tenantBetaId } })
+    );
+  });
+
+  it("tenant Alpha solo ve sus propias integraciones", async () => {
+    const integrations = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intTenantIntegration.findMany()
+    );
+    expect(integrations).toHaveLength(1);
+    expect(integrations[0]?.name).toBe("Personas Alpha");
+  });
+
+  it("contexto Alpha no puede leer integraciones de Beta", async () => {
+    const integrations = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intTenantIntegration.findMany({ where: { tenantId: tenantBetaId } })
+    );
+    expect(integrations).toHaveLength(0);
+  });
+
+  it("tenant Alpha solo ve sus propios runs", async () => {
+    const runs = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intRun.findMany()
+    );
+    expect(runs).toHaveLength(1);
+    expect(runs[0]?.rowsLoaded).toBe(10);
+  });
+
+  it("tenant Alpha solo ve sus propios errores de run", async () => {
+    const errors = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.intRunError.findMany()
+    );
+    expect(errors).toHaveLength(1);
+    expect(errors[0]?.errorCode).toBe("VALIDATION_ERROR");
+  });
+});

@@ -187,6 +187,26 @@ async function main() {
     { email: "viewer@globo.com", passwordHash: viewerHash, name: "Viewer Globo", role: "viewer" },
   ]);
 
+  // 5. Integration templates (catálogo global — sin RLS)
+  const integrationTemplates = [
+    { code: "file_people",       name: "Archivo: Personas",           category: "file", targetModel: "people" },
+    { code: "file_time",         name: "Archivo: Asistencia",         category: "file", targetModel: "time" },
+    { code: "file_absenteeism",  name: "Archivo: Ausentismo",         category: "file", targetModel: "absenteeism" },
+    { code: "file_payroll",      name: "Archivo: Liquidaciones",      category: "file", targetModel: "payroll" },
+    { code: "api_manu",          name: "API Manú (HR)",               category: "api",  targetModel: "people" },
+    { code: "api_geovictoria",   name: "API Geovictoria (T&A)",       category: "api",  targetModel: "time" },
+  ];
+
+  for (const t of integrationTemplates) {
+    await prisma.intTemplate.upsert({
+      where: { code: t.code },
+      update: { name: t.name },
+      create: { ...t, isActive: true },
+    });
+    console.log(`  ✅ IntTemplate: ${t.code}`);
+  }
+  console.log();
+
   // Resumen
   console.log("\n🎉 Seed completado.\n");
   console.log("  CMP     → /login");

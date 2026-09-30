@@ -375,3 +375,83 @@ Table pay_entries {
 
   Note: 'Líneas de liquidación por persona × período × concepto. Solo conceptos relevantes para analytics (HHEE, ausentismo, básico). RLS por tenant_id.'
 }
+
+// ============================================================
+// M1-B — INTEGRACIONES
+// ============================================================
+
+Table int_templates {
+  code          varchar(50)  [pk, note: 'Slug único del template. Ej: file_people, api_manu, api_geovictoria']
+  name          varchar(100) [not null, note: 'Nombre display del template']
+  category      varchar(20)  [not null, note: 'file | api — tipo de fuente de datos']
+  target_model  varchar(40)  [not null, note: 'people | time | payroll | absenteeism — modelo canónico que puebla']
+  config_schema jsonb        [note: 'JSON Schema que valida el campo config de int_tenant_integrations']
+  is_active     bool         [not null, default: true, note: 'false = template desactivado globalmente (no aparece en UI)']
+  created_at    timestamptz  [not null, default: `now()`]
+
+  Note: 'Catálogo global de templates de integración. Sin RLS — gestionado por WinLabs vía seed/migrations.'
+}
+
+Table int_tenant_integrations {
+  id                       int         [pk, increment]
+  tenant_id                uuid        [not null, ref: > tenants.id, note: 'RLS — cada fila pertenece a un tenant']
+  integration_template_code varchar(50) [not null, ref: > int_templates.code, note: 'Template que implementa esta integración']
+  name                     varchar(100)[not null, note: 'Nombre amigable definido por el tenant. Ej: Nómina mensual Acme']
+  status                   varchar(20) [not null, default: 'active', note: 'active | paused | error']
+  schedule_cron            varchar(100)[note: 'Expresión cron. Null si la integración es solo manual']
+  config                   jsonb       [not null, note: 'Reglas de mapping, filtros, value maps y defaults. Validado contra int_templates.config_schema']
+  last_run_at              timestamptz [note: 'Timestamp del último run iniciado (exitoso o no)']
+  last_success_at          timestamptz [note: 'Timestamp del último run completado sin errores fatales']
+  is_active                bool        [not null, default: true, note: 'false = integración desactivada por el tenant']
+  created_at               timestamptz [not null, default: `now()`]
+  updated_at               timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, integration_template_code) [name: 'idx_int_tenant_integrations_template']
+  }
+
+  Note: 'Integraciones activas por tenant. Una fila por integración configurada. El campo config almacena todo el mapping y las reglas. RLS por tenant_id.'
+}
+
+Table int_runs {
+  id                     int         [pk, increment]
+  tenant_id              uuid        [not null, ref: > tenants.id, note: 'RLS — denormalizado para simplificar policy']
+  tenant_integration_id  int         [not null, ref: > int_tenant_integrations.id, note: 'Integración que originó este run']
+  status                 varchar(20) [not null, note: 'running | success | partial | failed']
+  trigger_source         varchar(20) [not null, note: 'cron | manual | upload']
+  triggered_by           varchar(36) [note: 'UUID del usuario que disparó el run, o null si fue automático']
+  started_at             timestamptz [not null, note: 'Inicio del run']
+  finished_at            timestamptz [note: 'Fin del run. Null si sigue corriendo']
+  rows_read              int         [not null, default: 0, note: 'Filas leídas de la fuente']
+  rows_loaded            int         [not null, default: 0, note: 'Filas persistidas exitosamente en BD']
+  rows_error             int         [not null, default: 0, note: 'Filas descartadas por error de validación o mapping']
+  rows_warning           int         [not null, default: 0, note: 'Filas procesadas con advertencias (reconciliación pendiente, etc.)']
+  error_message          text        [note: 'Mensaje de error fatal si status = failed. Null en runs exitosos']
+  created_at             timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, tenant_integration_id, started_at) [name: 'idx_int_runs_integration_date']
+    (tenant_id, status)                            [name: 'idx_int_runs_status']
+  }
+
+  Note: 'Historial de ejecuciones por integración. Una fila por run. Los errores a nivel de fila se detallan en int_run_errors. RLS por tenant_id.'
+}
+
+Table int_run_errors {
+  id          int         [pk, increment]
+  tenant_id   uuid        [not null, ref: > tenants.id, note: 'RLS — denormalizado para simplificar policy']
+  run_id      int         [not null, ref: > int_runs.id, note: 'Run al que pertenece este error']
+  row_index   int         [note: 'Posición de la fila en el archivo o respuesta API. Null si el error no es de fila']
+  row_data    jsonb       [note: 'Datos crudos de la fila que falló. Para debug y reporte de errores descargable']
+  error_code  varchar(50) [not null, note: 'Código de error. Ej: VALIDATION_ERROR, MAPPING_ERROR, RECONCILIATION_PENDING']
+  error_message text      [not null, note: 'Descripción legible del error']
+  severity    varchar(10) [not null, default: 'error', note: 'error | warning']
+  created_at  timestamptz [not null, default: `now()`]
+
+  indexes {
+    (tenant_id, run_id)           [name: 'idx_int_run_errors_run']
+    (tenant_id, run_id, severity) [name: 'idx_int_run_errors_severity']
+  }
+
+  Note: 'Errores y advertencias a nivel de fila por run de integración. Usados para el reporte descargable de errores en UI. RLS por tenant_id.'
+}

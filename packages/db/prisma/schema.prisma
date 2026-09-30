@@ -472,6 +472,120 @@ model PayEntry {
 }
 
 // =============================================================================
+// M1-B — INTEGRACIONES
+// =============================================================================
+
+model IntTemplate {
+  /// PK: slug único del template
+  code         String  @id @db.VarChar(50)
+  /// Nombre display del template
+  name         String  @db.VarChar(100)
+  /// file | api
+  category     String  @db.VarChar(20)
+  /// people | time | payroll | absenteeism
+  targetModel  String  @db.VarChar(40) @map("target_model")
+  /// JSON Schema para validar el campo config de IntTenantIntegration
+  configSchema Json?   @map("config_schema")
+  /// false = desactivado globalmente (no aparece en UI)
+  isActive     Boolean @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  tenantIntegrations IntTenantIntegration[]
+
+  @@map("int_templates")
+}
+
+model IntTenantIntegration {
+  /// PK autoincrement
+  id                      Int      @id @default(autoincrement())
+  /// RLS
+  tenantId                String   @db.Uuid @map("tenant_id")
+  /// Template que implementa esta integración
+  integrationTemplateCode String   @db.VarChar(50) @map("integration_template_code")
+  /// Nombre amigable definido por el tenant
+  name                    String   @db.VarChar(100)
+  /// active | paused | error
+  status                  String   @default("active") @db.VarChar(20)
+  /// Expresión cron. Null si solo manual
+  scheduleCron            String?  @db.VarChar(100) @map("schedule_cron")
+  /// Reglas de mapping, filtros y defaults. Validado contra IntTemplate.configSchema
+  config                  Json
+  /// Timestamp del último run iniciado (exitoso o no)
+  lastRunAt               DateTime? @map("last_run_at")
+  /// Timestamp del último run completado sin errores fatales
+  lastSuccessAt           DateTime? @map("last_success_at")
+  /// false = integración desactivada por el tenant
+  isActive                Boolean  @default(true) @map("is_active")
+  createdAt               DateTime @default(now()) @map("created_at")
+  updatedAt               DateTime @updatedAt @map("updated_at")
+
+  template IntTemplate @relation(fields: [integrationTemplateCode], references: [code])
+  runs     IntRun[]
+
+  @@index([tenantId, integrationTemplateCode])
+  @@map("int_tenant_integrations")
+}
+
+model IntRun {
+  /// PK autoincrement
+  id                    Int       @id @default(autoincrement())
+  /// RLS — denormalizado para simplificar policy
+  tenantId              String    @db.Uuid @map("tenant_id")
+  /// Integración que originó este run
+  tenantIntegrationId   Int       @map("tenant_integration_id")
+  /// running | success | partial | failed
+  status                String    @db.VarChar(20)
+  /// cron | manual | upload
+  triggerSource         String    @db.VarChar(20) @map("trigger_source")
+  /// UUID del usuario que disparó el run, o null si fue automático
+  triggeredBy           String?   @db.VarChar(36) @map("triggered_by")
+  startedAt             DateTime  @map("started_at")
+  finishedAt            DateTime? @map("finished_at")
+  /// Filas leídas de la fuente
+  rowsRead              Int       @default(0) @map("rows_read")
+  /// Filas persistidas exitosamente
+  rowsLoaded            Int       @default(0) @map("rows_loaded")
+  /// Filas descartadas por error
+  rowsError             Int       @default(0) @map("rows_error")
+  /// Filas procesadas con advertencias
+  rowsWarning           Int       @default(0) @map("rows_warning")
+  /// Error fatal si status = failed
+  errorMessage          String?   @map("error_message")
+  createdAt             DateTime  @default(now()) @map("created_at")
+
+  tenantIntegration IntTenantIntegration @relation(fields: [tenantIntegrationId], references: [id])
+  errors            IntRunError[]
+
+  @@index([tenantId, tenantIntegrationId, startedAt])
+  @@index([tenantId, status])
+  @@map("int_runs")
+}
+
+model IntRunError {
+  /// PK autoincrement
+  id           Int      @id @default(autoincrement())
+  /// RLS — denormalizado para simplificar policy
+  tenantId     String   @db.Uuid @map("tenant_id")
+  runId        Int      @map("run_id")
+  /// Posición de la fila en el archivo/respuesta. Null si no es error de fila
+  rowIndex     Int?     @map("row_index")
+  /// Datos crudos de la fila que falló
+  rowData      Json?    @map("row_data")
+  /// VALIDATION_ERROR | MAPPING_ERROR | RECONCILIATION_PENDING | etc.
+  errorCode    String   @db.VarChar(50) @map("error_code")
+  errorMessage String   @map("error_message")
+  /// error | warning
+  severity     String   @default("error") @db.VarChar(10)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  run IntRun @relation(fields: [runId], references: [id])
+
+  @@index([tenantId, runId])
+  @@index([tenantId, runId, severity])
+  @@map("int_run_errors")
+}
+
+// =============================================================================
 // AUDIT_LOG
 // =============================================================================
 model AuditLog {
