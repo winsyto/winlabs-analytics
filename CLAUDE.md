@@ -191,8 +191,9 @@ app/(dashboard)/[feature]/
 ## CI/CD
 
 ### GitHub Actions (`.github/workflows/ci.yml`)
-Pipeline: lint → typecheck → build → RLS tests  
-No aplica migraciones ni seeds — eso es responsabilidad de Vercel.
+Pipeline: **solo RLS Integration Tests**.  
+Lint, typecheck y build los cubre Vercel en cada deploy — no se duplican en CI.  
+Los RLS tests se mantienen porque son seguridad crítica (aislamiento multi-tenant) y requieren PostgreSQL NOSUPERUSER que es difícil de garantizar en local.
 
 ### Vercel (deploy automático en push a `main`)
 - `winlabs-analytics-cmp.vercel.app` → apps/cmp
