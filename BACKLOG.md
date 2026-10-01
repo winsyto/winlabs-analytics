@@ -130,8 +130,8 @@
 
 - [x] **RLS policies** con `FORCE ROW LEVEL SECURITY` para todas las tablas de tenant
 - [x] **Tests RLS** — 4 tests nuevos M1 + 6 M0 = 10 en total, pasando en CI
-- [ ] Seed de catálogos globales: `cfg_org_unit_types` y `cfg_time_entry_types`
-- [ ] Aplicar migraciones en Supabase (prod)
+- [x] Seed de catálogos globales: `cfg_org_unit_types` (5) y `cfg_time_entry_types` (7) — aplicados en prod y dev
+- [x] Aplicar migraciones en Supabase (prod)
 
 ### M1-B: Tablas de integración ✅ CERRADO
 
@@ -183,7 +183,7 @@
   - Node.js actualizado a 24 en CI (20 deprecado en runners)
   - CLAUDE.md: reglas de migraciones, seeds y CI/CD actualizadas
 
-### M1-E: Worker framework (VPS) 🔄 EN PROGRESO
+### M1-E: Worker framework (VPS) ✅ CERRADO
 
 > Arquitectura definida en `proyecto/iniciativa/estrategia_workers_jobs_integraciones.md`
 > Deploy target: **Fly.io** (región GRU — São Paulo)
@@ -204,13 +204,13 @@
 
 - [x] **Handler mock `hello_world`** — loguea y completa (valida el framework end-to-end)
 
-- [ ] **Deploy del worker en Fly.io**
-  - Crear cuenta Fly.io y app `wla-worker`
-  - `fly secrets set DATABASE_URL="..."` (Supabase postgres superuser URL)
-  - `fly deploy` desde `jobs/worker/`
-  - Verificar: insertar job manual en BD → ver log del worker procesando
+- [x] **Deploy del worker en Fly.io**
+  - App `wla-worker` en región GRU (São Paulo)
+  - `DATABASE_URL` seteado como secret en Fly.io
+  - `fly deploy` exitoso — imagen Docker 54MB
 
-- [ ] **Checkpoint M1-E**: job `hello_world` procesado end-to-end en prod
+- [x] **Checkpoint M1-E**: job `hello_world` procesado end-to-end en prod ✓
+  - `job claimed → Hello from WLA worker! → job completed (501ms)`
 
 ---
 

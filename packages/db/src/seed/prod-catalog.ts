@@ -10,6 +10,44 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
+  // ── cfg_org_unit_types ───────────────────────────────────────────────────
+  const orgUnitTypes = [
+    { code: "AREA",        name: "Área",              description: "Unidad funcional o departamento" },
+    { code: "DEPARTMENT",  name: "Departamento",      description: "Subdivisión de un área" },
+    { code: "POSITION",    name: "Posición / Cargo",  description: "Rol o puesto dentro de la estructura" },
+    { code: "LOCATION",    name: "Sede / Sucursal",   description: "Ubicación física" },
+    { code: "COST_CENTER", name: "Centro de costos",  description: "Unidad de imputación contable" },
+  ];
+
+  for (const t of orgUnitTypes) {
+    await prisma.cfgOrgUnitType.upsert({
+      where:  { code: t.code },
+      update: { name: t.name, description: t.description, isActive: true },
+      create: { ...t, isActive: true },
+    });
+  }
+  console.log(`✓ cfg_org_unit_types: ${orgUnitTypes.length} registros`);
+
+  // ── cfg_time_entry_types ─────────────────────────────────────────────────
+  const timeEntryTypes = [
+    { code: "REGULAR",   name: "Horas regulares",      category: "special",  sign:  1 },
+    { code: "OVERTIME",  name: "Horas extra",           category: "overtime", sign:  1 },
+    { code: "NIGHT",     name: "Horas nocturnas",       category: "overtime", sign:  1 },
+    { code: "TRAINING",  name: "Capacitación",          category: "special",  sign:  1 },
+    { code: "HOLIDAY",   name: "Día feriado",           category: "special",  sign:  1 },
+    { code: "ABSENT",    name: "Ausencia",              category: "absence",  sign: -1 },
+    { code: "SICK_LEAVE",name: "Licencia por enfermedad", category: "absence", sign: -1 },
+  ];
+
+  for (const t of timeEntryTypes) {
+    await prisma.cfgTimeEntryType.upsert({
+      where:  { code: t.code },
+      update: { name: t.name, category: t.category, sign: t.sign, isActive: true },
+      create: { ...t, isActive: true },
+    });
+  }
+  console.log(`✓ cfg_time_entry_types: ${timeEntryTypes.length} registros`);
+
   // ── int_templates ────────────────────────────────────────────────────────
   const templates = [
     { code: "file_people",          name: "Archivo: Personas",                    category: "file", targetModel: "people" },

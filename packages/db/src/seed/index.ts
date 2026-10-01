@@ -187,7 +187,40 @@ async function main() {
     { email: "viewer@globo.com", passwordHash: viewerHash, name: "Viewer Globo", role: "viewer" },
   ]);
 
-  // 5. Integration templates (catálogo global — sin RLS)
+  // 5. Catálogos globales
+  const orgUnitTypes = [
+    { code: "AREA",        name: "Área",             description: "Unidad funcional o departamento" },
+    { code: "DEPARTMENT",  name: "Departamento",     description: "Subdivisión de un área" },
+    { code: "POSITION",    name: "Posición / Cargo", description: "Rol o puesto dentro de la estructura" },
+    { code: "LOCATION",    name: "Sede / Sucursal",  description: "Ubicación física" },
+    { code: "COST_CENTER", name: "Centro de costos", description: "Unidad de imputación contable" },
+  ];
+  for (const t of orgUnitTypes) {
+    await prisma.cfgOrgUnitType.upsert({
+      where:  { code: t.code },
+      update: { name: t.name, description: t.description, isActive: true },
+      create: { ...t, isActive: true },
+    });
+  }
+
+  const timeEntryTypes = [
+    { code: "REGULAR",    name: "Horas regulares",        category: "special",  sign:  1 },
+    { code: "OVERTIME",   name: "Horas extra",            category: "overtime", sign:  1 },
+    { code: "NIGHT",      name: "Horas nocturnas",        category: "overtime", sign:  1 },
+    { code: "TRAINING",   name: "Capacitación",           category: "special",  sign:  1 },
+    { code: "HOLIDAY",    name: "Día feriado",            category: "special",  sign:  1 },
+    { code: "ABSENT",     name: "Ausencia",               category: "absence",  sign: -1 },
+    { code: "SICK_LEAVE", name: "Licencia por enfermedad",category: "absence",  sign: -1 },
+  ];
+  for (const t of timeEntryTypes) {
+    await prisma.cfgTimeEntryType.upsert({
+      where:  { code: t.code },
+      update: { name: t.name, category: t.category, sign: t.sign, isActive: true },
+      create: { ...t, isActive: true },
+    });
+  }
+
+  // 6. Integration templates (catálogo global — sin RLS)
   // Desactivar template viejo renombrado (no eliminar: FK desde int_tenant_integrations)
   await prisma.intTemplate.updateMany({
     where: { code: "api_manu" },
