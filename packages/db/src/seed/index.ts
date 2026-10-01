@@ -188,13 +188,20 @@ async function main() {
   ]);
 
   // 5. Integration templates (catálogo global — sin RLS)
+  // Desactivar template viejo renombrado (no eliminar: FK desde int_tenant_integrations)
+  await prisma.intTemplate.updateMany({
+    where: { code: "api_manu" },
+    data: { isActive: false },
+  });
+
   const integrationTemplates = [
-    { code: "file_people",       name: "Archivo: Personas",           category: "file", targetModel: "people" },
-    { code: "file_time",         name: "Archivo: Asistencia",         category: "file", targetModel: "time" },
-    { code: "file_absenteeism",  name: "Archivo: Ausentismo",         category: "file", targetModel: "absenteeism" },
-    { code: "file_payroll",      name: "Archivo: Liquidaciones",      category: "file", targetModel: "payroll" },
-    { code: "api_manu",          name: "API Manú (HR)",               category: "api",  targetModel: "people" },
-    { code: "api_geovictoria",   name: "API Geovictoria (T&A)",       category: "api",  targetModel: "time" },
+    { code: "file_people",            name: "Archivo: Personas",                        category: "file", targetModel: "people" },
+    { code: "file_time",              name: "Archivo: Asistencia",                      category: "file", targetModel: "time" },
+    { code: "file_absenteeism",       name: "Archivo: Ausentismo",                      category: "file", targetModel: "absenteeism" },
+    { code: "file_payroll",           name: "Archivo: Liquidaciones",                   category: "file", targetModel: "payroll" },
+    { code: "api_mandu_visma_hr",     name: "API Mandú/Visma (HR)",                     category: "api",  targetModel: "people" },
+    { code: "api_mandu_visma_full",   name: "API Mandú/Visma (HR + Liquidaciones)",     category: "api",  targetModel: "people_payroll" },
+    { code: "api_geovictoria",        name: "API Geovictoria (T&A)",                    category: "api",  targetModel: "time" },
   ];
 
   for (const t of integrationTemplates) {

@@ -155,16 +155,20 @@
   - Fix: session callback en `apps/cmp/auth.ts` para propagar `session.user.id = token.sub`
   - Nav item "Modelos de datos" en sidebar CMP
 
-### M1-D: CMP — UI de integraciones
+### M1-D: CMP — UI de integraciones ✅ CERRADO
 
-- [ ] **Página `/integrations`** en CMP
-  - Catálogo de templates disponibles
-  - Activar integración para un tenant
-  - Ver estado de `integration_runs` por tenant
+- [x] **Página `/integrations`** en CMP
+  - Tabla global con todas las integraciones de todos los tenants
+  - Filtro por tenant (client-side)
+  - Dialog "Nueva integración": selector tenant + template + nombre
+  - Server action `createTenantIntegrationAction` (withTenantContext)
+  - Nav item "Integraciones" en sidebar CMP
 
-- [ ] **Página `/integrations/[tenantIntegrationId]`** en CMP
-  - Configuración de la integración (mapping, schedule, filtros)
-  - Historial de runs con status y errores
+- [x] **Página `/integrations/[tenantIntegrationId]?tenantId=xxx`** en CMP
+  - Header con nombre, status badge, botón Pausar/Activar
+  - Info grid: schedule, último run, último éxito, fecha creación
+  - Historial de runs (últimos 50): estado, tipo, duración, filas leídas/OK/errores
+  - Server action `toggleIntegrationStatusAction`
 
 ### M1-E: Worker framework (VPS)
 
