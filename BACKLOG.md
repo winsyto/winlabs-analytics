@@ -169,25 +169,48 @@
   - Info grid: schedule, último run, último éxito, fecha creación
   - Historial de runs (últimos 50): estado, tipo, duración, filas leídas/OK/errores
   - Server action `toggleIntegrationStatusAction`
+  - Server action `deleteIntegrationAction` con confirmación en UI
+  - Dropdown "•••" en tabla con opciones Ver detalle / Eliminar
 
-### M1-E: Worker framework (VPS)
+- [x] **Fixes post-testing**
+  - Templates corregidos: `api_manu` → `api_mandu_visma_hr` + nuevo `api_mandu_visma_full` (HR + Liquidaciones)
+  - Seed actualizado: `prod-catalog.ts` separado del seed de dev
+  - Supabase actualizado: migraciones M1 + catálogo de templates aplicados en prod
+
+- [x] **CI/CD** (resuelto en paralelo a M1-D)
+  - Vercel Build Command: `pnpm --filter @wla/db db:migrate:deploy && turbo build`
+  - GitHub Actions simplificado: solo RLS Integration Tests (lint/typecheck/build → Vercel)
+  - Node.js actualizado a 24 en CI (20 deprecado en runners)
+  - CLAUDE.md: reglas de migraciones, seeds y CI/CD actualizadas
+
+### M1-E: Worker framework (VPS) 🔄 EN PROGRESO
 
 > Arquitectura definida en `proyecto/iniciativa/estrategia_workers_jobs_integraciones.md`
+> Deploy target: **Fly.io** (región GRU — São Paulo)
 
-- [ ] **Migración Prisma: tablas de jobs** (del doc de estrategia)
-  - `jobs` (cola de trabajos)
-  - `job_runs` (historial de ejecuciones)
-  - `job_events` (log detallado)
-  - `integration_checkpoints` (cursor de posición)
+- [x] **Migración Prisma: tablas de jobs** (`20261001160622_add_job_tables`)
+  - `jobs` — cola de trabajos con locking, heartbeat, retries, run_key
+  - `job_runs` — historial de ejecuciones por intento
+  - `job_events` — log detallado de ciclo de vida
+  - `job_checkpoints` — cursor de posición incremental
 
-- [ ] Setup inicial del worker en `jobs/worker/`
-  - `Dockerfile`
-  - Scheduler loop (crea jobs según `integration_schedules`)
-  - Processor loop (toma jobs con `FOR UPDATE SKIP LOCKED`)
-  - Heartbeat + recovery de jobs stale
+- [x] **Setup inicial del worker en `jobs/worker/`**
+  - `Dockerfile` + `docker-compose.yml`
+  - `fly.toml` — deploy Fly.io región GRU
+  - Scheduler loop: crea jobs `hello_world` para integraciones con `schedule_cron` activo
+  - Processor loop: toma jobs con `FOR UPDATE SKIP LOCKED`, ejecuta handler
+  - Heartbeat (configurable, default 30s) + recovery de jobs stale (cada 5min)
+  - Graceful shutdown (SIGTERM/SIGINT)
 
-- [ ] Job mock `hello_world` que loguea timestamp (para validar el framework)
-- [ ] Deploy del worker en VPS (Docker)
+- [x] **Handler mock `hello_world`** — loguea y completa (valida el framework end-to-end)
+
+- [ ] **Deploy del worker en Fly.io**
+  - Crear cuenta Fly.io y app `wla-worker`
+  - `fly secrets set DATABASE_URL="..."` (Supabase postgres superuser URL)
+  - `fly deploy` desde `jobs/worker/`
+  - Verificar: insertar job manual en BD → ver log del worker procesando
+
+- [ ] **Checkpoint M1-E**: job `hello_world` procesado end-to-end en prod
 
 ---
 

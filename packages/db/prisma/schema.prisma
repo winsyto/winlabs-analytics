@@ -521,8 +521,10 @@ model IntTenantIntegration {
   createdAt               DateTime @default(now()) @map("created_at")
   updatedAt               DateTime @updatedAt @map("updated_at")
 
-  template IntTemplate @relation(fields: [integrationTemplateCode], references: [code])
-  runs     IntRun[]
+  template    IntTemplate    @relation(fields: [integrationTemplateCode], references: [code])
+  runs        IntRun[]
+  jobs        Job[]
+  checkpoints JobCheckpoint[]
 
   @@index([tenantId, integrationTemplateCode])
   @@map("int_tenant_integrations")
@@ -585,6 +587,120 @@ model IntRunError {
   @@index([tenantId, runId])
   @@index([tenantId, runId, severity])
   @@map("int_run_errors")
+}
+
+// =============================================================================
+// M1-E — WORKER JOBS (sin RLS — tablas de plataforma, acceso vía service role)
+// =============================================================================
+
+model Job {
+  id              Int       @id @default(autoincrement())
+  tenantId        String    @db.Uuid @map("tenant_id")
+  /// FK a int_tenant_integrations — null para jobs sin integración asociada (ej: hello_world)
+  integrationId   Int?      @map("integration_id")
+  /// Tipo de job: hello_world | sync_people | sync_time | etc.
+  jobType         String    @db.VarChar(50) @map("job_type")
+  /// pending | running | completed | failed | retry_scheduled | cancelled
+  status          String    @default("pending") @db.VarChar(20)
+  priority        Int       @default(0)
+  /// Clave única por ejecución lógica — evita duplicados si el scheduler corre dos veces
+  runKey          String?   @db.VarChar(200) @map("run_key")
+  payload         Json      @default("{}")
+  result          Json?
+  scheduledAt     DateTime  @default(now()) @map("scheduled_at")
+  startedAt       DateTime? @map("started_at")
+  finishedAt      DateTime? @map("finished_at")
+  attempts        Int       @default(0)
+  maxAttempts     Int       @default(3) @map("max_attempts")
+  nextRetryAt     DateTime? @map("next_retry_at")
+  lockedAt        DateTime? @map("locked_at")
+  lockedBy        String?   @db.VarChar(100) @map("locked_by")
+  heartbeatAt     DateTime? @map("heartbeat_at")
+  progressCurrent Int       @default(0) @map("progress_current")
+  progressTotal   Int       @default(0) @map("progress_total")
+  progressMessage String?   @map("progress_message")
+  lastError       String?   @map("last_error")
+  lastErrorCode   String?   @db.VarChar(50) @map("last_error_code")
+  createdBy       String?   @db.VarChar(36) @map("created_by")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  integration IntTenantIntegration? @relation(fields: [integrationId], references: [id], onDelete: SetNull)
+  runs        JobRun[]
+  events      JobEvent[]
+
+  @@unique([tenantId, integrationId, jobType, runKey], name: "uq_jobs_run_key")
+  @@index([status, scheduledAt], name: "idx_jobs_status_scheduled")
+  @@index([tenantId, status], name: "idx_jobs_tenant_status")
+  @@map("jobs")
+}
+
+model JobRun {
+  id             Int       @id @default(autoincrement())
+  jobId          Int       @map("job_id")
+  tenantId       String    @db.Uuid @map("tenant_id")
+  workerId       String    @db.VarChar(100) @map("worker_id")
+  /// running | completed | failed | cancelled | timeout | worker_shutdown
+  status         String    @db.VarChar(20)
+  startedAt      DateTime  @default(now()) @map("started_at")
+  finishedAt     DateTime? @map("finished_at")
+  durationMs     BigInt?   @map("duration_ms")
+  processedCount Int       @default(0) @map("processed_count")
+  successCount   Int       @default(0) @map("success_count")
+  failedCount    Int       @default(0) @map("failed_count")
+  skippedCount   Int       @default(0) @map("skipped_count")
+  errorMessage   String?   @map("error_message")
+  errorCode      String?   @db.VarChar(50) @map("error_code")
+  metadata       Json      @default("{}")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  job    Job        @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  events JobEvent[]
+
+  @@index([jobId], name: "idx_job_runs_job_id")
+  @@index([tenantId, status], name: "idx_job_runs_tenant_status")
+  @@map("job_runs")
+}
+
+model JobEvent {
+  id        Int      @id @default(autoincrement())
+  jobId     Int      @map("job_id")
+  jobRunId  Int?     @map("job_run_id")
+  tenantId  String   @db.Uuid @map("tenant_id")
+  /// job_created | job_claimed | job_started | job_completed | job_failed | retry_scheduled
+  eventType String   @db.VarChar(50) @map("event_type")
+  /// debug | info | warning | error | critical
+  level     String   @default("info") @db.VarChar(10)
+  message   String?
+  data      Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  job    Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobRun JobRun? @relation(fields: [jobRunId], references: [id], onDelete: SetNull)
+
+  @@index([jobId, createdAt(sort: Desc)], name: "idx_job_events_job_created")
+  @@index([tenantId, createdAt(sort: Desc)], name: "idx_job_events_tenant_created")
+  @@map("job_events")
+}
+
+model JobCheckpoint {
+  id              Int       @id @default(autoincrement())
+  tenantId        String    @db.Uuid @map("tenant_id")
+  integrationId   Int       @map("integration_id")
+  /// last_external_id | last_updated_at | last_file_processed | last_page_token | etc.
+  checkpointType  String    @db.VarChar(50) @map("checkpoint_type")
+  checkpointValue String?   @map("checkpoint_value")
+  checkpointData  Json      @default("{}") @map("checkpoint_data")
+  lastSuccessAt   DateTime? @map("last_success_at")
+  lastAttemptAt   DateTime? @map("last_attempt_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  integration IntTenantIntegration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, integrationId, checkpointType], name: "uq_job_checkpoints_tenant_integration_type")
+  @@index([tenantId, integrationId], name: "idx_job_checkpoints_tenant_integration")
+  @@map("job_checkpoints")
 }
 
 // =============================================================================

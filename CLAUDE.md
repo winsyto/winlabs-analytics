@@ -210,9 +210,43 @@ Los datos de catálogo global (ej: `int_templates`, tablas `cfg_*`) se seedean m
 
 ---
 
+## Worker de integraciones (`jobs/worker/`)
+
+Stack: TypeScript + `pg` (raw SQL, sin Prisma). Deploy en **Fly.io** región GRU.
+
+```bash
+# Desarrollo local
+pnpm --filter @wla/worker dev       # tsx watch — requiere DATABASE_URL en jobs/worker/.env
+
+# Build
+pnpm --filter @wla/worker build     # compila a dist/
+
+# Deploy Fly.io (desde jobs/worker/)
+fly deploy                          # construye la imagen Docker y deploya
+fly secrets set DATABASE_URL="..."  # Supabase postgres superuser URL — bypasea RLS
+fly logs                            # ver logs en tiempo real
+```
+
+### Arquitectura del worker
+
+- **Scheduler loop** (default 60s): lee `int_tenant_integrations` con `schedule_cron IS NOT NULL`, crea jobs con `run_key` para deduplicación.
+- **Processor loop** (default 10s): toma jobs con `FOR UPDATE SKIP LOCKED`, ejecuta el handler.
+- **Recovery loop** (cada 5min): detecta jobs con heartbeat vencido (+15min) y los re-agenda o marca failed.
+- **Handlers**: `src/handlers/index.ts` — mapa `job_type → handler`. Agregar handler nuevo = agregar entrada al mapa.
+
+### Tablas de jobs (sin RLS — plataforma)
+
+`jobs`, `job_runs`, `job_events`, `job_checkpoints` — accedidas por el worker con el postgres superuser (bypasea RLS). El CMP las lee directamente con prisma (también como superuser vía service role de Supabase).
+
+### Variables de entorno del worker
+
+Ver `jobs/worker/.env.example`. La variable crítica es `DATABASE_URL` que debe ser la URL de Supabase con el usuario `postgres` (superuser, no el anon/service-role de la API REST).
+
+---
+
 ## Lo que NO está implementado todavía
 
-- Workers/Jobs (VPS + Docker) — deferred a milestone de integraciones
+- Worker: deploy en Fly.io (el código está listo, falta crear la app en Fly.io)
 - Forgot password / reset password (stubs existen, falta implementar con Resend)
 - Modelo de datos de People/Time/Payroll (viene en M1)
 - Framework de integraciones (viene en M1)

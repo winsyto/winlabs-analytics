@@ -1,0 +1,23 @@
+# Fly.io deployment configuration for WLA worker
+# Deploy:  fly deploy  (run from jobs/worker/ directory)
+# Secrets: fly secrets set DATABASE_URL="postgresql://..."
+
+app            = "wla-worker"
+primary_region = "gru"   # São Paulo — same region as Supabase
+
+[build]
+
+[env]
+  WORKER_ID                       = "worker-fly-01"
+  SCHEDULER_ENABLED               = "true"
+  PROCESSOR_ENABLED               = "true"
+  SCHEDULER_INTERVAL_SECONDS      = "60"
+  PROCESSOR_POLL_INTERVAL_SECONDS = "10"
+  JOB_HEARTBEAT_SECONDS           = "30"
+  MAX_CONCURRENT_JOBS             = "2"
+
+# Pure background worker — no HTTP service, no exposed port.
+# Fly monitors via process health (container staying alive).
+[[vm]]
+  size   = "shared-cpu-1x"
+  memory = "256mb"

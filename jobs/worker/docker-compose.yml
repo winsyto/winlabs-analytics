@@ -1,0 +1,15 @@
+services:
+  worker:
+    build: .
+    container_name: wla-worker
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      WORKER_ID: worker-vps-01
+      SCHEDULER_ENABLED: "true"
+      PROCESSOR_ENABLED: "true"
+      SCHEDULER_INTERVAL_SECONDS: "60"
+      PROCESSOR_POLL_INTERVAL_SECONDS: "10"
+      JOB_HEARTBEAT_SECONDS: "30"
+      MAX_CONCURRENT_JOBS: "2"
