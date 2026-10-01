@@ -4,6 +4,7 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
+    "db:migrate:deploy": "pnpm --filter @wla/db db:migrate:deploy",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",

@@ -133,15 +133,16 @@ pnpm --filter @wla/cmp typecheck    # Solo CMP
 pnpm --filter @wla/cliente typecheck
 
 # Tests
-pnpm --filter @wla/db test          # RLS integration tests (requiere BD test corriendo)
-pnpm --filter @wla/e2e e2e          # Playwright E2E (requiere apps corriendo)
-pnpm --filter @wla/e2e e2e:ui       # Playwright en modo visual
+pnpm --filter @wla/db test          # RLS integration tests (solo en CI — ver nota abajo)
 
-# Base de datos
-pnpm --filter @wla/db db:migrate:dev    # Aplicar migraciones en local
-pnpm --filter @wla/db db:migrate:test   # Aplicar migraciones en BD test
-pnpm --filter @wla/db db:seed           # Seed en local
-pnpm --filter @wla/db db:studio         # Prisma Studio (explorar BD)
+# Base de datos — LOCAL
+pnpm --filter @wla/db db:migrate:dev    # Genera y aplica migración en winlabs_analytics_dev
+pnpm --filter @wla/db db:seed           # Seed de dev (tenants + usuarios de prueba + catálogo)
+pnpm --filter @wla/db db:studio         # Prisma Studio
+
+# Base de datos — PRODUCCIÓN (manual, ante cambios de schema o catálogo)
+pnpm --filter @wla/db db:migrate:prod           # Aplica migraciones en Supabase (usa .env.production.local)
+pnpm --filter @wla/db db:seed:prod-catalog      # Seed de catálogo en Supabase (idempotente, sin datos de dev)
 
 # Instalar dependencias
 pnpm install                        # Instalar todo
@@ -155,8 +156,8 @@ pnpm add <pkg> --filter @wla/cmp   # Agregar dep a una app
 `.env.local` en cada app (gitignoreado). Ver `.env.example` para la lista completa.
 
 - **Local dev:** PostgreSQL local `winlabs_analytics_dev`
-- **Test RLS:** PostgreSQL local `winlabs_analytics_test` — configurado en `packages/db/.env.test`
-- **Producción:** Supabase — vars solo en Vercel, nunca en git
+- **Test RLS (solo CI):** PostgreSQL `winlabs_analytics_test` — no se usa en desarrollo local
+- **Producción:** Supabase — vars en Vercel y en `packages/db/.env.production.local` (gitignoreado, nunca en git)
 
 ---
 
@@ -189,11 +190,22 @@ app/(dashboard)/[feature]/
 
 ## CI/CD
 
-- **GitHub Actions** (`.github/workflows/ci.yml`): lint → typecheck → build → RLS tests → E2E
-- **Vercel**: deploy automático en push a `main`
-  - `winlabs-analytics-cmp.vercel.app` → apps/cmp
-  - `winlabs-analytics-cliente.vercel.app` → apps/cliente
+### GitHub Actions (`.github/workflows/ci.yml`)
+Pipeline: lint → typecheck → build → RLS tests  
+No aplica migraciones ni seeds — eso es responsabilidad de Vercel.
+
+### Vercel (deploy automático en push a `main`)
+- `winlabs-analytics-cmp.vercel.app` → apps/cmp
+- `winlabs-analytics-cliente.vercel.app` → apps/cliente
+- **Build Command configurado en Vercel:** `prisma migrate deploy --schema packages/db/prisma/schema.prisma && <turbo build>`  
+  Esto aplica las migraciones pendientes en Supabase en cada deploy, antes de que arranque la app.
 - **pnpm version** viene de `packageManager` en `package.json` — no especificar en el workflow
+
+### Regla: migraciones y seeds siempre se aplican en Vercel
+Nunca esperar a correr migraciones manualmente. Todo push a `main` que incluya migraciones las aplica automáticamente vía el Build Command de Vercel.
+
+### Datos de catálogo en producción
+Los datos de catálogo global (ej: `int_templates`, tablas `cfg_*`) se seedean manualmente con `db:seed:prod-catalog` cuando se agrega un milestone nuevo con datos de referencia. No correr `db:seed` en prod (ese script es solo para dev).
 
 ---
 
@@ -205,6 +217,27 @@ app/(dashboard)/[feature]/
 - Framework de integraciones (viene en M1)
 - Dashboards de analytics (viene en M3)
 - IA/insights (viene en M5)
+
+---
+
+## Convenciones de migraciones y seeds
+
+### Migraciones (schema)
+- **Una migración por cambio lógico.** Nunca acumular cambios de varios features en una sola migración.
+- Se generan con `pnpm --filter @wla/db db:migrate:dev` (Prisma crea el archivo automáticamente).
+- Si la migración necesita RLS policies, se agregan manualmente al SQL generado antes de commitear.
+- Se aplican en producción automáticamente en el próximo deploy (Build Command de Vercel).
+
+### Seeds — dos tipos, nunca mezclar
+| Tipo | Archivo | Cuándo correr | En prod |
+|---|---|---|---|
+| **Dev** | `packages/db/src/seed/index.ts` | Al hacer `db:seed` local | **NUNCA** |
+| **Catálogo prod** | `packages/db/src/seed/prod-catalog.ts` | Manual, por milestone | Sí, con `db:seed:prod-catalog` |
+
+- El seed de dev crea tenants y usuarios de prueba — no es idempotente al 100% y contiene datos que no deben ir a prod.
+- El seed de catálogo contiene solo datos de referencia globales (ej: `int_templates`, `cfg_*`). Es idempotente (upsert).
+- **Cuando se agregan tablas de catálogo nuevas en un milestone:** agregar los inserts al `prod-catalog.ts` Y correr `db:seed:prod-catalog` después del deploy.
+- No crear un seed monolítico que crezca sin límite. Si el catálogo se hace grande, dividir en archivos por dominio dentro de `seed/`.
 
 ---
 
