@@ -197,7 +197,7 @@ No aplica migraciones ni seeds — eso es responsabilidad de Vercel.
 ### Vercel (deploy automático en push a `main`)
 - `winlabs-analytics-cmp.vercel.app` → apps/cmp
 - `winlabs-analytics-cliente.vercel.app` → apps/cliente
-- **Build Command configurado en Vercel:** `prisma migrate deploy --schema packages/db/prisma/schema.prisma && <turbo build>`  
+- **Build Command configurado en Vercel:** `pnpm --filter @wla/db db:migrate:deploy && turbo build`  
   Esto aplica las migraciones pendientes en Supabase en cada deploy, antes de que arranque la app.
 - **pnpm version** viene de `packageManager` en `package.json` — no especificar en el workflow
 
