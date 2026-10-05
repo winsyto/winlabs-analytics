@@ -19,13 +19,13 @@ export async function failJob(
 
   await pool.query(`
     UPDATE jobs SET
-      status        = $2,
-      finished_at   = CASE WHEN $2 = 'failed' THEN now() ELSE NULL END,
+      status        = $2::text,
+      finished_at   = CASE WHEN $2::text = 'failed' THEN now() ELSE NULL END,
       next_retry_at = $3,
       locked_at     = NULL,
       locked_by     = NULL,
-      last_error    = $4,
+      last_error    = $4::text,
       updated_at    = now()
-    WHERE id = $1
+    WHERE id = $1::int
   `, [jobId, nextStatus, nextRetry, errorMessage]);
 }
