@@ -106,10 +106,10 @@ async function upsertOrgAssignment(
   orgUnitId: number
 ): Promise<void> {
   await client.query(`
-    INSERT INTO hr_people_org_assignments (tenant_id, person_id, org_unit_id, is_current, updated_at)
-    VALUES ($1::uuid, $2::int, $3::int, true, now())
+    INSERT INTO hr_people_org_assignments (tenant_id, person_id, org_unit_id, is_primary)
+    VALUES ($1::uuid, $2::int, $3::int, true)
     ON CONFLICT (tenant_id, person_id, org_unit_id)
-    DO UPDATE SET is_current = true, updated_at = now()
+    DO UPDATE SET is_primary = true
   `, [tenantId, personId, orgUnitId]);
 }
 
