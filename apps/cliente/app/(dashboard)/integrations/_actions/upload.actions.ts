@@ -71,8 +71,9 @@ export async function getUploadUrlAction(
     const presignedUrl = await getUploadPresignedUrl(storagePath, contentType);
     return { presignedUrl, storagePath };
   } catch (err) {
-    console.error("[getUploadUrlAction]", err);
-    return { error: "Error al generar URL de subida" };
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[getUploadUrlAction]", msg);
+    return { error: `Error al generar URL de subida: ${msg}` };
   }
 }
 
