@@ -21,6 +21,23 @@ interface Run {
   errorMessage: string | null;
 }
 
+interface Job {
+  id: number;
+  status: string;
+  createdAt: Date;
+  finishedAt: Date | null;
+  result: unknown;
+  lastError: string | null;
+}
+
+interface JobResult {
+  rows_read?: number;
+  rows_ok?: number;
+  rows_error?: number;
+  people_inserted?: number;
+  people_updated?: number;
+}
+
 interface IntegrationDetailProps {
   integration: {
     id: number;
@@ -36,6 +53,7 @@ interface IntegrationDetailProps {
     createdAt: Date;
   };
   runs: Run[];
+  jobs: Job[];
 }
 
 const STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive"> = {
@@ -90,7 +108,23 @@ function durationLabel(start: Date, end: Date | null): string {
 
 const initialState: ToggleIntegrationState = {};
 
-export function IntegrationDetail({ integration, runs }: IntegrationDetailProps) {
+const JOB_STATUS_VARIANTS: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
+  pending:         "outline",
+  running:         "secondary",
+  completed:       "default",
+  failed:          "destructive",
+  retry_scheduled: "secondary",
+};
+
+const JOB_STATUS_LABELS: Record<string, string> = {
+  pending:         "Pendiente",
+  running:         "Procesando",
+  completed:       "Completado",
+  failed:          "Fallido",
+  retry_scheduled: "Reintento",
+};
+
+export function IntegrationDetail({ integration, runs, jobs }: IntegrationDetailProps) {
   const nextStatus = integration.status === "active" ? "paused" : "active";
   const [state, formAction, isPending] = useActionState(
     toggleIntegrationStatusAction,
@@ -159,15 +193,70 @@ export function IntegrationDetail({ integration, runs }: IntegrationDetailProps)
         ))}
       </div>
 
-      {/* Runs table */}
-      <div className="space-y-3">
-        <h2 className="text-base font-semibold">Historial de runs</h2>
-
-        {runs.length === 0 ? (
-          <div className="rounded-md border py-12 text-center">
-            <p className="text-sm text-muted-foreground">Sin runs registrados.</p>
+      {/* Jobs (file integrations) */}
+      {jobs.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold">Historial de jobs</h2>
+          <div className="rounded-md border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="h-10 px-4 text-left font-medium text-muted-foreground">Job</th>
+                  <th className="h-10 px-4 text-left font-medium text-muted-foreground">Inicio</th>
+                  <th className="h-10 px-4 text-center font-medium text-muted-foreground">Estado</th>
+                  <th className="h-10 px-4 text-center font-medium text-muted-foreground">Duración</th>
+                  <th className="h-10 px-4 text-center font-medium text-muted-foreground">Leídas</th>
+                  <th className="h-10 px-4 text-center font-medium text-muted-foreground">Nuevos</th>
+                  <th className="h-10 px-4 text-center font-medium text-muted-foreground">Actualizados</th>
+                  <th className="h-10 px-4 text-center font-medium text-muted-foreground">Errores</th>
+                </tr>
+              </thead>
+              <tbody>
+                {jobs.map((job, idx) => {
+                  const r = job.result as JobResult | null;
+                  return (
+                    <tr key={job.id} className={idx < jobs.length - 1 ? "border-b" : ""}>
+                      <td className="h-12 px-4 font-mono text-xs text-muted-foreground">#{job.id}</td>
+                      <td className="h-12 px-4 text-muted-foreground">{formatDate(job.createdAt)}</td>
+                      <td className="h-12 px-4 text-center">
+                        <Badge variant={JOB_STATUS_VARIANTS[job.status] ?? "secondary"} className="text-xs">
+                          {JOB_STATUS_LABELS[job.status] ?? job.status}
+                        </Badge>
+                      </td>
+                      <td className="h-12 px-4 text-center text-muted-foreground">
+                        {durationLabel(job.createdAt, job.finishedAt)}
+                      </td>
+                      <td className="h-12 px-4 text-center">{r?.rows_read ?? "—"}</td>
+                      <td className="h-12 px-4 text-center text-green-600 dark:text-green-400">
+                        {r?.people_inserted ?? "—"}
+                      </td>
+                      <td className="h-12 px-4 text-center">{r?.people_updated ?? "—"}</td>
+                      <td className="h-12 px-4 text-center text-destructive">
+                        {r?.rows_error ? r.rows_error : "—"}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {/* Errores de jobs fallidos */}
+            {jobs.some((j) => j.lastError) && (
+              <div className="border-t px-4 py-3 space-y-1">
+                {jobs.filter((j) => j.lastError).map((j) => (
+                  <p key={j.id} className="text-xs text-destructive">
+                    Job #{j.id}: {j.lastError}
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
-        ) : (
+        </div>
+      )}
+
+      {/* Runs (API integrations) */}
+      {runs.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold">Historial de runs</h2>
           <div className="rounded-md border">
             <table className="w-full text-sm">
               <thead>
@@ -184,17 +273,12 @@ export function IntegrationDetail({ integration, runs }: IntegrationDetailProps)
               <tbody>
                 {runs.map((run, idx) => (
                   <tr key={run.id} className={idx < runs.length - 1 ? "border-b" : ""}>
-                    <td className="h-12 px-4 text-muted-foreground">
-                      {formatDate(run.startedAt)}
-                    </td>
+                    <td className="h-12 px-4 text-muted-foreground">{formatDate(run.startedAt)}</td>
                     <td className="h-12 px-4 text-muted-foreground">
                       {TRIGGER_LABELS[run.triggerSource] ?? run.triggerSource}
                     </td>
                     <td className="h-12 px-4 text-center">
-                      <Badge
-                        variant={STATUS_VARIANTS[run.status] ?? "secondary"}
-                        className="text-xs"
-                      >
+                      <Badge variant={STATUS_VARIANTS[run.status] ?? "secondary"} className="text-xs">
                         {STATUS_LABELS[run.status] ?? run.status}
                       </Badge>
                     </td>
@@ -202,9 +286,7 @@ export function IntegrationDetail({ integration, runs }: IntegrationDetailProps)
                       {durationLabel(run.startedAt, run.finishedAt)}
                     </td>
                     <td className="h-12 px-4 text-center">{run.rowsRead}</td>
-                    <td className="h-12 px-4 text-center text-green-600 dark:text-green-400">
-                      {run.rowsLoaded}
-                    </td>
+                    <td className="h-12 px-4 text-center text-green-600 dark:text-green-400">{run.rowsLoaded}</td>
                     <td className="h-12 px-4 text-center text-destructive">
                       {run.rowsError > 0 ? run.rowsError : "—"}
                     </td>
@@ -213,8 +295,17 @@ export function IntegrationDetail({ integration, runs }: IntegrationDetailProps)
               </tbody>
             </table>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {jobs.length === 0 && runs.length === 0 && (
+        <div className="space-y-3">
+          <h2 className="text-base font-semibold">Historial de runs</h2>
+          <div className="rounded-md border py-12 text-center">
+            <p className="text-sm text-muted-foreground">Sin runs registrados.</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

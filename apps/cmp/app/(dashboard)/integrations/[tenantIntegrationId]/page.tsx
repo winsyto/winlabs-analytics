@@ -23,7 +23,7 @@ export default async function IntegrationDetailPage({ params, searchParams }: Pr
   });
   if (!tenant) notFound();
 
-  const [integration, runs] = await Promise.all([
+  const [integration, runs, jobs] = await Promise.all([
     withTenantContext(tenantId, (tx) =>
       tx.intTenantIntegration.findUnique({
         where: { id },
@@ -59,6 +59,21 @@ export default async function IntegrationDetailPage({ params, searchParams }: Pr
         },
       })
     ),
+    withTenantContext(tenantId, (tx) =>
+      tx.job.findMany({
+        where: { tenantId, integrationId: id },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        select: {
+          id: true,
+          status: true,
+          createdAt: true,
+          finishedAt: true,
+          result: true,
+          lastError: true,
+        },
+      })
+    ),
   ]);
 
   if (!integration) notFound();
@@ -73,6 +88,7 @@ export default async function IntegrationDetailPage({ params, searchParams }: Pr
           templateCategory: integration.template.category,
         }}
         runs={runs}
+        jobs={jobs}
       />
     </div>
   );
