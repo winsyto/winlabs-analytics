@@ -20,7 +20,7 @@ async function upsertOrgUnit(
 
   const result = await client.query<{ id: number }>(`
     INSERT INTO hr_org_units (tenant_id, type_code, code, name, is_active, updated_at)
-    VALUES ($1, $2, $3, $4, true, now())
+    VALUES ($1::uuid, $2::text, $3::text, $4::text, true, now())
     ON CONFLICT (tenant_id, code)
     DO UPDATE SET name = EXCLUDED.name, is_active = true, updated_at = now()
     RETURNING id
@@ -43,9 +43,9 @@ async function upsertPerson(
       email, birth_date, gender, document_type, document_number,
       contract_type, manager_code, is_active, updated_at
     ) VALUES (
-      $1, $2, $3, $4::date, $5,
-      $6, $7::date, $8, $9, $10,
-      $11, $12, true, now()
+      $1::uuid, $2::text, $3::text, $4::date, $5::text,
+      $6::text, $7::date, $8::text, $9::text, $10::text,
+      $11::text, $12::text, true, now()
     )
     ON CONFLICT (tenant_id, employee_code)
     DO UPDATE SET
@@ -78,7 +78,7 @@ async function upsertPerson(
   ]);
 
   const personResult = await client.query<{ id: number }>(`
-    SELECT id FROM hr_people WHERE tenant_id = $1 AND employee_code = $2
+    SELECT id FROM hr_people WHERE tenant_id = $1::uuid AND employee_code = $2::text
   `, [tenantId, row.employee_code]);
 
   const personId = personResult.rows[0]?.id;
@@ -87,7 +87,7 @@ async function upsertPerson(
   if (personId && areaOuId) {
     await client.query(`
       INSERT INTO hr_people_org_assignments (tenant_id, person_id, org_unit_id, is_current, updated_at)
-      VALUES ($1, $2, $3, true, now())
+      VALUES ($1::uuid, $2::int, $3::int, true, now())
       ON CONFLICT (tenant_id, person_id, org_unit_id)
       DO UPDATE SET is_current = true, updated_at = now()
     `, [tenantId, personId, areaOuId]);
@@ -96,7 +96,7 @@ async function upsertPerson(
   if (personId && positionOuId) {
     await client.query(`
       INSERT INTO hr_people_org_assignments (tenant_id, person_id, org_unit_id, is_current, updated_at)
-      VALUES ($1, $2, $3, true, now())
+      VALUES ($1::uuid, $2::int, $3::int, true, now())
       ON CONFLICT (tenant_id, person_id, org_unit_id)
       DO UPDATE SET is_current = true, updated_at = now()
     `, [tenantId, personId, positionOuId]);
@@ -126,7 +126,7 @@ export async function upsertPeople(
       await client.query("BEGIN");
       // El worker usa postgres superuser → bypasea RLS, pero igual seteamos el contexto
       // para que sea consistente con el resto de la plataforma
-      await client.query(`SELECT set_config('app.current_tenant_id', $1, true)`, [tenantId]);
+      await client.query(`SELECT set_config('app.current_tenant_id', $1::text, true)`, [tenantId]);
 
       for (const row of batch) {
         let areaOuId: number | null = null;
