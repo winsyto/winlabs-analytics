@@ -29,6 +29,9 @@ importers:
       '@wla/email':
         specifier: workspace:*
         version: link:../../packages/email
+      '@wla/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@wla/ui':
         specifier: workspace:*
         version: link:../../packages/ui

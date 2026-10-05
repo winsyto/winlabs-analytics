@@ -230,7 +230,10 @@
   - `jobs/worker/src/handlers/filePeople/` — parser, upsert, tipos
   - `packages/storage/` — `@wla/storage` con presigned URLs
   - Handler registrado en `handlers/index.ts`, JobHandler recibe pool
-- [ ] M2-4: UI Cliente — upload de archivo por integración (presigned URL → R2 directo desde browser → crea job)
+- [x] M2-4: UI Cliente — upload de archivo por integración (presigned URL → R2 directo desde browser → crea job)
+  - `/integrations` — lista integraciones file del tenant
+  - `/integrations/[id]` — zona de upload + historial de jobs
+  - `@wla/storage` registrado como dep en apps/cliente
 - [ ] M2-5: UI Cliente — historial de runs + detalle de errores por fila
 - [ ] Template `file_time_attendance`: parser → upsert a `time_daily`
 - [ ] Template `file_absenteeism`: parser → upsert a `absenteeism_events`

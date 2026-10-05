@@ -15,6 +15,7 @@
     "@wla/auth": "workspace:*",
     "@wla/db": "workspace:*",
     "@wla/email": "workspace:*",
+    "@wla/storage": "workspace:*",
     "@wla/ui": "workspace:*",
     "bcryptjs": "^2.4.3",
     "geist": "^1.7.1",
