@@ -5,6 +5,7 @@ import { PageHeader, Badge } from "@wla/ui";
 import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
 import { FileUpload } from "../_components/file-upload";
+import { JobsTable } from "../_components/jobs-table";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -106,52 +107,7 @@ export default async function IntegrationDetailPage({ params }: Props) {
       </div>
 
       {/* Historial de jobs */}
-      {recentJobs.length > 0 && (
-        <div className="rounded-lg border bg-card">
-          <div className="flex items-center gap-2 px-4 py-3 border-b">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <h3 className="font-medium text-sm">Últimos procesamientos</h3>
-          </div>
-          <div className="divide-y">
-            {recentJobs.map((job) => {
-              const result = job.result as Record<string, unknown> | null;
-              return (
-                <div key={job.id} className="flex items-center justify-between px-4 py-3 text-sm">
-                  <div className="flex items-center gap-3">
-                    <JobStatusBadge status={job.status} />
-                    <div>
-                      <p className="text-foreground">Job #{job.id}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(job.createdAt).toLocaleString("es-AR")}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right text-xs text-muted-foreground">
-                    {result && typeof result.rows_ok === "number" && (
-                      <p>{result.rows_ok as number} filas OK · {result.rows_error as number} errores</p>
-                    )}
-                    {job.lastError && (
-                      <p className="text-destructive truncate max-w-[200px]">{job.lastError}</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
+      <JobsTable jobs={recentJobs} />
     </div>
   );
-}
-
-function JobStatusBadge({ status }: { status: string }) {
-  const variants: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
-    pending:          { label: "Pendiente",   variant: "outline" },
-    running:          { label: "Procesando",  variant: "secondary" },
-    completed:        { label: "Completado",  variant: "default" },
-    failed:           { label: "Fallido",     variant: "destructive" },
-    retry_scheduled:  { label: "Reintento",   variant: "secondary" },
-  };
-  const cfg = variants[status] ?? { label: status, variant: "outline" as const };
-  return <Badge variant={cfg.variant}>{cfg.label}</Badge>;
 }

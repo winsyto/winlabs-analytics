@@ -59,13 +59,18 @@ export async function handleFilePeople(job: JobRow, pool: Pool): Promise<void> {
 
   logger.info("file_people: done", { ...stats, parse_errors: errors.length });
 
-  // El processor guarda este objeto en jobs.result
-  // Lo lanzamos como parte del resultado retornado al caller
+  // Actualizar lastRunAt y lastSuccessAt en la integración
+  await pool.query(`
+    UPDATE int_tenant_integrations
+    SET last_run_at = now(), last_success_at = now(), updated_at = now()
+    WHERE id = $1::int
+  `, [job.integration_id]);
+
   (job as JobRow & { _result?: unknown })._result = {
     rows_read: rows.length + errors.length,
     rows_ok: rows.length,
     rows_error: errors.length,
     ...stats,
-    parse_errors: errors.slice(0, 100), // guardar máx 100 errores en el resultado
+    parse_errors: errors.slice(0, 100),
   };
 }

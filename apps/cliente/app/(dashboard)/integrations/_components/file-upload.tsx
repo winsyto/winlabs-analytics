@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@wla/ui";
 import { Upload, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import {
@@ -18,6 +19,7 @@ interface FileUploadProps {
 type UploadStep = "idle" | "uploading" | "confirming" | "done" | "error";
 
 export function FileUpload({ integrationId, integrationName }: FileUploadProps) {
+  const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<UploadStep>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -102,6 +104,7 @@ export function FileUpload({ integrationId, integrationName }: FileUploadProps) 
 
     setJobId(confirmResult.jobId);
     setStep("done");
+    router.refresh();
   }
 
   return (
