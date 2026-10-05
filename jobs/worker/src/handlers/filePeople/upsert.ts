@@ -19,9 +19,9 @@ async function upsertOrgUnit(
   if (!code || !name) return null;
 
   const result = await client.query<{ id: number }>(`
-    INSERT INTO hr_org_units (tenant_id, type_code, code, name, is_active, updated_at)
+    INSERT INTO hr_org_units (tenant_id, org_unit_type_code, code, name, is_active, updated_at)
     VALUES ($1::uuid, $2::text, $3::text, $4::text, true, now())
-    ON CONFLICT (tenant_id, code)
+    ON CONFLICT (tenant_id, org_unit_type_code, code)
     DO UPDATE SET name = EXCLUDED.name, is_active = true, updated_at = now()
     RETURNING id
   `, [tenantId, typeCode, code, name]);
