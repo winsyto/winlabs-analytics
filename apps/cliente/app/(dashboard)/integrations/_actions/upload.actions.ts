@@ -116,6 +116,16 @@ export async function confirmUploadAction(
   );
   if (!integration) return { error: "Integración no encontrada" };
 
+  // Mapear integrationTemplateCode (del int_templates) → job_type (del worker)
+  const JOB_TYPE_MAP: Record<string, string> = {
+    file_people: "file_people",
+    file_time: "file_time_attendance",
+    file_absenteeism: "file_absenteeism",
+    file_payroll: "file_payroll",
+  };
+  const jobType = JOB_TYPE_MAP[integration.integrationTemplateCode];
+  if (!jobType) return { error: `Template ${integration.integrationTemplateCode} no soportado` };
+
   // Crear job — raw SQL porque jobs no tiene RLS (tabla de plataforma)
   // El worker usa postgres superuser, pero la creación del job la puede hacer
   // el cliente con la conexión normal (sin RLS en jobs = cualquier role puede insertar)
@@ -125,7 +135,7 @@ export async function confirmUploadAction(
       VALUES (
         ${tenantId}::uuid,
         ${integrationId},
-        'file_people',
+        ${jobType},
         'pending',
         ${JSON.stringify({ storagePath, filename })}::jsonb,
         now()
