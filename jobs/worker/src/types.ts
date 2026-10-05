@@ -37,4 +37,6 @@ export interface IntegrationRow {
   last_run_at: Date | null;
 }
 
-export type JobHandler = (job: JobRow) => Promise<void>;
+import type { Pool } from "pg";
+
+export type JobHandler = (job: JobRow, pool: Pool) => Promise<void>;

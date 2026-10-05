@@ -28,10 +28,12 @@ export async function runProcessorTick(pool: Pool): Promise<void> {
     const handler = handlers[job.job_type];
     if (!handler) throw new Error(`Unknown job type: "${job.job_type}"`);
 
-    await handler(job);
+    await handler(job, pool);
 
     const durationMs = Date.now() - startTime;
-    await completeJob(pool, job.id, {});
+    // Algunos handlers adjuntan un resultado en job._result (ej: file_people con stats)
+    const result = (job as { _result?: Record<string, unknown> })._result ?? {};
+    await completeJob(pool, job.id, result);
     await completeJobRun(pool, runId, durationMs);
     await createJobEvent(pool, job.id, runId, "job_completed", "info", `Completed in ${durationMs}ms`);
 

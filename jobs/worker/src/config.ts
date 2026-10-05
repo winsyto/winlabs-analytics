@@ -14,4 +14,10 @@ export const config = {
   heartbeatIntervalMs: Number(process.env.JOB_HEARTBEAT_SECONDS ?? 30) * 1000,
   maxConcurrentJobs: Number(process.env.MAX_CONCURRENT_JOBS ?? 2),
   staleJobThresholdMs: 15 * 60 * 1000,
+
+  // Cloudflare R2 (S3-compatible)
+  r2Endpoint: required("R2_ENDPOINT"),
+  r2AccessKeyId: required("R2_ACCESS_KEY_ID"),
+  r2SecretAccessKey: required("R2_SECRET_ACCESS_KEY"),
+  r2Bucket: required("R2_BUCKET"),
 };

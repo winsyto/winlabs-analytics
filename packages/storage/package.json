@@ -1,0 +1,20 @@
+{
+  "name": "@wla/storage",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.750.0",
+    "@aws-sdk/s3-request-presigner": "^3.750.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@wla/config": "workspace:*",
+    "typescript": "^5.8.3"
+  }
+}

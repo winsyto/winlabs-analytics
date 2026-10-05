@@ -1,7 +1,8 @@
 import type { JobRow } from "../types.js";
+import type { Pool } from "pg";
 import { logger } from "../utils/logger.js";
 
-export async function handleHelloWorld(job: JobRow): Promise<void> {
+export async function handleHelloWorld(job: JobRow, _pool: Pool): Promise<void> {
   logger.info("Hello from WLA worker!", {
     jobId:    job.id,
     tenantId: job.tenant_id,

@@ -218,13 +218,23 @@
 
 > **Objetivo:** subir un XLS y ver datos cargados en BD.
 > **Checkpoint:** subo XLS de people/time/absenteeism/payroll, se cargan en BD, veo el run en UI.
+> **Storage:** Cloudflare R2 (S3-compatible). Bucket `integration-files`. Path: `{tenantId}/{integrationId}/{timestamp}_{filename}`.
+> **Package storage:** `packages/storage` — `@wla/storage` con presigned URLs + download helper.
 
-- [ ] Template `file_people`: parser XLS/CSV → upsert a `people` + `areas` + `positions`
+- [x] M2-1: Seed catálogos `cfg_org_unit_types` (5) y `cfg_time_entry_types` (7) — prod y dev
+- [ ] M2-2: Configurar bucket R2 en Cloudflare + secrets en Fly.io y Vercel
+  - Bucket: `integration-files` (privado)
+  - Secrets worker: `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`
+  - Secrets Vercel (apps/cliente): mismas 4 vars
+- [x] M2-3: Parser `file_people` en worker (CSV + XLSX via ExcelJS, config-driven mapping)
+  - `jobs/worker/src/handlers/filePeople/` — parser, upsert, tipos
+  - `packages/storage/` — `@wla/storage` con presigned URLs
+  - Handler registrado en `handlers/index.ts`, JobHandler recibe pool
+- [ ] M2-4: UI Cliente — upload de archivo por integración (presigned URL → R2 directo desde browser → crea job)
+- [ ] M2-5: UI Cliente — historial de runs + detalle de errores por fila
 - [ ] Template `file_time_attendance`: parser → upsert a `time_daily`
 - [ ] Template `file_absenteeism`: parser → upsert a `absenteeism_events`
 - [ ] Template `file_payroll`: parser → upsert a `payroll_*`
-- [ ] UI Cliente: upload de archivos por integración
-- [ ] UI Cliente: historial de `integration_runs` + detalle de errores por fila
 - [ ] Job mensual de snapshot `people_history`
 
 ---
