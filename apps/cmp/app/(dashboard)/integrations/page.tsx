@@ -24,7 +24,7 @@ async function getData() {
     tenants.map((tenant) =>
       withTenantContext(tenant.id, (tx) =>
         tx.intTenantIntegration.findMany({
-          where: { isActive: true },
+          where: { tenantId: tenant.id, isActive: true },
           orderBy: { createdAt: "desc" },
           select: {
             id: true,

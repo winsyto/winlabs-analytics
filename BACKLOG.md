@@ -242,6 +242,20 @@
 
 ---
 
+## M2.1 — Bug fixes y UX polish CMP + Cliente
+
+> **Objetivo:** corregir bugs de producción y pulir UX de CMP antes de avanzar a M3.
+
+- [ ] **B1** · Fix listado integraciones CMP: agregar `tenantId` explícito al `where` del `findMany` (root cause de bugs "crea/borra para todos los tenants")
+- [ ] **T1** · CMP Tenants: botón inactivar/activar tenant (soft delete reversible)
+- [ ] **T2** · CMP Tenants: eliminar tenant con hard delete + cascada + modal de confirmación (escribir slug)
+- [ ] **DM1** · CMP Data Models: mover gestión de módulos activos dentro del detalle del tenant (eliminar página `/data-models` separada) — **mock previo antes de implementar**
+- [ ] **DM2** · CMP Data Models: todos los módulos activos por default al crear un tenant
+- [ ] **I1** · CMP Integrations: botón activar/inactivar desde la tabla principal (la action ya existe)
+- [ ] **TP1** · CMP Templates: lista read-only de templates con toggle activar/inactivar (sin create/edit)
+
+---
+
 ## M3 — Dashboards core
 
 > **Objetivo:** 4 dashboards funcionando contra data real.
@@ -262,6 +276,7 @@
 - [ ] Conector API Manú
 - [ ] Conector API Geovictoria
 - [ ] Reconciliación de identidades (tabla `people_source_ids` + UI matching)
+- [ ] Cliente: vista de integraciones API (Mandú, Geovictoria) como read-only con historial de runs y errores
 
 ---
 
