@@ -77,12 +77,12 @@ async function upsertAbsenteeismEvent(
       tenant_id, person_id, absenteeism_type_id,
       start_date, end_date, days_count, hours_count,
       justified, status, notes,
-      source_integration_id
+      source_integration_id, updated_at
     ) VALUES (
       $1::uuid, $2::int, $3::int,
       $4::date, $5::date, $6::numeric, $7::numeric,
       $8::boolean, $9::text, $10::text,
-      $11::int
+      $11::int, now()
     )`,
     [tenantId, personId, absenteeismTypeId, row.start_date, row.end_date, daysCount, hoursCount, justified, status, row.notes ?? null, sourceIntegrationId]
   );

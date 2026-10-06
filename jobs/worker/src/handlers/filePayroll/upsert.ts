@@ -20,8 +20,8 @@ async function upsertPeriod(
   row: PayrollRow
 ): Promise<number> {
   const result = await client.query<{ id: number }>(
-    `INSERT INTO pay_periods (tenant_id, period_code, start_date, end_date)
-     VALUES ($1::uuid, $2::text, $3::date, $4::date)
+    `INSERT INTO pay_periods (tenant_id, period_code, start_date, end_date, updated_at)
+     VALUES ($1::uuid, $2::text, $3::date, $4::date, now())
      ON CONFLICT (tenant_id, period_code) DO UPDATE SET
        start_date = EXCLUDED.start_date,
        end_date   = EXCLUDED.end_date,
