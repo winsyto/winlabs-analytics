@@ -1,11 +1,14 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Badge, Button, Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@wla/ui";
 import {
   deleteIntegrationAction,
+  toggleIntegrationStatusAction,
   type DeleteIntegrationState,
+  type ToggleIntegrationState,
 } from "../_actions/integrations.actions";
 
 interface Integration {
@@ -127,8 +130,10 @@ function DeleteConfirmDialog({
 // ─── Row actions dropdown ─────────────────────────────────────────────────────
 
 function RowActions({ integration }: { integration: Integration }) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [, startTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -141,6 +146,19 @@ function RowActions({ integration }: { integration: Integration }) {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, [menuOpen]);
+
+  function handleToggleStatus() {
+    const newStatus = integration.status === "active" ? "paused" : "active";
+    const formData = new FormData();
+    formData.set("integrationId", String(integration.id));
+    formData.set("tenantId", integration.tenantId);
+    formData.set("newStatus", newStatus);
+    setMenuOpen(false);
+    startTransition(async () => {
+      const result: ToggleIntegrationState = await toggleIntegrationStatusAction({}, formData);
+      if (!result.error) router.refresh();
+    });
+  }
 
   return (
     <>
@@ -155,7 +173,7 @@ function RowActions({ integration }: { integration: Integration }) {
         </Button>
 
         {menuOpen && (
-          <div className="absolute right-0 z-50 mt-1 w-36 rounded-md border bg-popover shadow-md text-sm">
+          <div className="absolute right-0 z-50 mt-1 w-40 rounded-md border bg-popover shadow-md text-sm">
             <Link
               href={`/integrations/${integration.id}?tenantId=${integration.tenantId}`}
               className="flex w-full items-center px-3 py-2 hover:bg-accent rounded-t-md"
@@ -163,6 +181,15 @@ function RowActions({ integration }: { integration: Integration }) {
             >
               Ver detalle
             </Link>
+            <div className="border-t" />
+            <button
+              type="button"
+              className="flex w-full items-center px-3 py-2 hover:bg-accent"
+              onClick={handleToggleStatus}
+            >
+              {integration.status === "active" ? "Pausar" : "Activar"}
+            </button>
+            <div className="border-t" />
             <button
               type="button"
               className="flex w-full items-center px-3 py-2 text-destructive hover:bg-accent rounded-b-md"

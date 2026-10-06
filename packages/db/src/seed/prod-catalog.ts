@@ -67,10 +67,9 @@ async function main() {
     });
   }
 
-  // Desactivar templates obsoletos
-  await prisma.intTemplate.updateMany({
+  // Eliminar templates obsoletos (sin FK activas en prod)
+  await prisma.intTemplate.deleteMany({
     where: { code: { in: ["api_manu"] } },
-    data: { isActive: false },
   });
 
   console.log(`✓ int_templates: ${templates.length} registros`);

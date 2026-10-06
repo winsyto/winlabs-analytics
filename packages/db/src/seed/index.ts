@@ -221,11 +221,8 @@ async function main() {
   }
 
   // 6. Integration templates (catálogo global — sin RLS)
-  // Desactivar template viejo renombrado (no eliminar: FK desde int_tenant_integrations)
-  await prisma.intTemplate.updateMany({
-    where: { code: "api_manu" },
-    data: { isActive: false },
-  });
+  // Eliminar template obsoleto reemplazado por api_mandu_visma_hr
+  await prisma.intTemplate.deleteMany({ where: { code: "api_manu" } });
 
   const integrationTemplates = [
     { code: "file_people",            name: "Archivo: Personas",                        category: "file", targetModel: "people" },

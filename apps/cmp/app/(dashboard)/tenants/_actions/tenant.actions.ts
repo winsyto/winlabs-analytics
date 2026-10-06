@@ -78,7 +78,7 @@ export async function createTenantAction(
   try {
     // 1. Crear el tenant (fuera de RLS context — no tiene tenantId propio)
     const tenant = await prisma.tenant.create({
-      data: { slug, name },
+      data: { slug, name, activeModules: ["people", "time", "payroll"] },
     });
 
     // 2. Dentro del contexto RLS del nuevo tenant: roles + usuario admin

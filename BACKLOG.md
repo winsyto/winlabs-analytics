@@ -145,6 +145,14 @@
 - [x] 4 tests RLS nuevos — 14 tests en total, todos pasando
 - [x] Seed de 6 templates en int_templates (4 file + api_manu + api_geovictoria)
 
+### CMP — Gestión de usuarios por tenant ✅ CERRADO
+
+- [x] CRUD de usuarios: crear, activar/desactivar, eliminar, resetear contraseña
+- [x] Emails transaccionales: bienvenida y reset con contraseña temporal (Resend)
+- [x] Política `mustChangePassword`: redirige a `/change-password` post-creación o reset
+- [x] Cliente: página `/change-password` standalone + server action que limpia el flag y cierra sesión
+- [x] Migración: columna `must_change_password` en tabla `users`
+
 ### M1-C: CMP — UI de modelo de datos ✅ CERRADO
 
 - [x] **Página `/data-models`** en CMP
@@ -234,10 +242,10 @@
   - `/integrations` — lista integraciones file del tenant
   - `/integrations/[id]` — zona de upload + historial de jobs
   - `@wla/storage` registrado como dep en apps/cliente
-- [ ] M2-5: UI Cliente — historial de runs + detalle de errores por fila
-- [ ] Template `file_time_attendance`: parser → upsert a `time_daily`
-- [ ] Template `file_absenteeism`: parser → upsert a `absenteeism_events`
-- [ ] Template `file_payroll`: parser → upsert a `payroll_*`
+- [x] M2-5: UI Cliente — historial de runs + detalle de errores por fila
+- [x] Template `file_time_attendance`: parser → upsert a `time_daily`
+- [x] Template `file_absenteeism`: parser → upsert a `absenteeism_events`
+- [x] Template `file_payroll`: parser → upsert a `payroll_*`
 - [ ] Job mensual de snapshot `people_history`
 
 ---
@@ -246,10 +254,10 @@
 
 > **Objetivo:** corregir bugs de producción y pulir UX de CMP antes de avanzar a M3.
 
-- [ ] **B1** · Fix listado integraciones CMP: agregar `tenantId` explícito al `where` del `findMany` (root cause de bugs "crea/borra para todos los tenants")
-- [ ] **T1** · CMP Tenants: botón inactivar/activar tenant (soft delete reversible)
-- [ ] **T2** · CMP Tenants: eliminar tenant con hard delete + cascada + modal de confirmación (escribir slug)
-- [ ] **DM1** · CMP Data Models: mover gestión de módulos activos dentro del detalle del tenant (eliminar página `/data-models` separada) — **mock previo antes de implementar**
+- [x] **B1** · Fix listado integraciones CMP: agregar `tenantId` explícito al `where` del `findMany` (root cause de bugs "crea/borra para todos los tenants")
+- [x] **T1** · CMP Tenants: botón inactivar/activar tenant (soft delete reversible)
+- [x] **T2** · CMP Tenants: eliminar tenant con hard delete + cascada + modal de confirmación (escribir slug)
+- [x] **DM1** · CMP Data Models: mover gestión de módulos activos dentro del detalle del tenant (eliminar página `/data-models` separada)
 - [ ] **DM2** · CMP Data Models: todos los módulos activos por default al crear un tenant
 - [ ] **I1** · CMP Integrations: botón activar/inactivar desde la tabla principal (la action ya existe)
 - [ ] **TP1** · CMP Templates: lista read-only de templates con toggle activar/inactivar (sin create/edit)
