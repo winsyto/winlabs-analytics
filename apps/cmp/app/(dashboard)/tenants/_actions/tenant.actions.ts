@@ -121,3 +121,137 @@ export async function createTenantAction(
     return { error: "Ocurrió un error al crear el tenant. Intentá de nuevo." };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Update tenant info (name + slug)
+// ---------------------------------------------------------------------------
+
+const updateTenantInfoSchema = z.object({
+  tenantId: z.string().uuid(),
+  name: z.string().min(2).max(80),
+  slug: z
+    .string()
+    .min(2)
+    .max(32)
+    .regex(/^[a-z0-9-]+$/, "Solo se permiten letras minúsculas, números y guiones"),
+});
+
+export type UpdateTenantInfoState = { error?: string; success?: boolean };
+
+export async function updateTenantInfoAction(
+  _prev: UpdateTenantInfoState,
+  formData: FormData
+): Promise<UpdateTenantInfoState> {
+  const parsed = updateTenantInfoSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    name: formData.get("name"),
+    slug: formData.get("slug"),
+  });
+  if (!parsed.success) return { error: parsed.error.errors[0]?.message ?? "Datos inválidos" };
+
+  const { tenantId, name, slug } = parsed.data;
+
+  const existing = await prisma.tenant.findFirst({
+    where: { slug, NOT: { id: tenantId } },
+  });
+  if (existing) return { error: "El slug ya está en uso por otro tenant" };
+
+  try {
+    await prisma.tenant.update({ where: { id: tenantId }, data: { name, slug } });
+    revalidatePath("/tenants");
+    revalidatePath(`/tenants/${tenantId}`);
+    return { success: true };
+  } catch (err) {
+    console.error("[updateTenantInfoAction]", err);
+    return { error: "Error al actualizar el tenant." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Delete tenant (hard delete + cascade domain tables)
+// ---------------------------------------------------------------------------
+
+const deleteTenantSchema = z.object({
+  tenantId: z.string().uuid(),
+  slugConfirmation: z.string().min(1),
+});
+
+export type DeleteTenantState = { error?: string; success?: boolean };
+
+export async function deleteTenantAction(
+  _prev: DeleteTenantState,
+  formData: FormData
+): Promise<DeleteTenantState> {
+  const parsed = deleteTenantSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    slugConfirmation: formData.get("slugConfirmation"),
+  });
+  if (!parsed.success) return { error: "Datos inválidos" };
+
+  const { tenantId, slugConfirmation } = parsed.data;
+
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant) return { error: "Tenant no encontrado" };
+  if (tenant.slug !== slugConfirmation) return { error: "El slug no coincide" };
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Domain tables have no FK to tenants — must delete manually in dependency order
+      await tx.$executeRaw`DELETE FROM att_time_daily WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM att_absenteeism_events WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM pay_entries WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM hr_people_history WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM hr_people WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM hr_org_units WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM cfg_absenteeism_types WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM pay_periods WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM pay_concepts WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM int_runs WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM int_tenant_integrations WHERE tenant_id = ${tenantId}::uuid`;
+      // tenant.delete cascades: users, roles, user_roles, jobs, job_runs, job_events, job_checkpoints, audit_log
+      await tx.tenant.delete({ where: { id: tenantId } });
+    });
+
+    revalidatePath("/tenants");
+    return { success: true };
+  } catch (err) {
+    console.error("[deleteTenantAction]", err);
+    return { error: "Error al eliminar el tenant." };
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Toggle tenant status
+// ---------------------------------------------------------------------------
+
+const toggleTenantSchema = z.object({
+  tenantId: z.string().uuid(),
+  isActive: z.boolean(),
+});
+
+export type ToggleTenantState = { error?: string; success?: boolean };
+
+export async function toggleTenantStatusAction(
+  _prev: ToggleTenantState,
+  formData: FormData
+): Promise<ToggleTenantState> {
+  const parsed = toggleTenantSchema.safeParse({
+    tenantId: formData.get("tenantId"),
+    isActive: formData.get("isActive") === "true",
+  });
+  if (!parsed.success) return { error: "Datos inválidos" };
+
+  const { tenantId, isActive } = parsed.data;
+
+  try {
+    await prisma.tenant.update({
+      where: { id: tenantId },
+      data: { isActive },
+    });
+    revalidatePath("/tenants");
+    return { success: true };
+  } catch (err) {
+    console.error("[toggleTenantStatusAction]", err);
+    return { error: "Error al actualizar el estado del tenant." };
+  }
+}

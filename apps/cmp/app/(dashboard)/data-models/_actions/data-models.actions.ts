@@ -35,7 +35,7 @@ export async function updateTenantModulesAction(
       data: { activeModules: parsed.data.activeModules },
     });
 
-    revalidatePath("/data-models");
+    revalidatePath("/tenants");
     return { success: true };
   } catch (err) {
     console.error("[updateTenantModulesAction]", err);
