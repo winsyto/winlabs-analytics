@@ -42,6 +42,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: true,
               passwordHash: true,
               isActive: true,
+              mustChangePassword: true,
             },
           });
         });
@@ -61,6 +62,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           tenantId: tenant.id,
           tenantSlug: tenant.slug,
+          mustChangePassword: user.mustChangePassword,
         };
       },
     }),
@@ -73,9 +75,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const u = user as typeof user & {
           tenantId: string;
           tenantSlug: string;
+          mustChangePassword: boolean;
         };
         token.tenantId = u.tenantId;
         token.tenantSlug = u.tenantSlug;
+        token.mustChangePassword = u.mustChangePassword;
       }
       return token;
     },
@@ -84,6 +88,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       session.user.id = token.sub!;
       session.user.tenantId = token.tenantId as string;
       session.user.tenantSlug = token.tenantSlug as string;
+      session.user.mustChangePassword = token.mustChangePassword as boolean;
       return session;
     },
   },

@@ -1,6 +1,7 @@
 export { getResend, FROM } from "./client";
 export { testEmailHtml } from "./templates/test";
 export { resetPasswordEmailHtml } from "./templates/reset-password";
+export { welcomeEmailHtml } from "./templates/welcome";
 
 import { getResend, FROM } from "./client";
 

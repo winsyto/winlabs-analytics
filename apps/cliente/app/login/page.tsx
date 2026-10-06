@@ -1,6 +1,13 @@
 import { LoginForm } from "./_components/login-form";
 
-export default function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ changed?: string }>;
+}) {
+  const params = await searchParams;
+  const passwordChanged = params.changed === "1";
+
   return (
     <main className="min-h-screen flex">
       {/* Hero */}
@@ -93,6 +100,11 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {passwordChanged && (
+            <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              Contraseña actualizada. Ingresá con tu nueva contraseña.
+            </div>
+          )}
           <LoginForm />
         </div>
       </div>
