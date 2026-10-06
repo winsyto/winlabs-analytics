@@ -6,6 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
 import { FileUpload } from "../_components/file-upload";
 import { JobsTable } from "../_components/jobs-table";
+import { TemplateInfo } from "../_components/template-info";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -105,6 +106,9 @@ export default async function IntegrationDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* Columnas requeridas + descarga de ejemplo */}
+      <TemplateInfo templateCode={integration.integrationTemplateCode} />
 
       {/* Historial de jobs */}
       <JobsTable jobs={recentJobs} />

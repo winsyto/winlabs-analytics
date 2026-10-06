@@ -1,0 +1,12 @@
+{
+  "name": "@wla/integration-files",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "generate": "tsx generate-examples.ts"
+  },
+  "devDependencies": {
+    "exceljs": "^4.4.0",
+    "tsx": "^4.19.2"
+  }
+}
