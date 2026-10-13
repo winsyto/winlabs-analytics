@@ -23,6 +23,7 @@ const TARGET_LABELS: Record<string, string> = {
   time: "Asistencia",
   payroll: "Liquidaciones",
   absenteeism: "Ausentismos",
+  org_history: "Unidades organizativas",
 };
 
 function TemplateToggle({ template }: { template: Template }) {

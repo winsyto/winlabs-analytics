@@ -6,7 +6,7 @@ import Link from "next/link";
 import { ArrowLeft, Clock } from "lucide-react";
 import { FileUpload } from "../_components/file-upload";
 import { JobsTable } from "../_components/jobs-table";
-import { TemplateInfo } from "../_components/template-info";
+import { TemplateInfo, type OrgTypeInfo } from "../_components/template-info";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -35,6 +35,22 @@ export default async function IntegrationDetailPage({ params }: Props) {
     })
   );
   if (!integration) notFound();
+
+  // Tipos de unidad organizativa del tenant (columnas del archivo) y motivos de baja
+  const { orgTypes, terminationReasonCodes } = await withTenantContext(tenantId, async (tx) => {
+    const [types, enabled, dims, reasons] = await Promise.all([
+      tx.cfgOrgUnitType.findMany({ orderBy: { sortOrder: "asc" } }),
+      tx.cfgTenantOrgUnitType.findMany({ where: { tenantId, isEnabled: true } }),
+      tx.dshDimension.findMany({ where: { tenantId }, select: { orgUnitTypeCode: true } }),
+      tx.cfgTerminationReason.findMany({ where: { isActive: true }, orderBy: { code: "asc" } }),
+    ]);
+    const enabledSet = new Set(enabled.map((e) => e.orgUnitTypeCode));
+    const dimSet = new Set(dims.map((d) => d.orgUnitTypeCode));
+    const orgTypes: OrgTypeInfo[] = types
+      .filter((t) => enabledSet.has(t.code) || dimSet.has(t.code))
+      .map((t) => ({ code: t.code, name: t.name, required: dimSet.has(t.code) }));
+    return { orgTypes, terminationReasonCodes: reasons.map((r) => r.code) };
+  });
 
   // Últimos 10 jobs de esta integración
   const recentJobs = await withTenantContext(tenantId, (tx) =>
@@ -108,7 +124,11 @@ export default async function IntegrationDetailPage({ params }: Props) {
       </div>
 
       {/* Columnas requeridas + descarga de ejemplo */}
-      <TemplateInfo templateCode={integration.integrationTemplateCode} />
+      <TemplateInfo
+        templateCode={integration.integrationTemplateCode}
+        orgTypes={orgTypes}
+        terminationReasonCodes={terminationReasonCodes}
+      />
 
       {/* Historial de jobs */}
       <JobsTable jobs={recentJobs} />

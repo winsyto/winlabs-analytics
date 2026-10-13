@@ -137,6 +137,14 @@ locations
 ├─ id, tenant_id, code, name, city, region, country, status, custom_fields
 ```
 
+### 4.3b Unidades organizativas con vigencia (actualización 2026-10-13, D-106 a D-109)
+
+La estructura organizacional se generalizó: en lugar de `area_id`, `position_id` y `location_id` fijos en `people`, hay un catálogo global de tipos de unidad (`cfg_org_unit_types`: Empresa, Sucursal, Área, Puesto, Contrato, Departamento, Centro de costos, etc.), unidades por tenant (`hr_org_units`) y asignaciones con vigencia por persona (`hr_people_org_assignments`: `valid_from` obligatoria, `valid_to` opcional, una asignación por persona y tipo en cada momento).
+
+- `cfg_tenant_org_unit_types`: qué tipos usa cada tenant.
+- `dsh_dimensions`: qué tipos son dimensiones de cada dashboard (headcount por defecto: Empresa, Sucursal, Área, Puesto, Contrato).
+- `hr_people_history` (4.4) es un caché mensual derivado de las asignaciones vigentes a fin de mes, más estado, jefe y banda salarial.
+
 ### 4.4 People history (snapshots mensuales)
 
 ```

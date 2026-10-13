@@ -6,7 +6,7 @@ import { Badge } from "@wla/ui";
 import { Clock, CheckCircle2, XCircle, Loader2, RotateCcw, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 
 interface RowError {
-  row: number;
+  row?: number;
   employee_code?: string;
   field?: string;
   message: string;
@@ -24,6 +24,7 @@ interface JobResult {
   org_units_upserted?: number;
   errors?: RowError[];
   parse_errors?: RowError[];
+  warnings?: string[];
 }
 
 interface Job {
@@ -107,8 +108,9 @@ function JobErrors({ result, jobFailed, lastError }: { result: unknown; jobFaile
   const totalErrors = (r?.errors?.length ?? 0) + (r?.parse_errors?.length ?? 0);
   const hasRowErrors = rowErrors.length > 0;
   const hasJobError = jobFailed && lastError;
+  const warnings = r?.warnings ?? [];
 
-  if (!hasRowErrors && !hasJobError) return null;
+  if (!hasRowErrors && !hasJobError && warnings.length === 0) return null;
 
   return (
     <div className="mt-1">
@@ -117,7 +119,7 @@ function JobErrors({ result, jobFailed, lastError }: { result: unknown; jobFaile
         className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:underline"
       >
         {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        {hasRowErrors ? `Ver errores (${totalErrors})` : "Ver detalle del error"}
+        {hasRowErrors ? `Ver errores (${totalErrors})` : hasJobError ? "Ver detalle del error" : "Ver avisos"}
       </button>
 
       {open && (
@@ -125,6 +127,9 @@ function JobErrors({ result, jobFailed, lastError }: { result: unknown; jobFaile
           {hasJobError && (
             <p className="text-xs text-destructive font-mono">{lastError}</p>
           )}
+          {warnings.map((w, i) => (
+            <p key={i} className="text-xs text-amber-700 dark:text-amber-300">{w}</p>
+          ))}
           {hasRowErrors && (
             <>
               <table className="w-full text-xs">
@@ -138,9 +143,12 @@ function JobErrors({ result, jobFailed, lastError }: { result: unknown; jobFaile
                 <tbody>
                   {rowErrors.map((e, i) => (
                     <tr key={i} className="border-b border-amber-100 dark:border-amber-900/50 last:border-0">
-                      <td className="py-1 pr-3 text-muted-foreground">{e.row}</td>
+                      <td className="py-1 pr-3 text-muted-foreground">{e.row ?? "—"}</td>
                       <td className="py-1 pr-3 font-mono text-muted-foreground">{e.employee_code ?? "—"}</td>
-                      <td className="py-1 text-foreground">{e.message}</td>
+                      <td className="py-1 text-foreground">
+                        {e.field && <span className="font-mono text-muted-foreground">{e.field}: </span>}
+                        {e.message}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

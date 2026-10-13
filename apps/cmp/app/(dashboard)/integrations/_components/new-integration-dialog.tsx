@@ -46,6 +46,7 @@ const TARGET_LABELS: Record<string, string> = {
   payroll: "Liquidaciones",
   absenteeism: "Ausentismo",
   people_payroll: "Personas + Liquidaciones",
+  org_history: "Unidades organizativas (historial)",
 };
 
 export function NewIntegrationDialog({ tenants, templates }: NewIntegrationDialogProps) {

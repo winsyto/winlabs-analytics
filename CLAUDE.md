@@ -231,6 +231,7 @@ fly logs                            # ver logs en tiempo real
 
 - **Scheduler loop** (default 60s): lee `int_tenant_integrations` con `schedule_cron IS NOT NULL`, crea jobs con `run_key` para deduplicación.
 - **Processor loop** (default 10s): toma jobs con `FOR UPDATE SKIP LOCKED`, ejecuta el handler.
+- **Snapshot loop** (cada hora, `SNAPSHOTS_INTERVAL_SECONDS`): para cada tenant activo genera los cierres mensuales (`hr_people_history`) que falten hasta el último mes cerrado, o la ventana de 24 meses si nunca tuvo. Además, al terminar un job `file_people` o `file_org_history` se reconstruye la ventana completa del tenant (`src/snapshots/peopleSnapshots.ts`; misma lógica SQL que `packages/db/src/snapshots/people-snapshots.ts`)
 - **Recovery loop** (cada 5min): detecta jobs con heartbeat vencido (+15min) y los re-agenda o marca failed.
 - **Handlers**: `src/handlers/index.ts` — mapa `job_type → handler`. Agregar handler nuevo = agregar entrada al mapa.
 

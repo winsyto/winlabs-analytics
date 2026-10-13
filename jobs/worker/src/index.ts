@@ -3,6 +3,7 @@ import { config } from "./config.js";
 import { runSchedulerTick } from "./scheduler.js";
 import { runProcessorTick } from "./processor.js";
 import { recoverStaleJobs } from "./jobs/recoverStale.js";
+import { runSnapshotTick } from "./snapshots/peopleSnapshots.js";
 import { logger } from "./utils/logger.js";
 
 logger.info("WLA worker starting", {
@@ -38,6 +39,16 @@ setInterval(async () => {
     logger.error("recovery tick error", { err: String(err) });
   }
 }, 5 * 60_000);
+
+// Snapshot loop — cierre mensual automático de personas (hr_people_history), una vez por hora
+if (config.snapshotsEnabled) {
+  const tick = () =>
+    runSnapshotTick(pool).catch((err) => logger.error("snapshot tick error", { err: String(err) }));
+  setInterval(tick, config.snapshotsIntervalMs);
+  // Primera corrida diferida para no competir con el arranque
+  setTimeout(tick, 30_000);
+  logger.info("snapshot loop started", { intervalMs: config.snapshotsIntervalMs });
+}
 
 // Processor loop
 if (config.processorEnabled) {

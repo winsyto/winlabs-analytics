@@ -355,3 +355,156 @@ describe("RLS M1-B — int_tenant_integrations, int_runs, int_run_errors", () =>
     expect(errors[0]?.errorCode).toBe("VALIDATION_ERROR");
   });
 });
+
+describe("RLS — configuración de unidades organizativas y asignaciones con vigencia", () => {
+  let alphaPersonId: number;
+  let betaPersonId: number;
+  let alphaAreaId: number;
+  let alphaArea2Id: number;
+  let betaAreaId: number;
+
+  beforeAll(async () => {
+    await seedOrgUnitType("AREA", "Área");
+    await seedOrgUnitType("POSITION", "Puesto");
+
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, async (tx) => {
+        await tx.cfgTenantOrgUnitType.upsert({
+          where: { uq_cfg_tenant_org_unit_types: { tenantId, orgUnitTypeCode: "AREA" } },
+          update: {},
+          create: { tenantId, orgUnitTypeCode: "AREA", isEnabled: true, sortOrder: 1 },
+        });
+        await tx.dshDimension.upsert({
+          where: { uq_dsh_dimensions: { tenantId, dashboardCode: "headcount", orgUnitTypeCode: "AREA" } },
+          update: {},
+          create: { tenantId, dashboardCode: "headcount", orgUnitTypeCode: "AREA", sortOrder: 1 },
+        });
+      });
+    }
+
+    alphaAreaId = (await createTestOrgUnit(tenantAlphaId, "AREA", "OPS", "Operaciones Alpha")).id;
+    alphaArea2Id = (await createTestOrgUnit(tenantAlphaId, "AREA", "FIN", "Finanzas Alpha")).id;
+    betaAreaId = (await createTestOrgUnit(tenantBetaId, "AREA", "OPS", "Operaciones Beta")).id;
+    alphaPersonId = (await createTestPerson(tenantAlphaId, "EMP-A-VIG", "Alice Vigencia")).id;
+    betaPersonId = (await createTestPerson(tenantBetaId, "EMP-B-VIG", "Charlie Vigencia")).id;
+
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrPeopleOrgAssignment.create({
+        data: {
+          tenantId: tenantAlphaId,
+          personId: alphaPersonId,
+          orgUnitId: alphaAreaId,
+          orgUnitTypeCode: "AREA",
+          validFrom: new Date("2024-01-01"),
+        },
+      })
+    );
+    await withTenantContext(tenantBetaId, (tx) =>
+      tx.hrPeopleOrgAssignment.create({
+        data: {
+          tenantId: tenantBetaId,
+          personId: betaPersonId,
+          orgUnitId: betaAreaId,
+          orgUnitTypeCode: "AREA",
+          validFrom: new Date("2024-01-01"),
+        },
+      })
+    );
+  });
+
+  afterAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, async (tx) => {
+        await tx.hrPeopleOrgAssignment.deleteMany({ where: { tenantId } });
+        await tx.hrPerson.deleteMany({ where: { tenantId } });
+        await tx.hrOrgUnit.deleteMany({ where: { tenantId } });
+        await tx.dshDimension.deleteMany({ where: { tenantId } });
+        await tx.cfgTenantOrgUnitType.deleteMany({ where: { tenantId } });
+      });
+    }
+  });
+
+  it("cada tenant ve solo su configuración de tipos y dimensiones", async () => {
+    const types = await withTenantContext(tenantAlphaId, (tx) => tx.cfgTenantOrgUnitType.findMany());
+    const dims = await withTenantContext(tenantAlphaId, (tx) => tx.dshDimension.findMany());
+    expect(types.every((t) => t.tenantId === tenantAlphaId)).toBe(true);
+    expect(dims.every((d) => d.tenantId === tenantAlphaId)).toBe(true);
+
+    const betaTypes = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.cfgTenantOrgUnitType.findMany({ where: { tenantId: tenantBetaId } })
+    );
+    expect(betaTypes).toHaveLength(0);
+  });
+
+  it("cada tenant ve solo sus asignaciones", async () => {
+    const rows = await withTenantContext(tenantAlphaId, (tx) => tx.hrPeopleOrgAssignment.findMany());
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.personId).toBe(alphaPersonId);
+  });
+
+  it("no permite dos asignaciones del mismo tipo que se solapen para una persona", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.hrPeopleOrgAssignment.create({
+          data: {
+            tenantId: tenantAlphaId,
+            personId: alphaPersonId,
+            orgUnitId: alphaArea2Id,
+            orgUnitTypeCode: "AREA",
+            validFrom: new Date("2024-06-01"),
+          },
+        })
+      )
+    ).rejects.toThrow();
+  });
+
+  it("permite un cambio de unidad encadenado sin solapamiento", async () => {
+    await withTenantContext(tenantAlphaId, async (tx) => {
+      await tx.hrPeopleOrgAssignment.updateMany({
+        where: { tenantId: tenantAlphaId, personId: alphaPersonId, validTo: null },
+        data: { validTo: new Date("2024-05-31") },
+      });
+      await tx.hrPeopleOrgAssignment.create({
+        data: {
+          tenantId: tenantAlphaId,
+          personId: alphaPersonId,
+          orgUnitId: alphaArea2Id,
+          orgUnitTypeCode: "AREA",
+          validFrom: new Date("2024-06-01"),
+        },
+      });
+    });
+    const rows = await withTenantContext(tenantAlphaId, (tx) => tx.hrPeopleOrgAssignment.findMany());
+    expect(rows).toHaveLength(2);
+  });
+
+  it("rechaza vigencias invertidas y tipo incoherente con la unidad", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.hrPeopleOrgAssignment.create({
+          data: {
+            tenantId: tenantAlphaId,
+            personId: alphaPersonId,
+            orgUnitId: alphaAreaId,
+            orgUnitTypeCode: "POSITION",
+            validFrom: new Date("2020-01-01"),
+          },
+        })
+      )
+    ).rejects.toThrow();
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.hrPeopleOrgAssignment.create({
+          data: {
+            tenantId: tenantAlphaId,
+            personId: alphaPersonId,
+            orgUnitId: alphaAreaId,
+            orgUnitTypeCode: "AREA",
+            validFrom: new Date("2000-02-01"),
+            validTo: new Date("2000-01-01"),
+          },
+        })
+      )
+    ).rejects.toThrow();
+  });
+});

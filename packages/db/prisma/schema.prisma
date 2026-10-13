@@ -12,18 +12,20 @@ datasource db {
 // TENANTS
 // =============================================================================
 model Tenant {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  slug           String   @unique
-  name           String
-  isActive       Boolean  @default(true) @map("is_active")
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug          String   @unique
+  name          String
+  isActive      Boolean  @default(true) @map("is_active")
   /// Módulos analíticos activos. Valores posibles: people, time, payroll
-  activeModules  String[] @default([]) @map("active_modules")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  activeModules String[] @default([]) @map("active_modules")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
-  users     User[]
-  roles     Role[]
-  auditLogs AuditLog[]
+  users              User[]
+  roles              Role[]
+  auditLogs          AuditLog[]
+  orgUnitTypeConfigs CfgTenantOrgUnitType[]
+  dimensions         DshDimension[]
 
   @@map("tenants")
 }
@@ -47,11 +49,11 @@ model InternalUser {
 // USERS — usuarios de clientes
 // =============================================================================
 model User {
-  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId     String   @db.Uuid @map("tenant_id")
-  email        String
-  passwordHash String   @map("password_hash")
-  name         String
+  id                 String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId           String   @map("tenant_id") @db.Uuid
+  email              String
+  passwordHash       String   @map("password_hash")
+  name               String
   isActive           Boolean  @default(true) @map("is_active")
   mustChangePassword Boolean  @default(false) @map("must_change_password")
   createdAt          DateTime @default(now()) @map("created_at")
@@ -69,7 +71,7 @@ model User {
 // =============================================================================
 model Role {
   id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId    String   @db.Uuid @map("tenant_id")
+  tenantId    String   @map("tenant_id") @db.Uuid
   name        String
   description String?
   createdAt   DateTime @default(now()) @map("created_at")
@@ -87,9 +89,9 @@ model Role {
 // =============================================================================
 model UserRole {
   id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId  String   @db.Uuid @map("tenant_id")
-  userId    String   @db.Uuid @map("user_id")
-  roleId    String   @db.Uuid @map("role_id")
+  tenantId  String   @map("tenant_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  roleId    String   @map("role_id") @db.Uuid
   createdAt DateTime @default(now()) @map("created_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -112,8 +114,13 @@ model CfgOrgUnitType {
   description String?
   /// false = no se puede asignar a nuevas instancias
   isActive    Boolean @default(true) @map("is_active")
+  /// Orden de presentación en listados y archivos
+  sortOrder   Int     @default(0) @map("sort_order")
 
-  orgUnits HrOrgUnit[]
+  orgUnits      HrOrgUnit[]
+  assignments   HrPeopleOrgAssignment[]
+  tenantConfigs CfgTenantOrgUnitType[]
+  dimensions    DshDimension[]
 
   @@id([code])
   @@map("cfg_org_unit_types")
@@ -136,14 +143,14 @@ model CfgTerminationReason {
 
 model CfgTimeEntryType {
   /// Código único. Ej: OVERTIME, ABSENT, HOLIDAY, NIGHT, TRAINING
-  code     String   @unique @db.VarChar(50)
+  code     String  @unique @db.VarChar(50)
   /// Nombre legible
-  name     String   @db.VarChar(100)
+  name     String  @db.VarChar(100)
   /// overtime | absence | special | other
-  category String   @db.VarChar(30)
+  category String  @db.VarChar(30)
   /// +1 suma al total trabajado, -1 detrae (ej: ABSENT = -1)
-  sign     Int      @default(1) @db.SmallInt
-  isActive Boolean  @default(true) @map("is_active")
+  sign     Int     @default(1) @db.SmallInt
+  isActive Boolean @default(true) @map("is_active")
 
   timeEntries AttTimeDailyEntry[]
 
@@ -157,31 +164,32 @@ model CfgTimeEntryType {
 
 model HrOrgUnit {
   /// PK autoincrement
-  id               Int       @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   /// RLS — tenant owner
-  tenantId         String    @db.Uuid @map("tenant_id")
+  tenantId        String    @map("tenant_id") @db.Uuid
   /// Tipo de OU (code de cfg_org_unit_types)
-  orgUnitTypeCode  String    @map("org_unit_type_code")
+  orgUnitTypeCode String    @map("org_unit_type_code")
   /// Código del sistema origen (único por tenant + tipo)
-  code             String    @db.VarChar(50)
+  code            String    @db.VarChar(50)
   /// Nombre de la unidad organizacional
-  name             String    @db.VarChar(150)
+  name            String    @db.VarChar(150)
   /// Self-ref para jerarquía. null = raíz
-  parentOrgUnitId  Int?      @map("parent_org_unit_id")
+  parentOrgUnitId Int?      @map("parent_org_unit_id")
   /// Profundidad en el árbol (0 = raíz)
-  level            Int?
-  isActive         Boolean   @default(true) @map("is_active")
-  customFields     Json?     @map("custom_fields")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  level           Int?
+  isActive        Boolean   @default(true) @map("is_active")
+  customFields    Json?     @map("custom_fields")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
   /// Soft delete
-  deletedAt        DateTime? @map("deleted_at")
+  deletedAt       DateTime? @map("deleted_at")
 
-  orgUnitType  CfgOrgUnitType  @relation(fields: [orgUnitTypeCode], references: [code])
-  parent       HrOrgUnit?      @relation("OrgUnitHierarchy", fields: [parentOrgUnitId], references: [id])
-  children     HrOrgUnit[]     @relation("OrgUnitHierarchy")
-  assignments  HrPeopleOrgAssignment[]
+  orgUnitType CfgOrgUnitType          @relation(fields: [orgUnitTypeCode], references: [code])
+  parent      HrOrgUnit?              @relation("OrgUnitHierarchy", fields: [parentOrgUnitId], references: [id])
+  children    HrOrgUnit[]             @relation("OrgUnitHierarchy")
+  assignments HrPeopleOrgAssignment[]
 
+  @@unique([id, orgUnitTypeCode], name: "uq_hr_org_units_id_type", map: "uq_hr_org_units_id_type")
   @@unique([tenantId, orgUnitTypeCode, code], name: "uq_hr_org_units_tenant_type_code")
   @@index([tenantId, orgUnitTypeCode])
   @@index([parentOrgUnitId])
@@ -192,52 +200,52 @@ model HrPerson {
   /// PK autoincrement
   id                    Int       @id @default(autoincrement())
   /// RLS — tenant owner
-  tenantId              String    @db.Uuid @map("tenant_id")
+  tenantId              String    @map("tenant_id") @db.Uuid
   /// Código del empleado en el sistema origen (único por tenant)
-  employeeCode          String    @db.VarChar(50) @map("employee_code")
+  employeeCode          String    @map("employee_code") @db.VarChar(50)
   /// Nombre completo
-  fullName              String    @db.VarChar(200) @map("full_name")
+  fullName              String    @map("full_name") @db.VarChar(200)
   /// Nombre(s) — opcional
-  firstName             String?   @db.VarChar(100) @map("first_name")
+  firstName             String?   @map("first_name") @db.VarChar(100)
   /// Apellido(s) — opcional
-  lastName              String?   @db.VarChar(100) @map("last_name")
+  lastName              String?   @map("last_name") @db.VarChar(100)
   /// Email laboral o personal
   email                 String?   @db.VarChar(255)
   /// Fecha de nacimiento
-  birthDate             DateTime? @db.Date @map("birth_date")
+  birthDate             DateTime? @map("birth_date") @db.Date
   /// M | F | X | no_decl — varchar para tolerar valores variados de orígenes
   gender                String?   @db.VarChar(20)
   nationality           String?   @db.VarChar(100)
   /// Tipo de documento principal (DNI, CUIL, RUT, CC…)
-  documentType          String?   @db.VarChar(30) @map("document_type")
-  documentNumber        String?   @db.VarChar(50) @map("document_number")
+  documentType          String?   @map("document_type") @db.VarChar(30)
+  documentNumber        String?   @map("document_number") @db.VarChar(50)
   /// Fecha de ingreso — base para cálculo de antigüedad
-  hireDate              DateTime  @db.Date @map("hire_date")
+  hireDate              DateTime  @map("hire_date") @db.Date
   /// Fecha de egreso. null = activo o con estado on_leave
-  terminationDate       DateTime? @db.Date @map("termination_date")
+  terminationDate       DateTime? @map("termination_date") @db.Date
   /// Motivo de baja del catálogo global
   terminationReasonCode String?   @map("termination_reason_code")
   /// active | inactive | on_leave
   status                String    @db.VarChar(20)
   /// indefinido | plazo_fijo | contractor | temporal
-  contractType          String?   @db.VarChar(30) @map("contract_type")
+  contractType          String?   @map("contract_type") @db.VarChar(30)
   /// Self-ref — jefe directo
   managerId             Int?      @map("manager_id")
   /// Banda salarial (etiqueta, no monto exacto)
-  salaryBand            String?   @db.VarChar(50) @map("salary_band")
+  salaryBand            String?   @map("salary_band") @db.VarChar(50)
   customFields          Json?     @map("custom_fields")
   createdAt             DateTime  @default(now()) @map("created_at")
   updatedAt             DateTime  @updatedAt @map("updated_at")
   deletedAt             DateTime? @map("deleted_at")
 
-  terminationReason  CfgTerminationReason?   @relation(fields: [terminationReasonCode], references: [code])
-  manager            HrPerson?               @relation("PeopleHierarchy", fields: [managerId], references: [id])
-  reports            HrPerson[]              @relation("PeopleHierarchy")
-  orgAssignments     HrPeopleOrgAssignment[]
-  historySnapshots   HrPeopleHistory[]
-  timeDailyRecords   AttTimeDaily[]
-  absenteeismEvents  AttAbsenteeismEvent[]
-  payEntries         PayEntry[]
+  terminationReason CfgTerminationReason?   @relation(fields: [terminationReasonCode], references: [code])
+  manager           HrPerson?               @relation("PeopleHierarchy", fields: [managerId], references: [id])
+  reports           HrPerson[]              @relation("PeopleHierarchy")
+  orgAssignments    HrPeopleOrgAssignment[]
+  historySnapshots  HrPeopleHistory[]
+  timeDailyRecords  AttTimeDaily[]
+  absenteeismEvents AttAbsenteeismEvent[]
+  payEntries        PayEntry[]
 
   @@unique([tenantId, employeeCode], name: "uq_hr_people_tenant_code")
   @@index([tenantId, status])
@@ -248,20 +256,29 @@ model HrPerson {
 
 model HrPeopleOrgAssignment {
   /// PK autoincrement
-  id          Int      @id @default(autoincrement())
+  id              Int       @id @default(autoincrement())
   /// RLS — denormalizado para simplificar policy
-  tenantId    String   @db.Uuid @map("tenant_id")
-  personId    Int      @map("person_id")
-  orgUnitId   Int      @map("org_unit_id")
-  /// true = asignación principal para ese tipo de OU
-  isPrimary   Boolean  @default(true) @map("is_primary")
-  createdAt   DateTime @default(now()) @map("created_at")
+  tenantId        String    @map("tenant_id") @db.Uuid
+  /// Empleado asignado
+  personId        Int       @map("person_id")
+  /// Unidad organizativa asignada
+  orgUnitId       Int       @map("org_unit_id")
+  /// Tipo de la unidad (denormalizado; la FK compuesta garantiza que coincida con la unidad)
+  orgUnitTypeCode String    @map("org_unit_type_code")
+  /// Inicio de vigencia (obligatorio)
+  validFrom       DateTime  @map("valid_from") @db.Date
+  /// Fin de vigencia inclusive. null = vigente. Solo una asignación por persona y tipo en cada momento
+  /// (restricción de exclusión excl_hr_people_org_assignments_no_overlap, definida en SQL)
+  validTo         DateTime? @map("valid_to") @db.Date
+  createdAt       DateTime  @default(now()) @map("created_at")
 
-  person  HrPerson  @relation(fields: [personId], references: [id])
-  orgUnit HrOrgUnit @relation(fields: [orgUnitId], references: [id])
+  person   HrPerson       @relation(fields: [personId], references: [id])
+  orgUnit  HrOrgUnit      @relation(fields: [orgUnitId, orgUnitTypeCode], references: [id, orgUnitTypeCode], map: "hr_people_org_assignments_org_unit_fkey")
+  unitType CfgOrgUnitType @relation(fields: [orgUnitTypeCode], references: [code])
 
-  @@unique([tenantId, personId, orgUnitId], name: "uq_hr_people_org_assignments")
+  @@unique([tenantId, personId, orgUnitId, validFrom], name: "uq_hr_people_org_assignments", map: "uq_hr_people_org_assignments")
   @@index([tenantId, orgUnitId])
+  @@index([tenantId, orgUnitTypeCode, validFrom, validTo], map: "idx_hr_people_org_assignments_type_validity")
   @@map("hr_people_org_assignments")
 }
 
@@ -269,18 +286,18 @@ model HrPeopleHistory {
   /// PK autoincrement
   id                     Int      @id @default(autoincrement())
   /// RLS — tenant owner
-  tenantId               String   @db.Uuid @map("tenant_id")
+  tenantId               String   @map("tenant_id") @db.Uuid
   /// Primer día del mes del snapshot: YYYY-MM-01
-  snapshotDate           DateTime @db.Date @map("snapshot_date")
+  snapshotDate           DateTime @map("snapshot_date") @db.Date
   personId               Int      @map("person_id")
   /// Snapshot del código del empleado al momento del cierre
-  employeeCode           String   @db.VarChar(50) @map("employee_code")
+  employeeCode           String   @map("employee_code") @db.VarChar(50)
   /// Estado al cierre del mes
   status                 String   @db.VarChar(20)
   /// Array de asignaciones OU al momento del snapshot
   orgAssignmentsSnapshot Json?    @map("org_assignments_snapshot")
   managerId              Int?     @map("manager_id")
-  salaryBand             String?  @db.VarChar(50) @map("salary_band")
+  salaryBand             String?  @map("salary_band") @db.VarChar(50)
   /// Antigüedad en meses al cierre del mes
   tenureMonths           Int?     @map("tenure_months")
   customFieldsSnapshot   Json?    @map("custom_fields_snapshot")
@@ -295,22 +312,67 @@ model HrPeopleHistory {
 }
 
 // =============================================================================
+// M1 — CONFIGURACIÓN DE UNIDADES ORGANIZATIVAS POR TENANT
+// =============================================================================
+
+model CfgTenantOrgUnitType {
+  /// PK autoincrement
+  id              Int      @id @default(autoincrement())
+  /// RLS — tenant owner
+  tenantId        String   @map("tenant_id") @db.Uuid
+  /// Tipo de unidad organizativa del catálogo global
+  orgUnitTypeCode String   @map("org_unit_type_code")
+  /// true = el tenant usa este tipo
+  isEnabled       Boolean  @default(true) @map("is_enabled")
+  /// Orden de presentación para el tenant
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitType CfgOrgUnitType @relation(fields: [orgUnitTypeCode], references: [code])
+
+  @@unique([tenantId, orgUnitTypeCode], name: "uq_cfg_tenant_org_unit_types", map: "uq_cfg_tenant_org_unit_types")
+  @@map("cfg_tenant_org_unit_types")
+}
+
+model DshDimension {
+  /// PK autoincrement
+  id              Int      @id @default(autoincrement())
+  /// RLS — tenant owner
+  tenantId        String   @map("tenant_id") @db.Uuid
+  /// Dashboard al que aplica. Ej: headcount
+  dashboardCode   String   @map("dashboard_code") @db.VarChar(50)
+  /// Tipo de unidad organizativa usado como dimensión (filtro y distribución)
+  orgUnitTypeCode String   @map("org_unit_type_code")
+  /// Orden de la dimensión dentro del dashboard
+  sortOrder       Int      @default(0) @map("sort_order")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  unitType CfgOrgUnitType @relation(fields: [orgUnitTypeCode], references: [code])
+
+  @@unique([tenantId, dashboardCode, orgUnitTypeCode], name: "uq_dsh_dimensions", map: "uq_dsh_dimensions")
+  @@map("dsh_dimensions")
+}
+
+// =============================================================================
 // M1 — CONFIG POR TENANT
 // =============================================================================
 
 model CfgAbsenteeismType {
   /// PK autoincrement
-  id               Int     @id @default(autoincrement())
+  id              Int     @id @default(autoincrement())
   /// RLS — cada tenant define sus propios tipos
-  tenantId         String  @db.Uuid @map("tenant_id")
+  tenantId        String  @map("tenant_id") @db.Uuid
   /// Código del tipo en el sistema origen
-  code             String  @db.VarChar(50)
-  name             String  @db.VarChar(100)
+  code            String  @db.VarChar(50)
+  name            String  @db.VarChar(100)
   /// medical | personal | justified | unjustified | other
-  category         String  @db.VarChar(30)
+  category        String  @db.VarChar(30)
   /// false = no impacta en tasa de ausentismo
-  countsAsAbsence  Boolean @default(true) @map("counts_as_absence")
-  customFields     Json?   @map("custom_fields")
+  countsAsAbsence Boolean @default(true) @map("counts_as_absence")
+  customFields    Json?   @map("custom_fields")
 
   events AttAbsenteeismEvent[]
 
@@ -324,27 +386,27 @@ model CfgAbsenteeismType {
 
 model AttTimeDaily {
   /// PK autoincrement
-  id                  Int       @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   /// RLS
-  tenantId            String    @db.Uuid @map("tenant_id")
-  personId            Int       @map("person_id")
+  tenantId            String   @map("tenant_id") @db.Uuid
+  personId            Int      @map("person_id")
   /// Fecha del registro diario
-  date                DateTime  @db.Date
+  date                DateTime @db.Date
   /// true = día hábil según calendario laboral
-  isWorkingDay        Boolean   @map("is_working_day")
+  isWorkingDay        Boolean  @map("is_working_day")
   /// Horas teóricas planificadas. 0 si isWorkingDay = false
-  scheduledHours      Decimal   @default(0) @db.Decimal(5, 2) @map("scheduled_hours")
+  scheduledHours      Decimal  @default(0) @map("scheduled_hours") @db.Decimal(5, 2)
   /// Total horas trabajadas independientemente de su categorización
-  workedHours         Decimal   @default(0) @db.Decimal(5, 2) @map("worked_hours")
+  workedHours         Decimal  @default(0) @map("worked_hours") @db.Decimal(5, 2)
   /// Flag de conveniencia — true si existe al menos una entrada ABSENT
-  hasAbsence          Boolean   @default(false) @map("has_absence")
+  hasAbsence          Boolean  @default(false) @map("has_absence")
   /// FK int_tenant_integrations — integración que originó el registro
-  sourceIntegrationId Int?      @map("source_integration_id")
-  customFields        Json?     @map("custom_fields")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
+  sourceIntegrationId Int?     @map("source_integration_id")
+  customFields        Json?    @map("custom_fields")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  person  HrPerson           @relation(fields: [personId], references: [id])
+  person  HrPerson            @relation(fields: [personId], references: [id])
   entries AttTimeDailyEntry[]
 
   @@unique([tenantId, personId, date], name: "uq_att_time_daily_tenant_person_date")
@@ -354,18 +416,18 @@ model AttTimeDaily {
 
 model AttTimeDailyEntry {
   /// PK autoincrement
-  id                Int     @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   /// RLS — denormalizado para simplificar policy
-  tenantId          String  @db.Uuid @map("tenant_id")
-  timeDailyId       Int     @map("time_daily_id")
+  tenantId          String   @map("tenant_id") @db.Uuid
+  timeDailyId       Int      @map("time_daily_id")
   /// Tipo de hora (code de cfg_time_entry_types)
-  timeEntryTypeCode String  @map("time_entry_type_code")
+  timeEntryTypeCode String   @map("time_entry_type_code")
   /// Horas de este tipo en el día
-  hours             Decimal @db.Decimal(6, 2)
+  hours             Decimal  @db.Decimal(6, 2)
   createdAt         DateTime @default(now()) @map("created_at")
 
-  timeDaily       AttTimeDaily     @relation(fields: [timeDailyId], references: [id])
-  timeEntryType   CfgTimeEntryType @relation(fields: [timeEntryTypeCode], references: [code])
+  timeDaily     AttTimeDaily     @relation(fields: [timeDailyId], references: [id])
+  timeEntryType CfgTimeEntryType @relation(fields: [timeEntryTypeCode], references: [code])
 
   @@unique([tenantId, timeDailyId, timeEntryTypeCode], name: "uq_att_time_daily_entries")
   @@index([tenantId, timeEntryTypeCode])
@@ -374,30 +436,30 @@ model AttTimeDailyEntry {
 
 model AttAbsenteeismEvent {
   /// PK autoincrement
-  id                  Int       @id @default(autoincrement())
+  id                  Int      @id @default(autoincrement())
   /// RLS
-  tenantId            String    @db.Uuid @map("tenant_id")
-  personId            Int       @map("person_id")
-  absenteeismTypeId   Int       @map("absenteeism_type_id")
-  startDate           DateTime  @db.Date @map("start_date")
-  endDate             DateTime  @db.Date @map("end_date")
+  tenantId            String   @map("tenant_id") @db.Uuid
+  personId            Int      @map("person_id")
+  absenteeismTypeId   Int      @map("absenteeism_type_id")
+  startDate           DateTime @map("start_date") @db.Date
+  endDate             DateTime @map("end_date") @db.Date
   /// Días de duración (puede ser fraccionario)
-  daysCount           Decimal   @db.Decimal(5, 2) @map("days_count")
+  daysCount           Decimal  @map("days_count") @db.Decimal(5, 2)
   /// Horas totales del evento
-  hoursCount          Decimal   @db.Decimal(6, 2) @map("hours_count")
-  justified           Boolean   @default(false)
+  hoursCount          Decimal  @map("hours_count") @db.Decimal(6, 2)
+  justified           Boolean  @default(false)
   /// Costo estimado — puede venir del ETL de Payroll
-  costEstimated       Decimal?  @db.Decimal(12, 2) @map("cost_estimated")
+  costEstimated       Decimal? @map("cost_estimated") @db.Decimal(12, 2)
   /// open | closed | cancelled
-  status              String    @default("open") @db.VarChar(20)
+  status              String   @default("open") @db.VarChar(20)
   notes               String?
-  sourceIntegrationId Int?      @map("source_integration_id")
-  customFields        Json?     @map("custom_fields")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
+  sourceIntegrationId Int?     @map("source_integration_id")
+  customFields        Json?    @map("custom_fields")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
 
-  person           HrPerson           @relation(fields: [personId], references: [id])
-  absenteeismType  CfgAbsenteeismType @relation(fields: [absenteeismTypeId], references: [id])
+  person          HrPerson           @relation(fields: [personId], references: [id])
+  absenteeismType CfgAbsenteeismType @relation(fields: [absenteeismTypeId], references: [id])
 
   @@index([tenantId, personId, startDate])
   @@index([tenantId, absenteeismTypeId])
@@ -410,17 +472,17 @@ model AttAbsenteeismEvent {
 
 model PayPeriod {
   /// PK autoincrement
-  id          Int      @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   /// RLS
-  tenantId    String   @db.Uuid @map("tenant_id")
+  tenantId   String   @map("tenant_id") @db.Uuid
   /// Código del período. Ej: 2026-01, 2026-Q1
-  periodCode  String   @db.VarChar(20) @map("period_code")
-  startDate   DateTime @db.Date @map("start_date")
-  endDate     DateTime @db.Date @map("end_date")
+  periodCode String   @map("period_code") @db.VarChar(20)
+  startDate  DateTime @map("start_date") @db.Date
+  endDate    DateTime @map("end_date") @db.Date
   /// open | closed | cancelled
-  status      String   @default("open") @db.VarChar(20)
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  status     String   @default("open") @db.VarChar(20)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
 
   entries PayEntry[]
 
@@ -432,7 +494,7 @@ model PayConcept {
   /// PK autoincrement
   id           Int     @id @default(autoincrement())
   /// RLS
-  tenantId     String  @db.Uuid @map("tenant_id")
+  tenantId     String  @map("tenant_id") @db.Uuid
   /// Código del concepto en el sistema origen
   code         String  @db.VarChar(50)
   name         String  @db.VarChar(100)
@@ -453,7 +515,7 @@ model PayEntry {
   /// PK autoincrement
   id                  Int      @id @default(autoincrement())
   /// RLS
-  tenantId            String   @db.Uuid @map("tenant_id")
+  tenantId            String   @map("tenant_id") @db.Uuid
   periodId            Int      @map("period_id")
   personId            Int      @map("person_id")
   conceptId           Int      @map("concept_id")
@@ -480,17 +542,17 @@ model PayEntry {
 
 model IntTemplate {
   /// PK: slug único del template
-  code         String  @id @db.VarChar(50)
+  code         String   @id @db.VarChar(50)
   /// Nombre display del template
-  name         String  @db.VarChar(100)
+  name         String   @db.VarChar(100)
   /// file | api
-  category     String  @db.VarChar(20)
+  category     String   @db.VarChar(20)
   /// people | time | payroll | absenteeism
-  targetModel  String  @db.VarChar(40) @map("target_model")
+  targetModel  String   @map("target_model") @db.VarChar(40)
   /// JSON Schema para validar el campo config de IntTenantIntegration
-  configSchema Json?   @map("config_schema")
+  configSchema Json?    @map("config_schema")
   /// false = desactivado globalmente (no aparece en UI)
-  isActive     Boolean @default(true) @map("is_active")
+  isActive     Boolean  @default(true) @map("is_active")
   createdAt    DateTime @default(now()) @map("created_at")
 
   tenantIntegrations IntTenantIntegration[]
@@ -500,17 +562,17 @@ model IntTemplate {
 
 model IntTenantIntegration {
   /// PK autoincrement
-  id                      Int      @id @default(autoincrement())
+  id                      Int       @id @default(autoincrement())
   /// RLS
-  tenantId                String   @db.Uuid @map("tenant_id")
+  tenantId                String    @map("tenant_id") @db.Uuid
   /// Template que implementa esta integración
-  integrationTemplateCode String   @db.VarChar(50) @map("integration_template_code")
+  integrationTemplateCode String    @map("integration_template_code") @db.VarChar(50)
   /// Nombre amigable definido por el tenant
-  name                    String   @db.VarChar(100)
+  name                    String    @db.VarChar(100)
   /// active | paused | error
-  status                  String   @default("active") @db.VarChar(20)
+  status                  String    @default("active") @db.VarChar(20)
   /// Expresión cron. Null si solo manual
-  scheduleCron            String?  @db.VarChar(100) @map("schedule_cron")
+  scheduleCron            String?   @map("schedule_cron") @db.VarChar(100)
   /// Reglas de mapping, filtros y defaults. Validado contra IntTemplate.configSchema
   config                  Json
   /// Timestamp del último run iniciado (exitoso o no)
@@ -518,11 +580,11 @@ model IntTenantIntegration {
   /// Timestamp del último run completado sin errores fatales
   lastSuccessAt           DateTime? @map("last_success_at")
   /// false = integración desactivada por el tenant
-  isActive                Boolean  @default(true) @map("is_active")
-  createdAt               DateTime @default(now()) @map("created_at")
-  updatedAt               DateTime @updatedAt @map("updated_at")
+  isActive                Boolean   @default(true) @map("is_active")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
-  template    IntTemplate    @relation(fields: [integrationTemplateCode], references: [code])
+  template    IntTemplate     @relation(fields: [integrationTemplateCode], references: [code])
   runs        IntRun[]
   jobs        Job[]
   checkpoints JobCheckpoint[]
@@ -533,30 +595,30 @@ model IntTenantIntegration {
 
 model IntRun {
   /// PK autoincrement
-  id                    Int       @id @default(autoincrement())
+  id                  Int       @id @default(autoincrement())
   /// RLS — denormalizado para simplificar policy
-  tenantId              String    @db.Uuid @map("tenant_id")
+  tenantId            String    @map("tenant_id") @db.Uuid
   /// Integración que originó este run
-  tenantIntegrationId   Int       @map("tenant_integration_id")
+  tenantIntegrationId Int       @map("tenant_integration_id")
   /// running | success | partial | failed
-  status                String    @db.VarChar(20)
+  status              String    @db.VarChar(20)
   /// cron | manual | upload
-  triggerSource         String    @db.VarChar(20) @map("trigger_source")
+  triggerSource       String    @map("trigger_source") @db.VarChar(20)
   /// UUID del usuario que disparó el run, o null si fue automático
-  triggeredBy           String?   @db.VarChar(36) @map("triggered_by")
-  startedAt             DateTime  @map("started_at")
-  finishedAt            DateTime? @map("finished_at")
+  triggeredBy         String?   @map("triggered_by") @db.VarChar(36)
+  startedAt           DateTime  @map("started_at")
+  finishedAt          DateTime? @map("finished_at")
   /// Filas leídas de la fuente
-  rowsRead              Int       @default(0) @map("rows_read")
+  rowsRead            Int       @default(0) @map("rows_read")
   /// Filas persistidas exitosamente
-  rowsLoaded            Int       @default(0) @map("rows_loaded")
+  rowsLoaded          Int       @default(0) @map("rows_loaded")
   /// Filas descartadas por error
-  rowsError             Int       @default(0) @map("rows_error")
+  rowsError           Int       @default(0) @map("rows_error")
   /// Filas procesadas con advertencias
-  rowsWarning           Int       @default(0) @map("rows_warning")
+  rowsWarning         Int       @default(0) @map("rows_warning")
   /// Error fatal si status = failed
-  errorMessage          String?   @map("error_message")
-  createdAt             DateTime  @default(now()) @map("created_at")
+  errorMessage        String?   @map("error_message")
+  createdAt           DateTime  @default(now()) @map("created_at")
 
   tenantIntegration IntTenantIntegration @relation(fields: [tenantIntegrationId], references: [id])
   errors            IntRunError[]
@@ -570,14 +632,14 @@ model IntRunError {
   /// PK autoincrement
   id           Int      @id @default(autoincrement())
   /// RLS — denormalizado para simplificar policy
-  tenantId     String   @db.Uuid @map("tenant_id")
+  tenantId     String   @map("tenant_id") @db.Uuid
   runId        Int      @map("run_id")
   /// Posición de la fila en el archivo/respuesta. Null si no es error de fila
   rowIndex     Int?     @map("row_index")
   /// Datos crudos de la fila que falló
   rowData      Json?    @map("row_data")
   /// VALIDATION_ERROR | MAPPING_ERROR | RECONCILIATION_PENDING | etc.
-  errorCode    String   @db.VarChar(50) @map("error_code")
+  errorCode    String   @map("error_code") @db.VarChar(50)
   errorMessage String   @map("error_message")
   /// error | warning
   severity     String   @default("error") @db.VarChar(10)
@@ -596,16 +658,16 @@ model IntRunError {
 
 model Job {
   id              Int       @id @default(autoincrement())
-  tenantId        String    @db.Uuid @map("tenant_id")
+  tenantId        String    @map("tenant_id") @db.Uuid
   /// FK a int_tenant_integrations — null para jobs sin integración asociada (ej: hello_world)
   integrationId   Int?      @map("integration_id")
   /// Tipo de job: hello_world | sync_people | sync_time | etc.
-  jobType         String    @db.VarChar(50) @map("job_type")
+  jobType         String    @map("job_type") @db.VarChar(50)
   /// pending | running | completed | failed | retry_scheduled | cancelled
   status          String    @default("pending") @db.VarChar(20)
   priority        Int       @default(0)
   /// Clave única por ejecución lógica — evita duplicados si el scheduler corre dos veces
-  runKey          String?   @db.VarChar(200) @map("run_key")
+  runKey          String?   @map("run_key") @db.VarChar(200)
   payload         Json      @default("{}")
   result          Json?
   scheduledAt     DateTime  @default(now()) @map("scheduled_at")
@@ -615,14 +677,14 @@ model Job {
   maxAttempts     Int       @default(3) @map("max_attempts")
   nextRetryAt     DateTime? @map("next_retry_at")
   lockedAt        DateTime? @map("locked_at")
-  lockedBy        String?   @db.VarChar(100) @map("locked_by")
+  lockedBy        String?   @map("locked_by") @db.VarChar(100)
   heartbeatAt     DateTime? @map("heartbeat_at")
   progressCurrent Int       @default(0) @map("progress_current")
   progressTotal   Int       @default(0) @map("progress_total")
   progressMessage String?   @map("progress_message")
   lastError       String?   @map("last_error")
-  lastErrorCode   String?   @db.VarChar(50) @map("last_error_code")
-  createdBy       String?   @db.VarChar(36) @map("created_by")
+  lastErrorCode   String?   @map("last_error_code") @db.VarChar(50)
+  createdBy       String?   @map("created_by") @db.VarChar(36)
   createdAt       DateTime  @default(now()) @map("created_at")
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
@@ -639,8 +701,8 @@ model Job {
 model JobRun {
   id             Int       @id @default(autoincrement())
   jobId          Int       @map("job_id")
-  tenantId       String    @db.Uuid @map("tenant_id")
-  workerId       String    @db.VarChar(100) @map("worker_id")
+  tenantId       String    @map("tenant_id") @db.Uuid
+  workerId       String    @map("worker_id") @db.VarChar(100)
   /// running | completed | failed | cancelled | timeout | worker_shutdown
   status         String    @db.VarChar(20)
   startedAt      DateTime  @default(now()) @map("started_at")
@@ -651,7 +713,7 @@ model JobRun {
   failedCount    Int       @default(0) @map("failed_count")
   skippedCount   Int       @default(0) @map("skipped_count")
   errorMessage   String?   @map("error_message")
-  errorCode      String?   @db.VarChar(50) @map("error_code")
+  errorCode      String?   @map("error_code") @db.VarChar(50)
   metadata       Json      @default("{}")
   createdAt      DateTime  @default(now()) @map("created_at")
 
@@ -667,9 +729,9 @@ model JobEvent {
   id        Int      @id @default(autoincrement())
   jobId     Int      @map("job_id")
   jobRunId  Int?     @map("job_run_id")
-  tenantId  String   @db.Uuid @map("tenant_id")
+  tenantId  String   @map("tenant_id") @db.Uuid
   /// job_created | job_claimed | job_started | job_completed | job_failed | retry_scheduled
-  eventType String   @db.VarChar(50) @map("event_type")
+  eventType String   @map("event_type") @db.VarChar(50)
   /// debug | info | warning | error | critical
   level     String   @default("info") @db.VarChar(10)
   message   String?
@@ -686,10 +748,10 @@ model JobEvent {
 
 model JobCheckpoint {
   id              Int       @id @default(autoincrement())
-  tenantId        String    @db.Uuid @map("tenant_id")
+  tenantId        String    @map("tenant_id") @db.Uuid
   integrationId   Int       @map("integration_id")
   /// last_external_id | last_updated_at | last_file_processed | last_page_token | etc.
-  checkpointType  String    @db.VarChar(50) @map("checkpoint_type")
+  checkpointType  String    @map("checkpoint_type") @db.VarChar(50)
   checkpointValue String?   @map("checkpoint_value")
   checkpointData  Json      @default("{}") @map("checkpoint_data")
   lastSuccessAt   DateTime? @map("last_success_at")
@@ -709,8 +771,8 @@ model JobCheckpoint {
 // =============================================================================
 model AuditLog {
   id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId   String   @db.Uuid @map("tenant_id")
-  userId     String?  @db.Uuid @map("user_id")
+  tenantId   String   @map("tenant_id") @db.Uuid
+  userId     String?  @map("user_id") @db.Uuid
   action     String
   entityType String?  @map("entity_type")
   entityId   String?  @map("entity_id")

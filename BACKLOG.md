@@ -246,7 +246,7 @@
 - [x] Template `file_time_attendance`: parser → upsert a `time_daily`
 - [x] Template `file_absenteeism`: parser → upsert a `absenteeism_events`
 - [x] Template `file_payroll`: parser → upsert a `payroll_*`
-- [ ] Job mensual de snapshot `people_history`
+- [x] Job mensual de snapshot `people_history` (verificación horaria en el worker, ver M3 · Etapa 3)
 
 ---
 
@@ -271,9 +271,15 @@
 
 > **Metodología:** un dashboard a la vez, guiado por la skill `dashboard-ux`. Se cierra y ajusta el primero antes de diseñar el siguiente, aplicando lo aprendido.
 
+> **Prerrequisito de datos reales (reestructura de unidades organizativas):**
+> - [x] Etapa 1 — Modelo: asignaciones con vigencia, catálogo de 15 tipos, Contrato como unidad, dimensiones configurables por tenant (CMP), script de limpieza `db:cleanup:tenant`
+> - [x] Etapa 2 — Archivos: archivo de Personas con dimensiones, baja y motivo + validaciones; nuevo template `file_org_history`; ejemplos regenerados (`jobs/worker/scripts/generate-examples.ts`)
+> - [x] Etapa 3 — Snapshots: reconstrucción en el worker tras cargar Personas/Historial + verificación horaria del cierre mensual (`jobs/worker/src/snapshots/`)
+> - [ ] Etapa 4 — Dashboard Headcount lee sus dimensiones de `dsh_dimensions`; eliminar `hr_people.contract_type`
+> - Las Etapas 1-3 se despliegan juntas (Vercel + `fly deploy`); luego `db:seed:prod-catalog` y limpieza de datos de prueba en producción antes de recargar los archivos nuevos
+
 - [x] Dashboard 1: **Headcount / Cubo** (KPIs, drill-down por área/sede/contrato con breadcrumb, filtros, exportación Excel y PDF paginado)
   - [ ] Pendiente al cierre: notas de ajustes, documentación del módulo (GENERATE_DOCS) y revisión de la skill `dashboard-ux`
-  - [ ] Pendiente: job mensual real de snapshots (hoy solo el seed demo de dev los genera) — ver M2
   - [ ] Pendiente: correr `db:seed:prod-catalog` tras el deploy (motivos de baja)
 - [ ] Dashboard 2: **Ausentismos** (tasa, tipos, tendencia, ranking)
 - [ ] Dashboard 3: **Horas extras** (total, distribución, alertas)

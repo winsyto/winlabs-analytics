@@ -200,6 +200,11 @@
 | D-103 | Sidebar default state: **colapsado** (alineado con AI-GEO-platform) | ✅ Cerrada |
 | D-104 | Forms de CRUD en `<Dialog>` (modal central); `<Sheet>` no se usa para CRUDs estándar | ✅ Cerrada |
 | D-105 | Auditoría también captura invocaciones del agente LLM (actor_type='agent', ai_session_id en context) | ✅ Cerrada |
+| D-106 | Catálogo global de 15 tipos de unidad organizativa (Empresa, Sucursal, Área, Puesto, Contrato, Departamento, Centro de costos, Gerencia, Categoría, Turno, Sindicato, Convenio, Forma de liquidación, Agencia, ART); cada tenant habilita los que usa (`cfg_tenant_org_unit_types`) | ✅ Cerrada |
+| D-107 | `hr_people_org_assignments` es la fuente de verdad de la historia de unidades organizativas: asignaciones con vigencia (`valid_from` obligatoria, `valid_to` opcional), una por persona y tipo en cada momento (restricción de exclusión); multipuesto fuera de alcance. `hr_people_history` pasa a ser caché mensual derivado. Resuelve Open-14 | ✅ Cerrada |
+| D-108 | Contrato es una unidad organizativa (tipo `CONTRACT`); `hr_people.contract_type` queda como columna transitoria hasta migrar el dashboard a dimensiones configurables | ✅ Cerrada |
+| D-109 | Dimensiones de dashboard configurables por tenant y dashboard (`dsh_dimensions`); defaults del headcount: Empresa, Sucursal, Área, Puesto, Contrato; se administran desde el CMP. Son columnas obligatorias del archivo de Personas | ✅ Cerrada |
+| D-110 | Contrato del archivo de Personas: las dimensiones del tenant son columnas obligatorias (`<tipo>_code`, `<tipo>_name` opcional); `inactive` exige `termination_date` y `termination_reason_code` (catálogo); fecha de efecto de una unidad nueva = `hire_date`; un cambio detectado en una re-carga cierra el período anterior el día previo y abre el nuevo en la fecha de carga. El archivo de **historial de unidades** (`file_org_history`) reemplaza por persona y tipo y fija las fechas exactas | ✅ Cerrada |
 
 ---
 
@@ -222,7 +227,7 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Open-11 | **Segundo vertical post-People**: Finance vs CRM vs Ventas | Al cerrar v1.x con feedback de mercado |
 | Open-12 | **Política de retención `sec_audit_log`** | Al firmar el primer contrato |
 | Open-13 | **DNS provider**: Cloudflare (gratis, recomendado) vs otros | Cuando se compre/use el dominio |
-| Open-14 | **Mejora a SCD2** para campos críticos de people (D-040 fallback) | Solo si snapshot mensual queda corto |
+| Open-14 | ~~**Mejora a SCD2** para campos críticos de people (D-040 fallback)~~ → resuelta para unidades organizativas con D-107 | ✅ Resuelta (alcance: unidades organizativas) |
 | Open-15 | **Programa de partners / implementadores** (v2.x+) | Al cerrar v1.x |
 | Open-16 | **T0 efectivo** (fecha real de arranque) | Cuando Winsy decida arrancar |
 
@@ -233,3 +238,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Fecha | Cambio |
 |---|---|
 | 2026-05-19 | Versión inicial. D-001 a D-105 cerradas durante el diseño de Fases 1-7. |
+| 2026-10-13 | D-106 a D-110: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |

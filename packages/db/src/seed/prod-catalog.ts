@@ -7,27 +7,20 @@
  */
 import { PrismaClient } from "@prisma/client";
 import { TERMINATION_REASONS } from "./termination-reasons";
+import { ORG_UNIT_TYPES } from "../org-config";
 
 const prisma = new PrismaClient();
 
 async function main() {
   // ── cfg_org_unit_types ───────────────────────────────────────────────────
-  const orgUnitTypes = [
-    { code: "AREA",        name: "Área",              description: "Unidad funcional o departamento" },
-    { code: "DEPARTMENT",  name: "Departamento",      description: "Subdivisión de un área" },
-    { code: "POSITION",    name: "Posición / Cargo",  description: "Rol o puesto dentro de la estructura" },
-    { code: "LOCATION",    name: "Sede / Sucursal",   description: "Ubicación física" },
-    { code: "COST_CENTER", name: "Centro de costos",  description: "Unidad de imputación contable" },
-  ];
-
-  for (const t of orgUnitTypes) {
+  for (const t of ORG_UNIT_TYPES) {
     await prisma.cfgOrgUnitType.upsert({
       where:  { code: t.code },
-      update: { name: t.name, description: t.description, isActive: true },
+      update: { name: t.name, description: t.description, sortOrder: t.sortOrder, isActive: true },
       create: { ...t, isActive: true },
     });
   }
-  console.log(`✓ cfg_org_unit_types: ${orgUnitTypes.length} registros`);
+  console.log(`✓ cfg_org_unit_types: ${ORG_UNIT_TYPES.length} registros`);
 
   // ── cfg_time_entry_types ─────────────────────────────────────────────────
   const timeEntryTypes = [
@@ -65,6 +58,7 @@ async function main() {
     { code: "file_time",            name: "Archivo: Asistencia",                  category: "file", targetModel: "time" },
     { code: "file_absenteeism",     name: "Archivo: Ausentismo",                  category: "file", targetModel: "absenteeism" },
     { code: "file_payroll",         name: "Archivo: Liquidaciones",               category: "file", targetModel: "payroll" },
+    { code: "file_org_history", name: "Archivo: Historial de unidades organizativas", category: "file", targetModel: "org_history" },
     { code: "api_mandu_visma_hr",   name: "API Mandú/Visma (HR)",                 category: "api",  targetModel: "people" },
     { code: "api_mandu_visma_full", name: "API Mandú/Visma (HR + Liquidaciones)", category: "api",  targetModel: "people_payroll" },
     { code: "api_geovictoria",      name: "API Geovictoria (T&A)",                category: "api",  targetModel: "time" },

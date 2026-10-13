@@ -10,7 +10,17 @@ type Tx = Prisma.TransactionClient;
 
 type OuDef = { code: string; name: string; w: number };
 
-const OU_DEFS: Record<"AREA" | "LOCATION" | "POSITION", readonly OuDef[]> = {
+const OU_DEFS: Record<"COMPANY" | "AREA" | "LOCATION" | "POSITION" | "CONTRACT", readonly OuDef[]> = {
+  COMPANY: [
+    { code: "CIA-SA", name: "Acme S.A.", w: 70 },
+    { code: "CIA-SERV", name: "Acme Servicios S.R.L.", w: 30 },
+  ],
+  CONTRACT: [
+    { code: "indefinido", name: "Indefinido", w: 70 },
+    { code: "plazo_fijo", name: "Plazo fijo", w: 15 },
+    { code: "temporal", name: "Temporal", w: 10 },
+    { code: "contractor", name: "Contratista", w: 5 },
+  ],
   AREA: [
     { code: "AREA-OPS", name: "Operaciones", w: 30 },
     { code: "AREA-VTA", name: "Ventas", w: 25 },
@@ -165,15 +175,31 @@ export async function seedDemoPeople(tx: Tx, tenantId: string): Promise<void> {
     });
     personIds.push(person.id);
 
-    for (const type of ["AREA", "LOCATION", "POSITION"] as const) {
-      const def = pick(OU_DEFS[type]);
-      const orgUnitId = unitIds[type]![def.code]!;
-      await tx.hrPeopleOrgAssignment.deleteMany({
-        where: { tenantId, personId: person.id, orgUnit: { orgUnitTypeCode: type } },
+    // Asignaciones con vigencia: se recrean completas para que el seed sea idempotente
+    await tx.hrPeopleOrgAssignment.deleteMany({ where: { tenantId, personId: person.id } });
+    const from = plan.hire;
+    const to = terminationDate;
+    const assign = (type: string, orgUnitId: number, validFrom: Date, validTo: Date | null) =>
+      tx.hrPeopleOrgAssignment.create({
+        data: { tenantId, personId: person.id, orgUnitId, orgUnitTypeCode: type, validFrom, validTo },
       });
-      await tx.hrPeopleOrgAssignment.create({
-        data: { tenantId, personId: person.id, orgUnitId, isPrimary: true },
-      });
+
+    for (const type of ["COMPANY", "LOCATION", "POSITION"] as const) {
+      await assign(type, unitIds[type]![pick(OU_DEFS[type]).code]!, from, to);
+    }
+    await assign("CONTRACT", unitIds.CONTRACT![contract]!, from, to);
+
+    // Área: ~15% cambió de área una vez (genera historia real de unidades)
+    const areaDef = pick(OU_DEFS.AREA);
+    const horizonEnd = to ?? windowEnd;
+    const canChange = horizonEnd.getTime() - from.getTime() > 400 * 86400000 && rnd() < 0.15;
+    if (canChange) {
+      const prevDef = pick(OU_DEFS.AREA.filter((d) => d.code !== areaDef.code));
+      const changeAt = between(new Date(from.getTime() + 180 * 86400000), new Date(horizonEnd.getTime() - 60 * 86400000));
+      await assign("AREA", unitIds.AREA![prevDef.code]!, from, new Date(changeAt.getTime() - 86400000));
+      await assign("AREA", unitIds.AREA![areaDef.code]!, changeAt, to);
+    } else {
+      await assign("AREA", unitIds.AREA![areaDef.code]!, from, to);
     }
   }
 

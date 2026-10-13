@@ -7,6 +7,7 @@ import { ChevronRight, Users } from "lucide-react";
 import { TenantModulesCard } from "./_components/tenant-modules-card";
 import { TenantActionsHeader } from "./_components/tenant-actions-header";
 import { TenantInfoCard } from "./_components/tenant-info-card";
+import { TenantOrgConfigCard } from "./_components/tenant-org-config-card";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +18,29 @@ const MODULES = [
 ] as const;
 
 export type DataModule = typeof MODULES[number];
+
+async function getOrgConfig(tenantId: string) {
+  const [allTypes, tenantTypes, dims] = await withTenantContext(tenantId, (tx) =>
+    Promise.all([
+      tx.cfgOrgUnitType.findMany({ orderBy: { sortOrder: "asc" } }),
+      tx.cfgTenantOrgUnitType.findMany({ where: { tenantId } }),
+      tx.dshDimension.findMany({
+        where: { tenantId, dashboardCode: "headcount" },
+        orderBy: { sortOrder: "asc" },
+      }),
+    ])
+  );
+  const enabled = new Map(tenantTypes.map((t) => [t.orgUnitTypeCode, t.isEnabled]));
+  return {
+    types: allTypes.map((t) => ({
+      code: t.code,
+      name: t.name,
+      description: t.description,
+      enabled: enabled.get(t.code) ?? false,
+    })),
+    headcountDimensions: dims.map((d) => d.orgUnitTypeCode),
+  };
+}
 
 async function getTenant(tenantId: string) {
   const [tenant, userCount, integrationCount] = await Promise.all([
@@ -32,7 +56,7 @@ async function getTenant(tenantId: string) {
       },
     }),
     withTenantContext(tenantId, (tx) => tx.user.count({ where: { tenantId } })),
-    prisma.intTenantIntegration.count({ where: { tenantId, isActive: true } }),
+    withTenantContext(tenantId, (tx) => tx.intTenantIntegration.count({ where: { tenantId, isActive: true } })),
   ]);
   if (!tenant) return null;
   return { ...tenant, userCount, integrationCount };
@@ -44,7 +68,7 @@ export default async function TenantDetailPage({
   params: Promise<{ tenantId: string }>;
 }) {
   const { tenantId } = await params;
-  const tenant = await getTenant(tenantId);
+  const [tenant, orgConfig] = await Promise.all([getTenant(tenantId), getOrgConfig(tenantId)]);
   if (!tenant) notFound();
 
   return (
@@ -85,6 +109,12 @@ export default async function TenantDetailPage({
           modules={MODULES}
         />
       </div>
+
+      <TenantOrgConfigCard
+        tenantId={tenant.id}
+        types={orgConfig.types}
+        headcountDimensions={orgConfig.headcountDimensions}
+      />
 
       <div className="rounded-xl border bg-card p-5">
         <div className="flex items-center justify-between mb-3">

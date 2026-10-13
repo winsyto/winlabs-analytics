@@ -4,6 +4,7 @@ import { handleFilePeople } from "./filePeople/index.js";
 import { handleFileTimeAttendance } from "./fileTimeAttendance/index.js";
 import { handleFileAbsenteeism } from "./fileAbsenteeism/index.js";
 import { handleFilePayroll } from "./filePayroll/index.js";
+import { handleFileOrgHistory } from "./fileOrgHistory/index.js";
 
 export const handlers: Record<string, JobHandler> = {
   hello_world: handleHelloWorld,
@@ -11,4 +12,5 @@ export const handlers: Record<string, JobHandler> = {
   file_time_attendance: handleFileTimeAttendance,
   file_absenteeism: handleFileAbsenteeism,
   file_payroll: handleFilePayroll,
+  file_org_history: handleFileOrgHistory,
 };

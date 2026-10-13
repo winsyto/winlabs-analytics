@@ -13,29 +13,6 @@ interface TemplateSpec {
 }
 
 const TEMPLATE_SPECS: Record<string, TemplateSpec> = {
-  file_people: {
-    label: "Personas",
-    exampleFile: "/examples/file_people.xlsx",
-    columns: [
-      { name: "employee_code", required: true,  description: "Código único del empleado" },
-      { name: "full_name",     required: true,  description: "Nombre y apellido" },
-      { name: "hire_date",     required: true,  description: "Fecha de ingreso (YYYY-MM-DD o DD/MM/YYYY)" },
-      { name: "status",        required: true,  description: "active | inactive | terminated" },
-      { name: "email",         required: false, description: "Email corporativo" },
-      { name: "birth_date",    required: false, description: "Fecha de nacimiento" },
-      { name: "gender",        required: false, description: "M | F | X" },
-      { name: "document_type", required: false, description: "DNI | CUIT | PASAPORTE" },
-      { name: "document_number", required: false, description: "Número de documento" },
-      { name: "contract_type", required: false, description: "full_time | part_time | contractor" },
-      { name: "area_code",     required: false, description: "Código del área" },
-      { name: "area_name",     required: false, description: "Nombre del área" },
-      { name: "position_code", required: false, description: "Código del puesto" },
-      { name: "position_name", required: false, description: "Nombre del puesto" },
-      { name: "location_code", required: false, description: "Código de la sede/ubicación" },
-      { name: "location_name", required: false, description: "Nombre de la sede/ubicación" },
-      { name: "manager_code",  required: false, description: "employee_code del jefe directo" },
-    ],
-  },
   file_time: {
     label: "Asistencia",
     exampleFile: "/examples/file_time.xlsx",
@@ -80,12 +57,86 @@ const TEMPLATE_SPECS: Record<string, TemplateSpec> = {
   },
 };
 
-interface TemplateInfoProps {
-  templateCode: string;
+export interface OrgTypeInfo {
+  code: string;
+  name: string;
+  /** true = es dimensión de algún dashboard del tenant (columna obligatoria) */
+  required: boolean;
 }
 
-export function TemplateInfo({ templateCode }: TemplateInfoProps) {
-  const spec = TEMPLATE_SPECS[templateCode];
+interface TemplateInfoProps {
+  templateCode: string;
+  orgTypes: OrgTypeInfo[];
+  terminationReasonCodes: string[];
+}
+
+function buildPeopleSpec(orgTypes: OrgTypeInfo[], reasons: string[]): TemplateSpec {
+  const unitColumns: ColumnDef[] = orgTypes.flatMap((t) => {
+    const key = t.code.toLowerCase();
+    return [
+      {
+        name: `${key}_code`,
+        required: t.required,
+        description: `Código de ${t.name}${t.required ? " (dimensión del dashboard)" : ""}`,
+      },
+      { name: `${key}_name`, required: false, description: `Nombre de ${t.name} (si no se informa se usa el código)` },
+    ];
+  });
+  return {
+    label: "Personas",
+    exampleFile: "/examples/file_people.xlsx",
+    columns: [
+      { name: "employee_code", required: true, description: "Código único del empleado" },
+      { name: "full_name", required: true, description: "Nombre y apellido" },
+      { name: "hire_date", required: true, description: "Fecha de ingreso (YYYY-MM-DD o DD/MM/YYYY)" },
+      { name: "status", required: true, description: "active | inactive | on_leave" },
+      {
+        name: "termination_date",
+        required: false,
+        description: "Fecha de baja. Obligatoria si status = inactive; no puede ser anterior al ingreso",
+      },
+      {
+        name: "termination_reason_code",
+        required: false,
+        description: `Motivo de baja. Obligatorio si status = inactive. Valores: ${reasons.join(" | ") || "ver catálogo"}`,
+      },
+      { name: "email", required: false, description: "Email corporativo" },
+      { name: "birth_date", required: false, description: "Fecha de nacimiento" },
+      { name: "gender", required: false, description: "M | F | X" },
+      { name: "document_type", required: false, description: "DNI | CUIT | PASAPORTE" },
+      { name: "document_number", required: false, description: "Número de documento" },
+      { name: "manager_code", required: false, description: "employee_code del jefe directo" },
+      ...unitColumns,
+    ],
+  };
+}
+
+function buildOrgHistorySpec(orgTypes: OrgTypeInfo[]): TemplateSpec {
+  return {
+    label: "Historial de unidades organizativas",
+    exampleFile: "/examples/file_org_history.xlsx",
+    columns: [
+      { name: "employee_code", required: true, description: "Código del empleado (debe existir: cargar antes el archivo de Personas)" },
+      {
+        name: "org_unit_type",
+        required: true,
+        description: `Tipo de unidad. Habilitados: ${orgTypes.map((t) => t.code).join(" | ")}`,
+      },
+      { name: "org_unit_code", required: true, description: "Código de la unidad (se crea si no existe)" },
+      { name: "org_unit_name", required: false, description: "Nombre de la unidad (si no se informa se usa el código)" },
+      { name: "valid_from", required: true, description: "Inicio de vigencia (YYYY-MM-DD o DD/MM/YYYY)" },
+      { name: "valid_to", required: false, description: "Fin de vigencia inclusive. Vacío = vigente; solo el último período puede estar abierto" },
+    ],
+  };
+}
+
+export function TemplateInfo({ templateCode, orgTypes, terminationReasonCodes }: TemplateInfoProps) {
+  const spec =
+    templateCode === "file_people"
+      ? buildPeopleSpec(orgTypes, terminationReasonCodes)
+      : templateCode === "file_org_history"
+        ? buildOrgHistorySpec(orgTypes)
+        : TEMPLATE_SPECS[templateCode];
   if (!spec) return null;
 
   return (
@@ -113,6 +164,18 @@ export function TemplateInfo({ templateCode }: TemplateInfoProps) {
           </div>
         ))}
       </div>
+
+      {templateCode === "file_org_history" && (
+        <p className="text-xs text-muted-foreground">
+          Para cada persona y tipo, el historial del archivo reemplaza al existente. Los períodos no pueden solaparse.
+        </p>
+      )}
+      {templateCode === "file_people" && (
+        <p className="text-xs text-muted-foreground">
+          Las columnas de unidades organizativas obligatorias dependen de las dimensiones configuradas para tu empresa.
+          Cada fila con error se informa y no se carga; el resto del archivo sí.
+        </p>
+      )}
     </div>
   );
 }

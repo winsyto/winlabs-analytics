@@ -69,10 +69,12 @@ const CONTRACT_LABELS: Record<string, string> = {
 };
 const GENDER_LABELS: Record<string, string> = { F: "Femenino", M: "Masculino", X: "No binario / otro", no_decl: "No declarado" };
 
+// Última asignación (por vigencia) de cada tipo de unidad organizativa
 const orgUnitName = (type: string) =>
-  Prisma.sql`(SELECT string_agg(ou.name, ', ' ORDER BY ou.name)
+  Prisma.sql`(SELECT ou.name
     FROM hr_people_org_assignments a JOIN hr_org_units ou ON ou.id = a.org_unit_id
-    WHERE a.person_id = p.id AND ou.org_unit_type_code = ${type})`;
+    WHERE a.person_id = p.id AND a.org_unit_type_code = ${type}
+    ORDER BY a.valid_from DESC LIMIT 1)`;
 
 export async function loadDetail(
   tenantId: string,

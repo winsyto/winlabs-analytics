@@ -6,15 +6,23 @@ export interface BaseConfig {
   hasHeader?: boolean;
 }
 
+function isRealDate(y: string, m: string, d: string): boolean {
+  const year = Number(y), month = Number(m), day = Number(d);
+  const dt = new Date(Date.UTC(year, month - 1, day));
+  return dt.getUTCFullYear() === year && dt.getUTCMonth() === month - 1 && dt.getUTCDate() === day;
+}
+
 export function parseDate(value: string): string | null {
   if (!value || value.trim() === "") return null;
   const v = value.trim();
 
-  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+    return isRealDate(v.slice(0, 4), v.slice(5, 7), v.slice(8, 10)) ? v : null;
+  }
 
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(v)) {
-    const [d, m, y] = v.split("/");
-    return `${y}-${m}-${d}`;
+    const [d, m, y] = v.split("/") as [string, string, string];
+    return isRealDate(y, m, d) ? `${y}-${m}-${d}` : null;
   }
 
   const d = new Date(v);

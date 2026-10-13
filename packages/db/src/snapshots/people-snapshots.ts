@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 
 /**
  * Reconstruye los snapshots mensuales de hr_people_history para un rango de meses.
+ * Las unidades organizativas se toman de las asignaciones vigentes a fin de mes (hr_people_org_assignments).
  * Cada snapshot representa el estado al CIERRE del mes (snapshot_date = primer día del mes):
  * incluye solo personas con ingreso <= fin de mes y sin egreso anterior o igual a esa fecha.
  * Debe ejecutarse dentro de withTenantContext.
@@ -20,7 +21,7 @@ export async function rebuildPeopleSnapshots(
   return tx.$executeRaw`
     INSERT INTO hr_people_history (
       tenant_id, snapshot_date, person_id, employee_code, status,
-      org_assignments_snapshot, manager_id, salary_band, tenure_months
+      org_assignments_snapshot, manager_id, salary_band, tenure_months, custom_fields_snapshot
     )
     SELECT
       p.tenant_id,
@@ -30,20 +31,21 @@ export async function rebuildPeopleSnapshots(
       'active',
       (
         SELECT COALESCE(jsonb_agg(jsonb_build_object(
-          'orgUnitId', ou.id,
-          'orgUnitTypeCode', ou.org_unit_type_code,
-          'isPrimary', a.is_primary
+          'orgUnitId', a.org_unit_id,
+          'orgUnitTypeCode', a.org_unit_type_code
         )), '[]'::jsonb)
         FROM hr_people_org_assignments a
-        JOIN hr_org_units ou ON ou.id = a.org_unit_id
         WHERE a.person_id = p.id
+          AND a.valid_from <= (m.month_start + interval '1 month - 1 day')::date
+          AND (a.valid_to IS NULL OR a.valid_to >= (m.month_start + interval '1 month - 1 day')::date)
       ),
       p.manager_id,
       p.salary_band,
       (
         EXTRACT(YEAR FROM age((m.month_start + interval '1 month - 1 day')::date, p.hire_date)) * 12
         + EXTRACT(MONTH FROM age((m.month_start + interval '1 month - 1 day')::date, p.hire_date))
-      )::int
+      )::int,
+      '{"source":"reconstructed"}'::jsonb
     FROM generate_series(${fromMonth}::date, ${toMonth}::date, interval '1 month') AS m(month_start)
     JOIN hr_people p
       ON p.tenant_id = ${tenantId}::uuid

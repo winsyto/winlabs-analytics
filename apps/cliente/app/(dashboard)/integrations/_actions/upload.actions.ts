@@ -122,6 +122,7 @@ export async function confirmUploadAction(
     file_time: "file_time_attendance",
     file_absenteeism: "file_absenteeism",
     file_payroll: "file_payroll",
+    file_org_history: "file_org_history",
   };
   const jobType = JOB_TYPE_MAP[integration.integrationTemplateCode];
   if (!jobType) return { error: `Template ${integration.integrationTemplateCode} no soportado` };

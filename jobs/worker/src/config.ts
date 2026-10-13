@@ -9,6 +9,8 @@ export const config = {
   workerId: process.env.WORKER_ID ?? `worker-${process.pid}`,
   schedulerEnabled: process.env.SCHEDULER_ENABLED !== "false",
   processorEnabled: process.env.PROCESSOR_ENABLED !== "false",
+  snapshotsEnabled: process.env.SNAPSHOTS_ENABLED !== "false",
+  snapshotsIntervalMs: Number(process.env.SNAPSHOTS_INTERVAL_SECONDS ?? 3600) * 1000,
   schedulerIntervalMs: Number(process.env.SCHEDULER_INTERVAL_SECONDS ?? 60) * 1000,
   processorPollMs: Number(process.env.PROCESSOR_POLL_INTERVAL_SECONDS ?? 10) * 1000,
   heartbeatIntervalMs: Number(process.env.JOB_HEARTBEAT_SECONDS ?? 30) * 1000,

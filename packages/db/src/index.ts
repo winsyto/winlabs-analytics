@@ -1,5 +1,12 @@
 export { prisma } from "./client";
 export { Prisma } from "@prisma/client";
+export {
+  ORG_UNIT_TYPES,
+  DEFAULT_DIMENSION_TYPES,
+  DASHBOARD_CODES,
+  applyDefaultOrgConfig,
+} from "./org-config";
+export type { DashboardCode } from "./org-config";
 export type {
   Tenant,
   InternalUser,
@@ -18,6 +25,8 @@ export type {
   HrPeopleHistory,
   // M1 — Config por tenant
   CfgAbsenteeismType,
+  CfgTenantOrgUnitType,
+  DshDimension,
   // M1 — Time & Attendance
   AttTimeDaily,
   AttTimeDailyEntry,

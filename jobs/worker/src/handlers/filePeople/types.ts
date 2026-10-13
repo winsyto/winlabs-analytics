@@ -1,27 +1,34 @@
+export interface OrgUnitCell {
+  code: string;
+  name: string | null;
+}
+
+export type PersonStatus = "active" | "inactive" | "on_leave";
+
 // Modelo canónico de una fila de personas parseada
 export interface PersonRow {
   employee_code: string;
   full_name: string;
   hire_date: string;          // ISO date string "YYYY-MM-DD"
-  status: string;             // "active" | "inactive" | raw value del cliente
+  status: PersonStatus;
   email: string | null;
-  birth_date: string | null;  // ISO date string o null
+  birth_date: string | null;
   gender: string | null;
   document_type: string | null;
   document_number: string | null;
-  contract_type: string | null;
   manager_code: string | null;
-  area_code: string | null;
-  area_name: string | null;
-  position_code: string | null;
-  position_name: string | null;
+  termination_date: string | null;
+  termination_reason_code: string | null;
+  /** Unidades organizativas por tipo (AREA, LOCATION, CONTRACT, ...). Solo los tipos con código en la fila. */
+  org_units: Record<string, OrgUnitCell>;
+  /** Espejo transitorio del código de CONTRACT (hr_people.contract_type) hasta migrar el dashboard */
+  contract_type: string | null;
 }
 
 // Config almacenado en IntTenantIntegration.config
 export interface FilePeopleConfig {
-  // Mapeo columna_canónica → nombre_en_el_archivo
-  // Si una columna no está en el mapa, se asume que el nombre es el mismo
-  columnMapping?: Partial<Record<keyof PersonRow, string>>;
+  // Mapeo columna_canónica → nombre_en_el_archivo (ej: { area_code: "cod_area" })
+  columnMapping?: Record<string, string>;
   // Formato de fechas en el archivo (default: "YYYY-MM-DD")
   dateFormat?: string;
   // Separador para CSV (default: ",")
@@ -30,14 +37,17 @@ export interface FilePeopleConfig {
   hasHeader?: boolean;
 }
 
-export interface ParseResult {
-  rows: PersonRow[];
-  errors: ParseError[];
-}
-
 export interface ParseError {
   rowIndex: number;
+  employee_code?: string;
   field: string;
   message: string;
   rawValue?: string;
+}
+
+export interface ParseResult {
+  rows: PersonRow[];
+  errors: ParseError[];
+  /** Columnas del archivo ignoradas (tipo de unidad no habilitado o columna desconocida de unidad) */
+  warnings: string[];
 }

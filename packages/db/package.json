@@ -16,6 +16,8 @@
     "db:migrate:test": "dotenv -e .env.test -- prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/seed/index.ts",
+    "db:cleanup:tenant": "tsx src/scripts/cleanup-tenant-data.ts",
+    "db:cleanup:tenant:prod": "dotenv -e .env.production.local -- tsx src/scripts/cleanup-tenant-data.ts",
     "db:seed:demo-people": "tsx src/seed/demo-people-run.ts",
     "db:seed:prod-catalog": "dotenv -e .env.production.local -- tsx src/seed/prod-catalog.ts",
     "db:seed:test": "dotenv -e .env.test -- tsx src/seed/index.ts",

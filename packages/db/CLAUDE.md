@@ -26,8 +26,10 @@ Tablas M1 implementadas:
 - `cfg_time_entry_types` — sin RLS (catálogo global)
 - `hr_org_units` — RLS por tenant_id
 - `hr_people` — RLS por tenant_id
-- `hr_people_org_assignments` — RLS por tenant_id
-- `hr_people_history` — RLS por tenant_id
+- `hr_people_org_assignments` — RLS por tenant_id. Asignaciones con vigencia (`valid_from`/`valid_to`), una por persona y tipo en cada momento. Fuente de verdad de la historia de unidades organizativas
+- `cfg_tenant_org_unit_types` — RLS por tenant_id (tipos de unidad que usa cada tenant)
+- `dsh_dimensions` — RLS por tenant_id (dimensiones por dashboard y tenant)
+- `hr_people_history` — RLS por tenant_id (caché mensual derivado de las asignaciones con vigencia)
 - `cfg_absenteeism_types` — RLS por tenant_id
 - `att_time_daily` — RLS por tenant_id
 - `att_time_daily_entries` — RLS por tenant_id
@@ -63,3 +65,17 @@ pnpm --filter @wla/db test
 Corren contra `winlabs_analytics_test` (BD local separada).
 Crean sus propios datos y limpian al finalizar — son idempotentes.
 En CI usan un servicio Postgres en GitHub Actions.
+
+## Unidades organizativas
+
+- Catálogo global `cfg_org_unit_types` (15 tipos, `ORG_UNIT_TYPES` en `src/org-config.ts`). Cada tenant habilita los que usa y define las dimensiones de cada dashboard (se administra desde el CMP).
+- `applyDefaultOrgConfig(tx, tenantId)` crea la configuración por defecto de un tenant nuevo (se llama al crear el tenant).
+- La migración que agrega vigencias usa `NO FORCE ROW LEVEL SECURITY` temporal para hacer backfill entre tenants.
+
+## Limpieza de datos de un tenant
+
+```bash
+pnpm --filter @wla/db db:cleanup:tenant -- --tenant=acme            # simulación
+pnpm --filter @wla/db db:cleanup:tenant -- --tenant=acme --confirm  # ejecuta
+pnpm --filter @wla/db db:cleanup:tenant:prod -- --tenant=acme --confirm  # producción
+```
