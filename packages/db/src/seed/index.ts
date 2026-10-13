@@ -27,6 +27,8 @@
 
 import { PrismaClient, type Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { seedDemoPeople } from "./demo-people";
+import { TERMINATION_REASONS } from "./termination-reasons";
 
 const prisma = new PrismaClient();
 
@@ -219,6 +221,17 @@ async function main() {
       create: { ...t, isActive: true },
     });
   }
+
+  for (const t of TERMINATION_REASONS) {
+    await prisma.cfgTerminationReason.upsert({
+      where:  { code: t.code },
+      update: { name: t.name, category: t.category, isActive: true },
+      create: { ...t, isActive: true },
+    });
+  }
+
+  // 5b. Datos demo de People (solo dev) — acme; winlabs queda vacío para probar el estado empty
+  await withTenantContext(acme.id, (tx) => seedDemoPeople(tx, acme.id));
 
   // 6. Integration templates (catálogo global — sin RLS)
   // Eliminar template obsoleto reemplazado por api_mandu_visma_hr

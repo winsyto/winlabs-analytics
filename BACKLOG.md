@@ -258,9 +258,9 @@
 - [x] **T1** · CMP Tenants: botón inactivar/activar tenant (soft delete reversible)
 - [x] **T2** · CMP Tenants: eliminar tenant con hard delete + cascada + modal de confirmación (escribir slug)
 - [x] **DM1** · CMP Data Models: mover gestión de módulos activos dentro del detalle del tenant (eliminar página `/data-models` separada)
-- [ ] **DM2** · CMP Data Models: todos los módulos activos por default al crear un tenant
-- [ ] **I1** · CMP Integrations: botón activar/inactivar desde la tabla principal (la action ya existe)
-- [ ] **TP1** · CMP Templates: lista read-only de templates con toggle activar/inactivar (sin create/edit)
+- [x] **DM2** · CMP Data Models: todos los módulos activos por default al crear un tenant
+- [x] **I1** · CMP Integrations: botón activar/inactivar desde la tabla principal (la action ya existe)
+- [x] **TP1** · CMP Templates: lista read-only de templates con toggle activar/inactivar (sin create/edit)
 
 ---
 
@@ -269,12 +269,18 @@
 > **Objetivo:** 4 dashboards funcionando contra data real.
 > **Checkpoint:** cargo datos del cliente ancla y los 4 dashboards muestran info navegable.
 
-- [ ] Dashboard 1: **Headcount / Cubo** (KPIs, drill-down por área/posición/location)
+> **Metodología:** un dashboard a la vez, guiado por la skill `dashboard-ux`. Se cierra y ajusta el primero antes de diseñar el siguiente, aplicando lo aprendido.
+
+- [x] Dashboard 1: **Headcount / Cubo** (KPIs, drill-down por área/sede/contrato con breadcrumb, filtros, exportación Excel y PDF paginado)
+  - [ ] Pendiente al cierre: notas de ajustes, documentación del módulo (GENERATE_DOCS) y revisión de la skill `dashboard-ux`
+  - [ ] Pendiente: job mensual real de snapshots (hoy solo el seed demo de dev los genera) — ver M2
+  - [ ] Pendiente: correr `db:seed:prod-catalog` tras el deploy (motivos de baja)
 - [ ] Dashboard 2: **Ausentismos** (tasa, tipos, tendencia, ranking)
 - [ ] Dashboard 3: **Horas extras** (total, distribución, alertas)
 - [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
-- [ ] Filtros globales (período, área, location)
-- [ ] Exportación PDF básica
+- [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
+- [x] Exportación Excel y PDF paginado (Dashboard 1; reutilizable en los siguientes)
+- [ ] Benchmarks configurables por tenant (defaults Argentina: ausentismo 4% mensual, horas extra 10%, rotación 18% anual) — aplica desde el Dashboard 2
 
 ---
 

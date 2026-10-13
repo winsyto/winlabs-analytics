@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarNav } from "@wla/ui";
-import { BarChart3, FileSpreadsheet, LayoutDashboard, Settings, Users } from "lucide-react";
+import { BarChart3, FileSpreadsheet, LayoutDashboard, Settings, Users, UsersRound } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/headcount", label: "Headcount", icon: UsersRound },
   { href: "/integrations", label: "Integraciones", icon: FileSpreadsheet },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
   { href: "/team", label: "Equipo", icon: Users },

@@ -6,6 +6,7 @@
  * Uso: pnpm --filter @wla/db db:seed:prod-catalog
  */
 import { PrismaClient } from "@prisma/client";
+import { TERMINATION_REASONS } from "./termination-reasons";
 
 const prisma = new PrismaClient();
 
@@ -47,6 +48,16 @@ async function main() {
     });
   }
   console.log(`✓ cfg_time_entry_types: ${timeEntryTypes.length} registros`);
+
+  // ── cfg_termination_reasons ──────────────────────────────────────────────
+  for (const t of TERMINATION_REASONS) {
+    await prisma.cfgTerminationReason.upsert({
+      where:  { code: t.code },
+      update: { name: t.name, category: t.category, isActive: true },
+      create: { ...t, isActive: true },
+    });
+  }
+  console.log(`✓ cfg_termination_reasons: ${TERMINATION_REASONS.length} registros`);
 
   // ── int_templates ────────────────────────────────────────────────────────
   const templates = [

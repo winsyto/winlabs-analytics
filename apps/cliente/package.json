@@ -11,6 +11,7 @@
     "clean": "rm -rf .next"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.9.0",
     "@sentry/nextjs": "^9",
     "@wla/auth": "workspace:*",
     "@wla/db": "workspace:*",
@@ -18,12 +19,14 @@
     "@wla/storage": "workspace:*",
     "@wla/ui": "workspace:*",
     "bcryptjs": "^2.4.3",
+    "exceljs": "^4.4.0",
     "geist": "^1.7.1",
     "lucide-react": "^0.511.0",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.29",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "recharts": "^3.10.1",
     "zod": "^3.25.0"
   },
   "devDependencies": {
