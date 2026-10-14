@@ -1,14 +1,13 @@
 import type { HeadcountFilters } from "./filters";
 
-export type DetailScope = "activos" | "altas" | "bajas" | "area" | "sede" | "contrato";
+export type DetailScope = "activos" | "altas" | "bajas" | "dim";
 
 export function filtersQuery(f: HeadcountFilters): URLSearchParams {
   const p = new URLSearchParams();
   if (f.p !== "month") p.set("p", f.p);
-  if (f.area.length) p.set("area", f.area.join(","));
-  if (f.loc.length) p.set("loc", f.loc.join(","));
-  if (f.pos.length) p.set("pos", f.pos.join(","));
-  if (f.ct.length) p.set("ct", f.ct.join(","));
+  for (const [code, ids] of Object.entries(f.dims)) {
+    if (ids.length) p.set(`f_${code.toLowerCase()}`, ids.join(","));
+  }
   return p;
 }
 
@@ -19,7 +18,8 @@ const withQs = (path: string, qs: URLSearchParams) => {
 
 export const overviewHref = (f: HeadcountFilters) => withQs("/headcount", filtersQuery(f));
 
-export function detailHref(f: HeadcountFilters, scope: DetailScope, id?: string): string {
-  const path = `/headcount/${scope}${id ? `/${encodeURIComponent(id)}` : ""}`;
+/** /headcount/<scope>[/<segmento>...] conservando período y filtros. Para una dimensión: ("dim", slug, idUnidad | "none"). */
+export function detailHref(f: HeadcountFilters, scope: DetailScope, ...segments: string[]): string {
+  const path = `/headcount/${scope}${segments.map((s) => `/${encodeURIComponent(s)}`).join("")}`;
   return withQs(path, filtersQuery(f));
 }

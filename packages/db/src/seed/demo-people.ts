@@ -165,7 +165,6 @@ export async function seedDemoPeople(tx: Tx, tenantId: string): Promise<void> {
       terminationDate,
       terminationReasonCode: reasonCode,
       status: terminationDate ? "inactive" : "active",
-      contractType: contract,
       salaryBand: `B${1 + Math.floor(rnd() * 4)}`,
     };
     const person = await tx.hrPerson.upsert({

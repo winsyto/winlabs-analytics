@@ -41,10 +41,10 @@ async function upsertPerson(
   const result = await client.query<{ id: number; xmax: string }>(
     `INSERT INTO hr_people (
        tenant_id, employee_code, full_name, hire_date, termination_date, termination_reason_code, status,
-       email, birth_date, gender, document_type, document_number, contract_type, updated_at
+       email, birth_date, gender, document_type, document_number, updated_at
      ) VALUES (
        $1::uuid, $2::text, $3::text, $4::date, $5::date, $6::text, $7::text,
-       $8::text, $9::date, $10::text, $11::text, $12::text, $13::text, now()
+       $8::text, $9::date, $10::text, $11::text, $12::text, now()
      )
      ON CONFLICT (tenant_id, employee_code)
      DO UPDATE SET
@@ -58,7 +58,6 @@ async function upsertPerson(
        gender                  = EXCLUDED.gender,
        document_type           = EXCLUDED.document_type,
        document_number         = EXCLUDED.document_number,
-       contract_type           = EXCLUDED.contract_type,
        deleted_at              = NULL,
        updated_at              = now()
      RETURNING id, xmax::text`,
@@ -75,7 +74,6 @@ async function upsertPerson(
       row.gender,
       row.document_type,
       row.document_number,
-      row.contract_type,
     ]
   );
   const r = result.rows[0]!;
@@ -91,8 +89,8 @@ async function upsertPerson(
  *  - Unidad distinta: se cierra la vigente el día anterior y se abre la nueva hoy
  *    (si la vigente empezó hoy, se corrige en el lugar). Las fechas exactas se fijan
  *    con el archivo de historial de unidades.
- *  - Persona con baja cumplida: se cierran las asignaciones vigentes en la fecha de baja y
- *    no se detectan cambios.
+ *  - Persona con baja cumplida: el último período de cada tipo termina en la fecha de baja (se cierra el vigente
+ *    o se ajusta el cierre si la fecha de baja cambió) y no se detectan cambios de unidad.
  */
 function planAssignments(
   row: PersonRow,
@@ -114,6 +112,10 @@ function planAssignments(
       const end = row.termination_date!;
       if (open) ops.push({ kind: "close", id: open.id, to: later(open.valid_from, end) });
       else if (!last) ops.push({ kind: "insert", type, unitId, from: row.hire_date, to: later(row.hire_date, end) });
+      else if (last.valid_to !== later(last.valid_from, end)) {
+        // La fecha de baja cambió: el último período debe terminar en la nueva fecha
+        ops.push({ kind: "close", id: last.id, to: later(last.valid_from, end) });
+      }
       continue;
     }
 

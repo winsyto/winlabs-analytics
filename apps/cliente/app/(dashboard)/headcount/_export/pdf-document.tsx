@@ -2,7 +2,8 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import { fmtDate, fmtDec, fmtInt, fmtSigned, fmtTenure, monthLabel, monthShort } from "../../_dashboard-kit/format";
 import type { PersonRow } from "../_data/detail-queries";
 import type { DistItem } from "../_data/types";
-import { CONTRACT_LABELS, NOTES, type Report } from "./report";
+import { NOTES, type Report } from "./report";
+import type { Dimension } from "../_data/dimensions";
 
 const s = StyleSheet.create({
   page: { padding: 32, paddingBottom: 48, fontSize: 8.5, fontFamily: "Helvetica", color: "#111214" },
@@ -66,14 +67,11 @@ const distRows = (items: DistItem[]) => {
   return items.map((i) => [i.label, fmtInt(i.value), total ? `${fmtDec((i.value / total) * 100)}%` : "0,0%"]);
 };
 
-function peopleRows(rows: PersonRow[], withTermination: boolean) {
+function peopleRows(rows: PersonRow[], dims: Dimension[], withTermination: boolean) {
   return rows.map((r) => [
     r.name,
     r.code,
-    r.area ?? "-",
-    r.location ?? "-",
-    r.position ?? "-",
-    r.contract ? (CONTRACT_LABELS[r.contract] ?? r.contract) : "-",
+    ...dims.map((d) => r.units[d.code] ?? "-"),
     fmtDate(r.hireDate),
     ...(withTermination ? [fmtDate(r.terminationDate), r.reason ?? "-"] : []),
     fmtTenure(r.tenureMonths),
@@ -81,16 +79,17 @@ function peopleRows(rows: PersonRow[], withTermination: boolean) {
 }
 
 function PeoplePages({ report, title, rows, withTermination }: { report: Report; title: string; rows: PersonRow[]; withTermination: boolean }) {
-  const cols: Col[] = withTermination
-    ? [
-        { label: "Nombre", w: 15 }, { label: "Legajo", w: 8 }, { label: "Área", w: 11 }, { label: "Sede", w: 12 },
-        { label: "Cargo", w: 12 }, { label: "Contrato", w: 8 }, { label: "Ingreso", w: 8 }, { label: "Baja", w: 8 },
-        { label: "Motivo", w: 12 }, { label: "Antig.", w: 6, right: true },
-      ]
-    : [
-        { label: "Nombre", w: 19 }, { label: "Legajo", w: 9 }, { label: "Área", w: 14 }, { label: "Sede", w: 15 },
-        { label: "Cargo", w: 15 }, { label: "Contrato", w: 10 }, { label: "Ingreso", w: 10 }, { label: "Antig.", w: 8, right: true },
-      ];
+  const dims = report.dimensions;
+  const fixedWidth = withTermination ? 57 : 46; // Nombre, Legajo, Ingreso, (Baja, Motivo), Antig.
+  const dimWidth = dims.length ? (100 - fixedWidth) / dims.length : 0;
+  const cols: Col[] = [
+    { label: "Nombre", w: withTermination ? 15 : 19 },
+    { label: "Legajo", w: withTermination ? 8 : 9 },
+    ...dims.map((d) => ({ label: d.name, w: dimWidth })),
+    { label: "Ingreso", w: withTermination ? 8 : 10 },
+    ...(withTermination ? [{ label: "Baja", w: 8 }, { label: "Motivo", w: 12 }] : []),
+    { label: "Antig.", w: withTermination ? 6 : 8, right: true },
+  ];
   return (
     <Page size="A4" orientation="landscape" style={s.page}>
       <Text style={s.h2}>
@@ -99,7 +98,7 @@ function PeoplePages({ report, title, rows, withTermination }: { report: Report;
       {rows.length === 0 ? (
         <Text style={s.muted}>No hay personas para este listado con los filtros aplicados.</Text>
       ) : (
-        <Table cols={cols} rows={peopleRows(rows, withTermination)} fixedHeader />
+        <Table cols={cols} rows={peopleRows(rows, dims, withTermination)} fixedHeader />
       )}
       <Footer report={report} />
     </Page>
@@ -171,13 +170,7 @@ export function HeadcountPdf({ report }: { report: Report }) {
       <Page size="A4" style={s.page}>
         <Text style={s.h1}>Distribuciones</Text>
         <Text style={[s.muted, { marginBottom: 4 }]}>Cierre de {monthLabel(period.refMonth, "long")}</Text>
-        {(
-          [
-            ["Por área", overview.byArea],
-            ["Por sede", overview.byLocation],
-            ["Por tipo de contrato", overview.byContract],
-          ] as const
-        ).map(([title, items]) => (
+        {overview.dimensions.map((d) => ({ title: `Por ${d.name.toLowerCase()}`, items: d.items })).map(({ title, items }) => (
           <View key={title} wrap={false}>
             <Text style={s.h2}>{title}</Text>
             <Table

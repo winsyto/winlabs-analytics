@@ -27,6 +27,15 @@ export interface FilterOption {
   label: string;
 }
 
+/** Una dimensión del dashboard con su distribución al cierre y las unidades disponibles para filtrar. */
+export interface DimensionData {
+  code: string;
+  name: string;
+  slug: string;
+  items: DistItem[];
+  options: FilterOption[];
+}
+
 export interface Freshness {
   refMonth: string;
   firstMonth: string;
@@ -44,14 +53,6 @@ export type HeadcountData =
       filters: HeadcountFilters;
       kpis: { headcount: KpiValue; altas: KpiValue; bajas: KpiValue; neta: KpiValue };
       series: SeriesPoint[];
-      byArea: DistItem[];
-      byLocation: DistItem[];
-      byContract: DistItem[];
-      options: {
-        areas: FilterOption[];
-        locations: FilterOption[];
-        positions: FilterOption[];
-        contracts: FilterOption[];
-      };
+      dimensions: DimensionData[];
       freshness: Freshness;
     };

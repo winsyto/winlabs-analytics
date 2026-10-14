@@ -101,19 +101,6 @@ export async function upsertOrgHistory(
              AND p.termination_date >= a.valid_from`,
           [touched, today]
         );
-        // Espejo transitorio de contrato (hr_people.contract_type) mientras el dashboard no use dimensiones
-        await client.query(
-          `UPDATE hr_people p
-           SET contract_type = ou.code, updated_at = now()
-           FROM (
-             SELECT DISTINCT ON (a.person_id) a.person_id, o.code
-             FROM hr_people_org_assignments a JOIN hr_org_units o ON o.id = a.org_unit_id
-             WHERE a.person_id = ANY($1::int[]) AND a.org_unit_type_code = 'CONTRACT'
-             ORDER BY a.person_id, a.valid_from DESC
-           ) ou
-           WHERE p.id = ou.person_id AND length(ou.code) <= 30 AND p.contract_type IS DISTINCT FROM ou.code`,
-          [touched]
-        );
         stats.people_affected += touched.length;
       }
     });

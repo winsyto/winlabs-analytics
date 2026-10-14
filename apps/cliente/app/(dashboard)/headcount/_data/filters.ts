@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { Dimension } from "./dimensions";
 import type { PeriodKey } from "./period";
 
 const idList = z
@@ -14,46 +15,31 @@ const idList = z
       : []
   );
 
-const codeList = z
-  .string()
-  .optional()
-  .transform((s) =>
-    s
-      ? s
-          .split(",")
-          .filter((c) => /^[a-z0-9_-]{1,30}$/.test(c))
-          .slice(0, 20)
-      : []
-  );
-
-const schema = z.object({
-  p: z.enum(["month", "12m", "year"]).catch("month"),
-  area: idList,
-  loc: idList,
-  pos: idList,
-  ct: codeList,
-});
+const periodSchema = z.enum(["month", "12m", "year"]).catch("month");
 
 export interface HeadcountFilters {
   p: PeriodKey;
-  area: number[];
-  loc: number[];
-  pos: number[];
-  ct: string[];
+  /** Unidades seleccionadas por tipo de dimensión (clave = código del tipo) */
+  dims: Record<string, number[]>;
 }
+
+/** Nombre del parámetro de URL de una dimensión: f_<tipo en minúsculas> */
+export const filterParam = (dim: Pick<Dimension, "slug">) => `f_${dim.slug}`;
 
 export function parseFilters(
-  sp: Record<string, string | string[] | undefined>
+  sp: Record<string, string | string[] | undefined>,
+  dimensions: Dimension[]
 ): HeadcountFilters {
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-  return schema.parse({
-    p: first(sp.p),
-    area: first(sp.area),
-    loc: first(sp.loc),
-    pos: first(sp.pos),
-    ct: first(sp.ct),
-  });
+  const dims: Record<string, number[]> = {};
+  for (const d of dimensions) {
+    const ids = idList.parse(first(sp[filterParam(d)]));
+    if (ids.length > 0) dims[d.code] = ids;
+  }
+  return { p: periodSchema.parse(first(sp.p)), dims };
 }
 
-export const hasActiveFilters = (f: HeadcountFilters) =>
-  f.area.length + f.loc.length + f.pos.length + f.ct.length > 0;
+export const activeFilterCount = (f: HeadcountFilters) =>
+  Object.values(f.dims).reduce((s, ids) => s + ids.length, 0);
+
+export const hasActiveFilters = (f: HeadcountFilters) => activeFilterCount(f) > 0;

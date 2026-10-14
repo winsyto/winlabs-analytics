@@ -36,7 +36,6 @@ const MAX_LEN: Partial<Record<BaseField, number>> = {
   document_number: 50,
   manager_code: 50,
   termination_reason_code: 50,
-  contract_type: 30,
 };
 const MAX_UNIT_CODE = 50;
 const MAX_UNIT_NAME = 150;
@@ -205,18 +204,15 @@ export async function parseFilePeople(
         orgUnits[type] = { code: part.code, name: part.name ?? null };
       }
     }
-    // Compatibilidad: columna contract_type de archivos anteriores
+    // Compatibilidad: la columna contract_type de archivos anteriores se interpreta como el código de la unidad CONTRACT
     if (!orgUnits.CONTRACT && base.contract_type && ctx.orgSchema.enabledTypes.includes("CONTRACT")) {
+      if (base.contract_type.length > MAX_UNIT_CODE) err("contract_type", `Excede ${MAX_UNIT_CODE} caracteres`, base.contract_type);
       orgUnits.CONTRACT = { code: base.contract_type, name: null };
     }
     for (const type of ctx.orgSchema.requiredTypes) {
       if (!orgUnits[type]) {
         err(typeCodeColumn(type), `Falta ${ctx.orgSchema.typeNames[type] ?? type}: la columna ${typeCodeColumn(type)} es obligatoria`);
       }
-    }
-    const contractCode = orgUnits.CONTRACT?.code ?? null;
-    if (contractCode && contractCode.length > MAX_LEN.contract_type!) {
-      err("contract_code", `Excede ${MAX_LEN.contract_type} caracteres`, contractCode);
     }
 
     // Duplicados dentro del archivo
@@ -245,7 +241,6 @@ export async function parseFilePeople(
       termination_date: termination,
       termination_reason_code: reason,
       org_units: orgUnits,
-      contract_type: contractCode,
     });
   }
 

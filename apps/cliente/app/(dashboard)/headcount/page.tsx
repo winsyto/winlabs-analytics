@@ -2,19 +2,29 @@ import { auth } from "@/auth";
 import { ChartCard } from "../_dashboard-kit/chart-card";
 import { DashboardShell, PendingRegion } from "../_dashboard-kit/dashboard-shell";
 import { DashboardEmpty, DashboardNoResults } from "../_dashboard-kit/dashboard-states";
+import { ExportMenu } from "../_dashboard-kit/export-menu";
 import { FreshnessBadge } from "../_dashboard-kit/freshness-badge";
 import { monthLabel } from "../_dashboard-kit/format";
-import { ExportMenu } from "../_dashboard-kit/export-menu";
 import { MetricCard } from "../_dashboard-kit/metric-card";
-import { BarDistributionChart } from "./_components/bar-distribution-chart";
-import { ContractDonut } from "./_components/contract-donut";
+import { DimensionChart } from "./_components/dimension-chart";
 import { EvolutionChart } from "./_components/evolution-chart";
 import { HeadcountFiltersBar } from "./_components/headcount-filters";
+import { TabbedDimensions } from "./_components/tabbed-dimensions";
+import { getDimensions } from "./_data/dimensions";
 import { hasActiveFilters, parseFilters } from "./_data/filters";
 import { detailHref, filtersQuery } from "./_data/hrefs";
 import { loadHeadcount } from "./_data/queries";
 
 export const metadata = { title: "Headcount" };
+
+/** Máximo de paneles en la segunda fila; si hay más dimensiones, el último panel pasa a tener pestañas. */
+const MAX_ROW_PANELS = 4;
+const COLS: Record<number, string> = {
+  1: "lg:grid-cols-1",
+  2: "lg:grid-cols-2",
+  3: "lg:grid-cols-3",
+  4: "lg:grid-cols-4",
+};
 
 export default async function HeadcountPage({
   searchParams,
@@ -23,8 +33,9 @@ export default async function HeadcountPage({
 }) {
   const session = await auth();
   const tenantId = session!.user.tenantId;
-  const filters = parseFilters(await searchParams);
-  const data = await loadHeadcount(tenantId, filters);
+  const dimensions = await getDimensions(tenantId);
+  const filters = parseFilters(await searchParams, dimensions);
+  const data = await loadHeadcount(tenantId, filters, dimensions);
 
   if (data.status === "empty") {
     return (
@@ -38,13 +49,22 @@ export default async function HeadcountPage({
     );
   }
 
-  const { period, kpis, series, byArea, byLocation, byContract, options, freshness } = data;
+  const { period, kpis, series, freshness } = data;
   const common = { compareLabel: period.compareLabel };
-  const withHref = (items: typeof byArea, scope: "area" | "sede" | "contrato") =>
-    items.map((i) => ({
+  const dims = data.dimensions.map((d) => ({
+    ...d,
+    items: d.items.map((i) => ({
       ...i,
-      href: i.key === "others" || (i.key === "none" && scope === "contrato") ? undefined : detailHref(filters, scope, i.key),
-    }));
+      href: i.key === "others" ? undefined : detailHref(filters, "dim", d.slug, i.key),
+    })),
+  }));
+
+  const [first, ...rest] = dims;
+  const rowPanels = rest.length > MAX_ROW_PANELS ? rest.slice(0, MAX_ROW_PANELS - 1) : rest;
+  const tabbed = rest.length > MAX_ROW_PANELS ? rest.slice(MAX_ROW_PANELS - 1) : [];
+  const rowCols = rowPanels.length + (tabbed.length ? 1 : 0);
+  const subtitle = `Cierre de ${monthLabel(period.refMonth)}`;
+
   const exportHref = (format: "xlsx" | "pdf") => {
     const q = filtersQuery(filters);
     q.set("format", format);
@@ -72,7 +92,16 @@ export default async function HeadcountPage({
         </div>
       </div>
 
-      <HeadcountFiltersBar filters={filters} options={options} />
+      <HeadcountFiltersBar
+        period={filters.p}
+        dimensions={dims.map((d) => ({
+          code: d.code,
+          name: d.name,
+          slug: d.slug,
+          options: d.options,
+          selected: (filters.dims[d.code] ?? []).map(String),
+        }))}
+      />
 
       {noResults ? (
         <DashboardNoResults clearHref={filters.p === "month" ? "/headcount" : `/headcount?p=${filters.p}`} />
@@ -85,31 +114,32 @@ export default async function HeadcountPage({
             <MetricCard label="Variación neta (altas − bajas)" signed hidePct {...kpis.neta} {...common} />
           </div>
 
-          <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-3 lg:grid-rows-2">
-            <ChartCard
-              className="lg:col-span-2"
-              title="Evolución del headcount"
-              subtitle="Últimos 12 cierres mensuales"
-            >
-              <EvolutionChart series={series} />
-            </ChartCard>
-            <ChartCard
-              title="Por tipo de contrato"
-              subtitle={`Cierre de ${monthLabel(period.refMonth)}`}
-              footnote="Según el contrato actual de cada persona."
-            >
-              <ContractDonut items={withHref(byContract, "contrato")} />
-            </ChartCard>
-            <ChartCard
-              className="lg:col-span-2"
-              title="Por área"
-              subtitle={`Cierre de ${monthLabel(period.refMonth)}`}
-            >
-              <BarDistributionChart items={withHref(byArea, "area")} name="Área" />
-            </ChartCard>
-            <ChartCard title="Por sede" subtitle={`Cierre de ${monthLabel(period.refMonth)}`}>
-              <BarDistributionChart items={withHref(byLocation, "sede")} name="Sede" />
-            </ChartCard>
+          <div className="flex min-h-0 flex-1 flex-col gap-3">
+            <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-3">
+              <ChartCard
+                className={first ? "lg:col-span-2" : "lg:col-span-3"}
+                title="Evolución del headcount"
+                subtitle="Últimos 12 cierres mensuales"
+              >
+                <EvolutionChart series={series} />
+              </ChartCard>
+              {first && (
+                <ChartCard title={`Por ${first.name.toLowerCase()}`} subtitle={subtitle}>
+                  <DimensionChart dim={first} />
+                </ChartCard>
+              )}
+            </div>
+
+            {rowCols > 0 && (
+              <div className={`grid min-h-0 flex-1 grid-cols-1 gap-3 ${COLS[rowCols] ?? "lg:grid-cols-4"}`}>
+                {rowPanels.map((d) => (
+                  <ChartCard key={d.code} title={`Por ${d.name.toLowerCase()}`} subtitle={subtitle}>
+                    <DimensionChart dim={d} />
+                  </ChartCard>
+                ))}
+                {tabbed.length > 0 && <TabbedDimensions dimensions={tabbed} refMonth={period.refMonth} />}
+              </div>
+            )}
           </div>
         </PendingRegion>
       )}

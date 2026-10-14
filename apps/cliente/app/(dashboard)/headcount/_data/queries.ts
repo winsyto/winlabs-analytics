@@ -1,46 +1,46 @@
 import { withTenantContext } from "@wla/auth";
 import { Prisma } from "@wla/db";
+import type { Dimension } from "./dimensions";
 import type { HeadcountFilters } from "./filters";
 import { addMonths, buildPeriod, monthEnd } from "./period";
-import type { DistItem, HeadcountData, KpiValue, SeriesPoint } from "./types";
+import type { DimensionData, DistItem, HeadcountData, KpiValue, SeriesPoint } from "./types";
 
-const CONTRACT_LABELS: Record<string, string> = {
-  indefinido: "Indefinido",
-  plazo_fijo: "Plazo fijo",
-  temporal: "Temporal",
-  contractor: "Contratista",
-  sin_dato: "Sin dato",
-};
-
-const SNAP_ARR = Prisma.raw(
+export const SNAP_ARR = Prisma.raw(
   "CASE WHEN jsonb_typeof(h.org_assignments_snapshot) = 'array' THEN h.org_assignments_snapshot ELSE '[]'::jsonb END"
 );
 
-/** Filtros sobre hr_people_history (alias h) + hr_people (alias p). Entre dimensiones AND, dentro de una dimensión OR. */
+/**
+ * Filtros sobre hr_people_history (alias h). Entre dimensiones AND, dentro de una dimensión OR.
+ * Usa las unidades del cierre (vigentes a fin de mes).
+ */
 export function snapFilter(f: HeadcountFilters): Prisma.Sql {
-  const parts: Prisma.Sql[] = [];
-  for (const ids of [f.area, f.loc, f.pos]) {
-    if (ids.length) {
-      parts.push(Prisma.sql`AND EXISTS (
+  const parts = Object.entries(f.dims)
+    .filter(([, ids]) => ids.length > 0)
+    .map(
+      ([type, ids]) => Prisma.sql`AND EXISTS (
         SELECT 1 FROM jsonb_array_elements(${SNAP_ARR}) fe
-        WHERE (fe->>'orgUnitId')::int IN (${Prisma.join(ids)}))`);
-    }
-  }
-  if (f.ct.length) parts.push(Prisma.sql`AND p.contract_type IN (${Prisma.join(f.ct)})`);
+        WHERE fe->>'orgUnitTypeCode' = ${type} AND (fe->>'orgUnitId')::int IN (${Prisma.join(ids)}))`
+    );
   return parts.length ? Prisma.join(parts, " ") : Prisma.empty;
 }
 
-/** Filtros sobre hr_people (alias p) usando las asignaciones actuales (altas/bajas). */
-export function personFilter(f: HeadcountFilters): Prisma.Sql {
-  const parts: Prisma.Sql[] = [];
-  for (const ids of [f.area, f.loc, f.pos]) {
-    if (ids.length) {
-      parts.push(Prisma.sql`AND EXISTS (
+/**
+ * Filtros para altas y bajas sobre hr_people (alias p): la unidad se evalúa vigente en la fecha del evento
+ * (fecha de ingreso para altas, fecha de baja para bajas).
+ */
+export function eventFilter(f: HeadcountFilters, dateCol: "p.hire_date" | "p.termination_date"): Prisma.Sql {
+  const col = Prisma.raw(dateCol);
+  const parts = Object.entries(f.dims)
+    .filter(([, ids]) => ids.length > 0)
+    .map(
+      ([type, ids]) => Prisma.sql`AND EXISTS (
         SELECT 1 FROM hr_people_org_assignments fa
-        WHERE fa.person_id = p.id AND fa.org_unit_id IN (${Prisma.join(ids)}))`);
-    }
-  }
-  if (f.ct.length) parts.push(Prisma.sql`AND p.contract_type IN (${Prisma.join(f.ct)})`);
+        WHERE fa.person_id = p.id
+          AND fa.org_unit_type_code = ${type}
+          AND fa.org_unit_id IN (${Prisma.join(ids)})
+          AND fa.valid_from <= ${col}
+          AND (fa.valid_to IS NULL OR fa.valid_to >= ${col}))`
+    );
   return parts.length ? Prisma.join(parts, " ") : Prisma.empty;
 }
 
@@ -55,7 +55,8 @@ const monthDiff = (a: string, b: string) =>
 
 export async function loadHeadcount(
   tenantId: string,
-  filters: HeadcountFilters
+  filters: HeadcountFilters,
+  dimensions: Dimension[]
 ): Promise<HeadcountData> {
   return withTenantContext(tenantId, async (tx) => {
     const cov = await tx.$queryRaw<{ month: string }[]>`
@@ -76,13 +77,12 @@ export async function loadHeadcount(
       tx.$queryRaw<{ m: string; n: number }[]>(Prisma.sql`
         SELECT to_char(h.snapshot_date, 'YYYY-MM-DD') AS m, count(*)::int AS n
         FROM hr_people_history h
-        JOIN hr_people p ON p.id = h.person_id
         WHERE h.tenant_id = ${tenantId}::uuid
           AND h.snapshot_date BETWEEN ${from}::date AND ${refMonth}::date
           ${snapFilter(filters)}
         GROUP BY 1`),
-      flowQuery(tx, tenantId, "hire_date", from, to, filters),
-      flowQuery(tx, tenantId, "termination_date", from, to, filters),
+      flowQuery(tx, tenantId, "p.hire_date", from, to, filters),
+      flowQuery(tx, tenantId, "p.termination_date", from, to, filters),
     ]);
 
     const hcMap = new Map(headcountRows.map((r) => [r.m, r.n]));
@@ -138,43 +138,27 @@ export async function loadHeadcount(
     }));
 
     const total = headcount.value ?? 0;
-    const [byArea, byLocation, contractRows] = await Promise.all([
-      orgDistribution(tx, tenantId, "AREA", refMonth, filters, total),
-      orgDistribution(tx, tenantId, "LOCATION", refMonth, filters, total),
-      tx.$queryRaw<{ key: string; value: number }[]>(Prisma.sql`
-        SELECT COALESCE(p.contract_type, 'sin_dato') AS key, count(*)::int AS value
-        FROM hr_people_history h
-        JOIN hr_people p ON p.id = h.person_id
-        WHERE h.tenant_id = ${tenantId}::uuid AND h.snapshot_date = ${refMonth}::date
-          ${snapFilter(filters)}
-        GROUP BY 1 ORDER BY 2 DESC`),
+    const codes = dimensions.map((d) => d.code);
+    const [distributions, units] = await Promise.all([
+      Promise.all(dimensions.map((d) => orgDistribution(tx, tenantId, d.code, refMonth, filters, total))),
+      codes.length
+        ? tx.hrOrgUnit.findMany({
+            where: { tenantId, isActive: true, deletedAt: null, orgUnitTypeCode: { in: codes } },
+            select: { id: true, name: true, orgUnitTypeCode: true },
+            orderBy: { name: "asc" },
+          })
+        : Promise.resolve([]),
     ]);
-    const byContract: DistItem[] = contractRows.map((r) => ({
-      key: r.key,
-      label: CONTRACT_LABELS[r.key] ?? r.key,
-      value: r.value,
-    }));
 
-    const [units, contractGroups] = await Promise.all([
-      tx.hrOrgUnit.findMany({
-        where: {
-          tenantId,
-          isActive: true,
-          deletedAt: null,
-          orgUnitTypeCode: { in: ["AREA", "LOCATION", "POSITION"] },
-        },
-        select: { id: true, name: true, orgUnitTypeCode: true },
-        orderBy: { name: "asc" },
-      }),
-      tx.hrPerson.groupBy({
-        by: ["contractType"],
-        where: { tenantId, deletedAt: null, contractType: { not: null } },
-      }),
-    ]);
-    const unitOptions = (type: string) =>
-      units
-        .filter((u) => u.orgUnitTypeCode === type)
-        .map((u) => ({ value: String(u.id), label: u.name }));
+    const dimensionData: DimensionData[] = dimensions.map((d, i) => ({
+      code: d.code,
+      name: d.name,
+      slug: d.slug,
+      items: distributions[i]!,
+      options: units
+        .filter((u) => u.orgUnitTypeCode === d.code)
+        .map((u) => ({ value: String(u.id), label: u.name })),
+    }));
 
     const staleDays = Math.floor((Date.now() - Date.parse(`${to}T00:00:00Z`)) / 86400000);
 
@@ -184,18 +168,7 @@ export async function loadHeadcount(
       filters,
       kpis: { headcount, altas, bajas, neta },
       series,
-      byArea,
-      byLocation,
-      byContract,
-      options: {
-        areas: unitOptions("AREA"),
-        locations: unitOptions("LOCATION"),
-        positions: unitOptions("POSITION"),
-        contracts: contractGroups
-          .map((g) => g.contractType!)
-          .filter((c) => /^[a-z0-9_-]{1,30}$/.test(c))
-          .map((c) => ({ value: c, label: CONTRACT_LABELS[c] ?? c })),
-      },
+      dimensions: dimensionData,
       freshness: {
         refMonth,
         firstMonth,
@@ -211,26 +184,26 @@ export async function loadHeadcount(
 function flowQuery(
   tx: Prisma.TransactionClient,
   tenantId: string,
-  col: "hire_date" | "termination_date",
+  col: "p.hire_date" | "p.termination_date",
   from: string,
   to: string,
   filters: HeadcountFilters
 ) {
-  const c = Prisma.raw(`p.${col}`);
+  const c = Prisma.raw(col);
   return tx.$queryRaw<{ m: string; n: number }[]>(Prisma.sql`
     SELECT to_char(date_trunc('month', ${c}), 'YYYY-MM-DD') AS m, count(*)::int AS n
     FROM hr_people p
     WHERE p.tenant_id = ${tenantId}::uuid
       AND p.deleted_at IS NULL
       AND ${c} BETWEEN ${from}::date AND ${to}::date
-      ${personFilter(filters)}
+      ${eventFilter(filters, col)}
     GROUP BY 1`);
 }
 
 async function orgDistribution(
   tx: Prisma.TransactionClient,
   tenantId: string,
-  type: "AREA" | "LOCATION",
+  type: string,
   refMonth: string,
   filters: HeadcountFilters,
   total: number
@@ -238,13 +211,11 @@ async function orgDistribution(
   const rows = await tx.$queryRaw<{ key: string; label: string; value: number }[]>(Prisma.sql`
     SELECT ou.id::text AS key, ou.name AS label, count(DISTINCT h.person_id)::int AS value
     FROM hr_people_history h
-    JOIN hr_people p ON p.id = h.person_id
     CROSS JOIN LATERAL jsonb_array_elements(${SNAP_ARR}) AS e
     JOIN hr_org_units ou
       ON ou.id = (e->>'orgUnitId')::int AND ou.org_unit_type_code = ${type}
     WHERE h.tenant_id = ${tenantId}::uuid
       AND h.snapshot_date = ${refMonth}::date
-      AND COALESCE((e->>'isPrimary')::boolean, true)
       ${snapFilter(filters)}
     GROUP BY ou.id, ou.name
     ORDER BY value DESC, ou.name`);

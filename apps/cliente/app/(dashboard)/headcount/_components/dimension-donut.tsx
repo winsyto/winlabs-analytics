@@ -9,7 +9,7 @@ import type { DistItem } from "../_data/types";
 
 const PALETTE = ["#1e2530", "#dc2626", "#2563eb", "#d97706", "#9ca3af"];
 
-export function ContractDonut({ items }: { items: DistItem[] }) {
+export function DimensionDonut({ items, name }: { items: DistItem[]; name: string }) {
   const router = useRouter();
   const total = items.reduce((s, i) => s + i.value, 0);
 
@@ -20,7 +20,7 @@ export function ContractDonut({ items }: { items: DistItem[] }) {
   return (
     <figure className="flex h-full w-full items-center gap-3">
       <figcaption className="sr-only">
-        {`Distribución por tipo de contrato: ${items.map((i) => `${i.label} ${i.value}`).join(", ")}.`}
+        {`Distribución por ${name}: ${items.map((i) => `${i.label} ${i.value}`).join(", ")}.`}
       </figcaption>
       <div className="h-full min-h-0 w-1/2">
         <ResponsiveContainer width="100%" height="100%">
@@ -81,8 +81,8 @@ export function ContractDonut({ items }: { items: DistItem[] }) {
         ))}
       </ul>
       <ChartDataTable
-        caption="Distribución por tipo de contrato"
-        columns={["Contrato", "Personas", "%"]}
+        caption={`Distribución por ${name}`}
+        columns={[name, "Personas", "%"]}
         rows={items.map((i) => [i.label, i.value, `${fmtDec((i.value / total) * 100)}%`])}
       />
     </figure>

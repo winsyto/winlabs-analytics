@@ -1,10 +1,11 @@
 import { z } from "zod";
 import { withTenantContext } from "@wla/auth";
 import { Prisma } from "@wla/db";
+import type { Dimension } from "./dimensions";
 import type { HeadcountFilters } from "./filters";
 import type { DetailScope } from "./hrefs";
 import { buildPeriod, monthEnd, type PeriodRange } from "./period";
-import { personFilter, snapFilter } from "./queries";
+import { eventFilter, SNAP_ARR, snapFilter } from "./queries";
 
 export const PAGE_SIZE = 50;
 export const EXPORT_MAX_ROWS = 20000;
@@ -30,10 +31,8 @@ export interface PersonRow {
   id: number;
   code: string;
   name: string;
-  area: string | null;
-  location: string | null;
-  position: string | null;
-  contract: string | null;
+  /** Unidad por tipo de dimensión, vigente en la fecha de referencia del listado */
+  units: Record<string, string | null>;
   hireDate: string;
   terminationDate: string | null;
   reason: string | null;
@@ -60,27 +59,27 @@ export type DetailData =
       showTermination: boolean;
     };
 
-const CONTRACT_LABELS: Record<string, string> = {
-  indefinido: "Indefinido",
-  plazo_fijo: "Plazo fijo",
-  temporal: "Temporal",
-  contractor: "Contratista",
-  sin_dato: "Sin dato",
-};
 const GENDER_LABELS: Record<string, string> = { F: "Femenino", M: "Masculino", X: "No binario / otro", no_decl: "No declarado" };
 
-// Última asignación (por vigencia) de cada tipo de unidad organizativa
-const orgUnitName = (type: string) =>
+/** Nombre de la unidad de un tipo vigente en `at` (una fecha SQL) para la persona p. */
+const orgUnitNameAt = (type: string, at: Prisma.Sql) =>
   Prisma.sql`(SELECT ou.name
     FROM hr_people_org_assignments a JOIN hr_org_units ou ON ou.id = a.org_unit_id
     WHERE a.person_id = p.id AND a.org_unit_type_code = ${type}
+      AND a.valid_from <= ${at} AND (a.valid_to IS NULL OR a.valid_to >= ${at})
     ORDER BY a.valid_from DESC LIMIT 1)`;
 
+/**
+ * Listado de personas de un drill-down.
+ *  - scope activos | altas | bajas: sin segmentos
+ *  - scope dim: segments = [slug de la dimensión, id de unidad | "none"]
+ */
 export async function loadDetail(
   tenantId: string,
   filters: HeadcountFilters,
+  dimensions: Dimension[],
   scope: DetailScope,
-  key: string | undefined,
+  segments: string[],
   params: DetailParams,
   opts: { all?: boolean } = {}
 ): Promise<DetailData> {
@@ -93,22 +92,12 @@ export async function loadDetail(
 
     const period = buildPeriod(filters.p, refMonth);
     const end = monthEnd(refMonth);
-    const fromTable = Prisma.sql`FROM hr_people p`;
     let pop: Prisma.Sql;
     let title: string;
     let description = period.label;
     let showTermination = false;
-
-    const orgScope = (type: "AREA" | "LOCATION") => {
-      if (key === "none") {
-        return Prisma.sql`AND NOT EXISTS (
-          SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(h.org_assignments_snapshot) = 'array' THEN h.org_assignments_snapshot ELSE '[]'::jsonb END) se
-          WHERE se->>'orgUnitTypeCode' = ${type})`;
-      }
-      return Prisma.sql`AND EXISTS (
-        SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(h.org_assignments_snapshot) = 'array' THEN h.org_assignments_snapshot ELSE '[]'::jsonb END) se
-        WHERE (se->>'orgUnitId')::int = ${Number(key)} AND COALESCE((se->>'isPrimary')::boolean, true))`;
-    };
+    // Fecha de referencia con la que se muestra la unidad de cada persona
+    let refDate: Prisma.Sql = Prisma.sql`${end}::date`;
 
     const snapshotPop = (extra: Prisma.Sql) => Prisma.sql`
       FROM hr_people_history h
@@ -117,34 +106,40 @@ export async function loadDetail(
       ${snapFilter(filters)} ${extra}`;
 
     if (scope === "altas" || scope === "bajas") {
-      const col = Prisma.raw(scope === "altas" ? "p.hire_date" : "p.termination_date");
-      pop = Prisma.sql`${fromTable}
+      const colName = scope === "altas" ? "p.hire_date" : "p.termination_date";
+      const col = Prisma.raw(colName);
+      pop = Prisma.sql`FROM hr_people p
         WHERE p.tenant_id = ${tenantId}::uuid AND p.deleted_at IS NULL
           AND ${col} BETWEEN ${period.start}::date AND ${end}::date
-          ${personFilter(filters)}`;
+          ${eventFilter(filters, colName)}`;
       title = scope === "altas" ? "Altas del período" : "Bajas del período";
       showTermination = scope === "bajas";
+      refDate = col;
     } else if (scope === "activos") {
       pop = snapshotPop(Prisma.empty);
       title = "Headcount al cierre";
-    } else if (scope === "contrato") {
-      if (!key) return { status: "notfound" } as const;
-      pop = snapshotPop(Prisma.sql`AND COALESCE(p.contract_type, 'sin_dato') = ${key}`);
-      title = `Contrato: ${CONTRACT_LABELS[key] ?? key}`;
     } else {
-      const type = scope === "area" ? "AREA" : "LOCATION";
-      if (!key || (key !== "none" && !/^\d+$/.test(key))) return { status: "notfound" } as const;
+      const dim = dimensions.find((d) => d.slug === segments[0]);
+      const key = segments[1];
+      if (!dim || !key || (key !== "none" && !/^\d+$/.test(key))) return { status: "notfound" } as const;
+
+      let unitFilter: Prisma.Sql;
       if (key === "none") {
-        title = `${scope === "area" ? "Área" : "Sede"}: Sin asignar`;
+        title = `${dim.name}: Sin asignar`;
+        unitFilter = Prisma.sql`AND NOT EXISTS (
+          SELECT 1 FROM jsonb_array_elements(${SNAP_ARR}) se WHERE se->>'orgUnitTypeCode' = ${dim.code})`;
       } else {
         const unit = await tx.hrOrgUnit.findFirst({
-          where: { id: Number(key), tenantId, orgUnitTypeCode: type, deletedAt: null },
+          where: { id: Number(key), tenantId, orgUnitTypeCode: dim.code, deletedAt: null },
           select: { name: true },
         });
         if (!unit) return { status: "notfound" } as const;
-        title = `${scope === "area" ? "Área" : "Sede"}: ${unit.name}`;
+        title = `${dim.name}: ${unit.name}`;
+        unitFilter = Prisma.sql`AND EXISTS (
+          SELECT 1 FROM jsonb_array_elements(${SNAP_ARR}) se
+          WHERE se->>'orgUnitTypeCode' = ${dim.code} AND (se->>'orgUnitId')::int = ${Number(key)})`;
       }
-      pop = snapshotPop(orgScope(type));
+      pop = snapshotPop(unitFilter);
     }
     if (scope !== "altas" && scope !== "bajas") description = `Cierre de ${period.refMonth.slice(0, 7)}`;
 
@@ -182,16 +177,21 @@ export async function loadDetail(
     const dir = Prisma.raw(
       params.s === "tenure" ? (params.d === "asc" ? "DESC" : "ASC") : params.d === "asc" ? "ASC" : "DESC"
     );
+    const unitColumns = dimensions.length
+      ? Prisma.sql`${Prisma.join(
+          dimensions.map((d, i) => Prisma.sql`${orgUnitNameAt(d.code, refDate)} AS ${Prisma.raw(`u${i}`)}`),
+          ", "
+        )},`
+      : Prisma.empty;
+
     const rows = await tx.$queryRaw<
-      {
-        id: number; code: string; name: string; area: string | null; location: string | null;
-        position: string | null; contract: string | null; hire_date: string; termination_date: string | null;
+      ({
+        id: number; code: string; name: string; hire_date: string; termination_date: string | null;
         reason: string | null; tenure: number;
-      }[]
+      } & Record<string, unknown>)[]
     >(Prisma.sql`
       SELECT p.id, p.employee_code AS code, p.full_name AS name,
-        ${orgUnitName("AREA")} AS area, ${orgUnitName("LOCATION")} AS location, ${orgUnitName("POSITION")} AS position,
-        p.contract_type AS contract,
+        ${unitColumns}
         to_char(p.hire_date, 'YYYY-MM-DD') AS hire_date,
         to_char(p.termination_date, 'YYYY-MM-DD') AS termination_date,
         (SELECT name FROM cfg_termination_reasons r WHERE r.code = p.termination_reason_code) AS reason,
@@ -208,9 +208,14 @@ export async function loadDetail(
       description,
       total,
       rows: rows.map((r) => ({
-        id: r.id, code: r.code, name: r.name, area: r.area, location: r.location, position: r.position,
-        contract: r.contract, hireDate: r.hire_date, terminationDate: r.termination_date,
-        reason: r.reason, tenureMonths: r.tenure,
+        id: r.id,
+        code: r.code,
+        name: r.name,
+        units: Object.fromEntries(dimensions.map((d, i) => [d.code, (r[`u${i}`] as string | null) ?? null])),
+        hireDate: r.hire_date,
+        terminationDate: r.termination_date,
+        reason: r.reason,
+        tenureMonths: r.tenure,
       })),
       demographics: {
         gender: [...genderMap].map(([g, value]) => ({ label: GENDER_LABELS[g] ?? g, value })).sort((a, b) => b.value - a.value),

@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { auth } from "@/auth";
+import { getDimensions } from "../_data/dimensions";
 import { parseFilters } from "../_data/filters";
 import { HeadcountPdf } from "../_export/pdf-document";
 import { collectReport } from "../_export/report";
@@ -17,8 +18,9 @@ export async function GET(req: Request) {
   const format = url.searchParams.get("format");
   if (format !== "xlsx" && format !== "pdf") return new Response("Formato inválido", { status: 400 });
 
-  const filters = parseFilters(Object.fromEntries(url.searchParams));
-  const report = await collectReport(session.user.tenantId, filters);
+  const dimensions = await getDimensions(session.user.tenantId);
+  const filters = parseFilters(Object.fromEntries(url.searchParams), dimensions);
+  const report = await collectReport(session.user.tenantId, filters, dimensions);
   if (!report) return new Response("Sin datos para exportar", { status: 404 });
 
   const base = `headcount-${report.tenantSlug}-${report.overview.freshness.refMonth.slice(0, 7)}`;

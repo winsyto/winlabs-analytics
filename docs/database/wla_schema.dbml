@@ -175,7 +175,6 @@ Table hr_people {
   termination_date       date        [note: 'Fecha de egreso. null = activo o con estado on_leave']
   termination_reason_id  int         [ref: > cfg_termination_reasons.id, note: 'Motivo de baja del catálogo global']
   status                 varchar(20) [not null, note: 'active | inactive | on_leave']
-  contract_type          varchar(30) [note: 'indefinido | plazo_fijo | contractor | temporal']
   manager_id             int         [ref: > hr_people.id, note: 'Self-ref — jefe directo. null = sin manager o top-level']
   salary_band            varchar(50) [note: 'Banda salarial (etiqueta, no monto exacto). Ej: B3, Senior, L4']
   custom_fields          jsonb       [note: 'Extensiones por tenant — campos del origen que no tienen columna canónica']

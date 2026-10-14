@@ -275,7 +275,8 @@
 > - [x] Etapa 1 — Modelo: asignaciones con vigencia, catálogo de 15 tipos, Contrato como unidad, dimensiones configurables por tenant (CMP), script de limpieza `db:cleanup:tenant`
 > - [x] Etapa 2 — Archivos: archivo de Personas con dimensiones, baja y motivo + validaciones; nuevo template `file_org_history`; ejemplos regenerados (`jobs/worker/scripts/generate-examples.ts`)
 > - [x] Etapa 3 — Snapshots: reconstrucción en el worker tras cargar Personas/Historial + verificación horaria del cierre mensual (`jobs/worker/src/snapshots/`)
-> - [ ] Etapa 4 — Dashboard Headcount lee sus dimensiones de `dsh_dimensions`; eliminar `hr_people.contract_type`
+> - [x] Etapa 4 — Dashboard Headcount lee sus dimensiones de `dsh_dimensions` (filtros, paneles, detalle y exportaciones dinámicos); se elimina `hr_people.contract_type`
+> - [ ] Inmediatamente después del deploy de la Etapa 4: filtrar por "Sin asignar" como valor de cualquier dimensión
 > - Las Etapas 1-3 se despliegan juntas (Vercel + `fly deploy`); luego `db:seed:prod-catalog` y limpieza de datos de prueba en producción antes de recargar los archivos nuevos
 
 - [x] Dashboard 1: **Headcount / Cubo** (KPIs, drill-down por área/sede/contrato con breadcrumb, filtros, exportación Excel y PDF paginado)

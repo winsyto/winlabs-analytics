@@ -1,7 +1,8 @@
 import ExcelJS from "exceljs";
 import { monthLabel, monthShort } from "../../_dashboard-kit/format";
 import type { PersonRow } from "../_data/detail-queries";
-import { CONTRACT_LABELS, NOTES, type Report } from "./report";
+import { NOTES, type Report } from "./report";
+import type { Dimension } from "../_data/dimensions";
 
 const HEADER_FILL: ExcelJS.Fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF1E2530" } };
 
@@ -13,15 +14,12 @@ function styleHeader(row: ExcelJS.Row) {
 
 const toDate = (ymd: string | null) => (ymd ? new Date(`${ymd}T00:00:00Z`) : null);
 
-function peopleSheet(wb: ExcelJS.Workbook, name: string, rows: PersonRow[], withTermination: boolean) {
+function peopleSheet(wb: ExcelJS.Workbook, name: string, rows: PersonRow[], dims: Dimension[], withTermination: boolean) {
   const ws = wb.addWorksheet(name, { views: [{ state: "frozen", ySplit: 1 }] });
   const cols = [
     { header: "Nombre", key: "name", width: 28 },
     { header: "Legajo", key: "code", width: 14 },
-    { header: "Área", key: "area", width: 20 },
-    { header: "Sede", key: "location", width: 22 },
-    { header: "Cargo", key: "position", width: 22 },
-    { header: "Contrato", key: "contract", width: 14 },
+    ...dims.map((d) => ({ header: d.name, key: `dim_${d.code}`, width: 22 })),
     { header: "Ingreso", key: "hire", width: 12, style: { numFmt: "dd/mm/yyyy" } },
     ...(withTermination
       ? [
@@ -37,10 +35,7 @@ function peopleSheet(wb: ExcelJS.Workbook, name: string, rows: PersonRow[], with
     ws.addRow({
       name: r.name,
       code: r.code,
-      area: r.area ?? "",
-      location: r.location ?? "",
-      position: r.position ?? "",
-      contract: r.contract ? (CONTRACT_LABELS[r.contract] ?? r.contract) : "",
+      ...Object.fromEntries(dims.map((d) => [`dim_${d.code}`, r.units[d.code] ?? ""])),
       hire: toDate(r.hireDate),
       term: toDate(r.terminationDate),
       reason: r.reason ?? "",
@@ -109,13 +104,11 @@ export async function buildXlsx(report: Report): Promise<Buffer> {
       row.getCell(4).numFmt = "0.0%";
     }
   };
-  dist("Área", overview.byArea);
-  dist("Sede", overview.byLocation);
-  dist("Contrato", overview.byContract);
+  for (const d of overview.dimensions) dist(d.name, d.items);
 
-  peopleSheet(wb, "Headcount al cierre", report.activos, false);
-  peopleSheet(wb, "Altas", report.altas, false);
-  peopleSheet(wb, "Bajas", report.bajas, true);
+  peopleSheet(wb, "Headcount al cierre", report.activos, report.dimensions, false);
+  peopleSheet(wb, "Altas", report.altas, report.dimensions, false);
+  peopleSheet(wb, "Bajas", report.bajas, report.dimensions, true);
 
   return Buffer.from(await wb.xlsx.writeBuffer());
 }

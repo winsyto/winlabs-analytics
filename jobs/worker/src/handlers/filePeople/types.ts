@@ -21,8 +21,6 @@ export interface PersonRow {
   termination_reason_code: string | null;
   /** Unidades organizativas por tipo (AREA, LOCATION, CONTRACT, ...). Solo los tipos con código en la fila. */
   org_units: Record<string, OrgUnitCell>;
-  /** Espejo transitorio del código de CONTRACT (hr_people.contract_type) hasta migrar el dashboard */
-  contract_type: string | null;
 }
 
 // Config almacenado en IntTenantIntegration.config

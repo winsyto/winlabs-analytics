@@ -228,7 +228,6 @@ model HrPerson {
   /// active | inactive | on_leave
   status                String    @db.VarChar(20)
   /// indefinido | plazo_fijo | contractor | temporal
-  contractType          String?   @map("contract_type") @db.VarChar(30)
   /// Self-ref — jefe directo
   managerId             Int?      @map("manager_id")
   /// Banda salarial (etiqueta, no monto exacto)

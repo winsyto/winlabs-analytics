@@ -205,6 +205,7 @@
 | D-108 | Contrato es una unidad organizativa (tipo `CONTRACT`); `hr_people.contract_type` queda como columna transitoria hasta migrar el dashboard a dimensiones configurables | ✅ Cerrada |
 | D-109 | Dimensiones de dashboard configurables por tenant y dashboard (`dsh_dimensions`); defaults del headcount: Empresa, Sucursal, Área, Puesto, Contrato; se administran desde el CMP. Son columnas obligatorias del archivo de Personas | ✅ Cerrada |
 | D-110 | Contrato del archivo de Personas: las dimensiones del tenant son columnas obligatorias (`<tipo>_code`, `<tipo>_name` opcional); `inactive` exige `termination_date` y `termination_reason_code` (catálogo); fecha de efecto de una unidad nueva = `hire_date`; un cambio detectado en una re-carga cierra el período anterior el día previo y abre el nuevo en la fecha de carga. El archivo de **historial de unidades** (`file_org_history`) reemplaza por persona y tipo y fija las fechas exactas | ✅ Cerrada |
+| D-111 | El dashboard de headcount lee sus dimensiones de `dsh_dimensions`: filtros `f_<tipo>`, un panel por dimensión (dona hasta 4 unidades, barras si hay más; pestañas pasadas las 5 dimensiones), detalle en `/headcount/dim/<tipo>/<id>`. Altas y bajas se filtran por la unidad vigente en la fecha del evento y las listas muestran la unidad vigente a la fecha de referencia. Se elimina `hr_people.contract_type` (el contrato es la unidad CONTRACT) | ✅ Cerrada |
 
 ---
 
@@ -238,4 +239,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Fecha | Cambio |
 |---|---|
 | 2026-05-19 | Versión inicial. D-001 a D-105 cerradas durante el diseño de Fases 1-7. |
-| 2026-10-13 | D-106 a D-110: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |
+| 2026-10-13 | D-106 a D-111: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |

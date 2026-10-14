@@ -6,16 +6,11 @@ import { Breadcrumb } from "../../../_dashboard-kit/breadcrumb";
 import { DashboardEmpty } from "../../../_dashboard-kit/dashboard-states";
 import { fmtDate, fmtInt, fmtTenure } from "../../../_dashboard-kit/format";
 import { detailParamsSchema, loadDetail, PAGE_SIZE, type SortKey } from "../../_data/detail-queries";
+import { getDimensions } from "../../_data/dimensions";
 import { parseFilters } from "../../_data/filters";
 import { filtersQuery, overviewHref, type DetailScope } from "../../_data/hrefs";
 
-const SCOPES = ["activos", "altas", "bajas", "area", "sede", "contrato"] as const;
-const CONTRACTS: Record<string, string> = {
-  indefinido: "Indefinido",
-  plazo_fijo: "Plazo fijo",
-  temporal: "Temporal",
-  contractor: "Contratista",
-};
+const SCOPES = ["activos", "altas", "bajas", "dim"] as const;
 
 type SP = Record<string, string | string[] | undefined>;
 
@@ -32,12 +27,15 @@ export default async function HeadcountDetailPage({
   if (!(SCOPES as readonly string[]).includes(scope)) notFound();
   const sp = await searchParams;
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
-  const filters = parseFilters(sp);
-  const dp = detailParamsSchema.parse({ page: first(sp.page), q: first(sp.q), s: first(sp.s), d: first(sp.d) });
-  const key = id?.[0] ? decodeURIComponent(id[0]) : undefined;
-
   const session = await auth();
-  const data = await loadDetail(session!.user.tenantId, filters, scope as DetailScope, key, dp);
+  const tenantId = session!.user.tenantId;
+  const dimensions = await getDimensions(tenantId);
+  const filters = parseFilters(sp, dimensions);
+  const dp = detailParamsSchema.parse({ page: first(sp.page), q: first(sp.q), s: first(sp.s), d: first(sp.d) });
+  const segments = (id ?? []).map((seg) => decodeURIComponent(seg));
+  if (scope !== "dim" && segments.length > 0) notFound();
+
+  const data = await loadDetail(tenantId, filters, dimensions, scope as DetailScope, segments, dp);
   if (data.status === "notfound") notFound();
 
   const crumbs = (title: string) => [
@@ -59,7 +57,7 @@ export default async function HeadcountDetailPage({
   const page = Math.min(dp.page, pages);
 
   const base = filtersQuery(filters);
-  const pathBase = `/headcount/${scope}${key ? `/${encodeURIComponent(key)}` : ""}`;
+  const pathBase = `/headcount/${scope}${segments.map((seg) => `/${encodeURIComponent(seg)}`).join("")}`;
   const link = (over: Partial<{ page: number; s: SortKey; d: "asc" | "desc"; q: string }>) => {
     const q = new URLSearchParams(base);
     const term = over.q ?? dp.q;
@@ -79,10 +77,7 @@ export default async function HeadcountDetailPage({
   const columns: { key: SortKey | null; label: string; align?: "right" }[] = [
     { key: "name", label: "Nombre" },
     { key: "code", label: "Legajo" },
-    { key: null, label: "Área" },
-    { key: null, label: "Sede" },
-    { key: null, label: "Cargo" },
-    { key: null, label: "Contrato" },
+    ...dimensions.map((d) => ({ key: null, label: d.name })),
     { key: "hire", label: "Ingreso" },
     ...(showTermination ? [{ key: "term" as const, label: "Baja" }, { key: null, label: "Motivo" }] : []),
     { key: "tenure", label: "Antigüedad" },
@@ -149,7 +144,7 @@ export default async function HeadcountDetailPage({
       ) : (
         <div className="flex min-h-0 flex-1 flex-col rounded-lg border bg-card">
           <div className="min-h-0 flex-1 overflow-auto">
-            <table className="w-full min-w-[820px] text-left text-xs">
+            <table className="w-full text-left text-xs" style={{ minWidth: `${700 + dimensions.length * 110}px` }}>
               <caption className="sr-only">{title}: listado de personas</caption>
               <thead className="sticky top-0 bg-muted/80 backdrop-blur">
                 <tr>
@@ -180,10 +175,11 @@ export default async function HeadcountDetailPage({
                   <tr key={r.id} className="hover:bg-muted/40">
                     <th scope="row" className="whitespace-nowrap px-3 py-1.5 font-medium text-foreground">{r.name}</th>
                     <td className="px-3 py-1.5 tabular-nums text-muted-foreground">{r.code}</td>
-                    <td className="px-3 py-1.5">{r.area ?? "—"}</td>
-                    <td className="px-3 py-1.5">{r.location ?? "—"}</td>
-                    <td className="px-3 py-1.5">{r.position ?? "—"}</td>
-                    <td className="px-3 py-1.5">{r.contract ? (CONTRACTS[r.contract] ?? r.contract) : "—"}</td>
+                    {dimensions.map((d) => (
+                      <td key={d.code} className="px-3 py-1.5">
+                        {r.units[d.code] ?? "—"}
+                      </td>
+                    ))}
                     <td className="px-3 py-1.5 tabular-nums">{fmtDate(r.hireDate)}</td>
                     {showTermination && (
                       <>
