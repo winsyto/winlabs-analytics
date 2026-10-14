@@ -21,13 +21,20 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 ## Rutas actuales
 
 ```
-/login              → LoginForm (tenantSlug + email + password)
-/dashboard          → Dashboard con stats del tenant
-/reports            → Stub (pendiente M3)
-/team               → Stub (pendiente M3)
-/settings           → Stub
-/settings/users     → Gestión de usuarios del tenant (cambiar rol, activar/desactivar)
+/login                          → LoginForm (tenantSlug + email + password)
+/change-password                → Cambio obligatorio de contraseña (usuarios creados o reseteados desde el CMP)
+/dashboard                      → Inicio con stats del tenant
+/headcount                      → Dashboard 1 (Headcount): KPIs, gráficos por dimensión, filtros
+/headcount/[scope]/[[...id]]    → Drill-down: activos, altas, bajas, dim/<tipo>/<id>
+/headcount/export               → Descarga Excel/PDF (?format=xlsx|pdf)
+/integrations                   → Carga de archivos: lista de integraciones del tenant
+/integrations/[id]              → Subida de archivo, columnas del template y resultados de cada job
+/reports, /team                 → Stubs
+/settings                       → Stub
+/settings/users                 → Gestión de usuarios del tenant (cambiar rol, activar/desactivar)
 ```
+
+Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
 
 ## Permisos en settings/users
 

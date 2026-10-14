@@ -230,7 +230,7 @@
 > **Package storage:** `packages/storage` — `@wla/storage` con presigned URLs + download helper.
 
 - [x] M2-1: Seed catálogos `cfg_org_unit_types` (5) y `cfg_time_entry_types` (7) — prod y dev
-- [ ] M2-2: Configurar bucket R2 en Cloudflare + secrets en Fly.io y Vercel
+- [x] M2-2: Configurar bucket R2 en Cloudflare + secrets en Fly.io y Vercel (producción y bucket de desarrollo aparte; ver `docs/runbooks/prueba-local-de-archivos.md`)
   - Bucket: `integration-files` (privado)
   - Secrets worker: `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`
   - Secrets Vercel (apps/cliente): mismas 4 vars
@@ -276,18 +276,30 @@
 > - [x] Etapa 2 — Archivos: archivo de Personas con dimensiones, baja y motivo + validaciones; nuevo template `file_org_history`; ejemplos regenerados (`jobs/worker/scripts/generate-examples.ts`)
 > - [x] Etapa 3 — Snapshots: reconstrucción en el worker tras cargar Personas/Historial + verificación horaria del cierre mensual (`jobs/worker/src/snapshots/`)
 > - [x] Etapa 4 — Dashboard Headcount lee sus dimensiones de `dsh_dimensions` (filtros, paneles, detalle y exportaciones dinámicos); se elimina `hr_people.contract_type`
-> - [ ] Inmediatamente después del deploy de la Etapa 4: filtrar por "Sin asignar" como valor de cualquier dimensión
-> - Las Etapas 1-3 se despliegan juntas (Vercel + `fly deploy`); luego `db:seed:prod-catalog` y limpieza de datos de prueba en producción antes de recargar los archivos nuevos
+> - [x] Filtro "Sin asignar" como valor de cualquier dimensión (`f_<tipo>=none`, combinable con unidades; OR dentro de la dimensión)
+> - Desplegado y verificado en producción (2026-10-14). Procedimiento: `docs/runbooks/deploy-migraciones-y-worker.md`
 
-- [x] Dashboard 1: **Headcount / Cubo** (KPIs, drill-down por área/sede/contrato con breadcrumb, filtros, exportación Excel y PDF paginado)
-  - [ ] Pendiente al cierre: notas de ajustes, documentación del módulo (GENERATE_DOCS) y revisión de la skill `dashboard-ux`
-  - [ ] Pendiente: correr `db:seed:prod-catalog` tras el deploy (motivos de baja)
+- [x] Dashboard 1: **Headcount / Cubo** (KPIs, drill-down por dimensión con breadcrumb, filtros, exportación Excel y PDF paginado) — completo y en producción
+  - [x] Cierre: notas de ajustes y aprendizajes, documentación (`docs/modules/dashboard-headcount.md`, `unidades-organizativas.md`, `carga-de-archivos.md`, runbooks), skill `ADD_DASHBOARD` reescrito y `dashboard-ux` ajustado con `references/wla-conventions.md`
+  - [ ] Pendientes del módulo (ver su doc): accesibilidad verificada con lector de pantalla, comportamiento en tablet/móvil, rendimiento con un tenant grande
 - [ ] Dashboard 2: **Ausentismos** (tasa, tipos, tendencia, ranking)
 - [ ] Dashboard 3: **Horas extras** (total, distribución, alertas)
 - [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
 - [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
 - [x] Exportación Excel y PDF paginado (Dashboard 1; reutilizable en los siguientes)
 - [ ] Benchmarks configurables por tenant (defaults Argentina: ausentismo 4% mensual, horas extra 10%, rotación 18% anual) — aplica desde el Dashboard 2
+- [ ] Al construir el Dashboard 2: generalizar las piezas atadas a `headcount` (código de dashboard en `getDimensions`, `DASHBOARD_CODES`, defaults por tenant, tarjeta de dimensiones del CMP, `period.ts`/`queries.ts` al kit) — lista en `.claude/skills/add-dashboard.md`
+
+---
+
+## Etapa posterior a los 4 dashboards — Hub de dashboards y gestión por tenant (a analizar)
+
+> **Idea registrada (2026-10-14):** en lugar de una opción de menú lateral por dashboard, una **única opción "Dashboards"** que abra un **hub** con todos los dashboards disponibles y lleve a cada uno.
+> Se analiza **después** de terminar los dashboards del MVP, porque implica definir toda la gestión:
+> - [ ] Hub de dashboards en la app cliente (una sola entrada en el menú lateral).
+> - [ ] Administración en el CMP de **qué dashboards están activos en cada tenant** (similar a los módulos activos).
+> - [ ] Posible **matriz de permisos por opción de menú** (qué roles ven qué dashboards u opciones).
+> - [ ] Definir el modelo de datos (por ejemplo catálogo de dashboards + activación por tenant + permisos) y su impacto en `dsh_dimensions` y en la navegación.
 
 ---
 

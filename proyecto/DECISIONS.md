@@ -206,6 +206,7 @@
 | D-109 | Dimensiones de dashboard configurables por tenant y dashboard (`dsh_dimensions`); defaults del headcount: Empresa, Sucursal, Área, Puesto, Contrato; se administran desde el CMP. Son columnas obligatorias del archivo de Personas | ✅ Cerrada |
 | D-110 | Contrato del archivo de Personas: las dimensiones del tenant son columnas obligatorias (`<tipo>_code`, `<tipo>_name` opcional); `inactive` exige `termination_date` y `termination_reason_code` (catálogo); fecha de efecto de una unidad nueva = `hire_date`; un cambio detectado en una re-carga cierra el período anterior el día previo y abre el nuevo en la fecha de carga. El archivo de **historial de unidades** (`file_org_history`) reemplaza por persona y tipo y fija las fechas exactas | ✅ Cerrada |
 | D-111 | El dashboard de headcount lee sus dimensiones de `dsh_dimensions`: filtros `f_<tipo>`, un panel por dimensión (dona hasta 4 unidades, barras si hay más; pestañas pasadas las 5 dimensiones), detalle en `/headcount/dim/<tipo>/<id>`. Altas y bajas se filtran por la unidad vigente en la fecha del evento y las listas muestran la unidad vigente a la fecha de referencia. Se elimina `hr_people.contract_type` (el contrato es la unidad CONTRACT) | ✅ Cerrada |
+| D-112 | Filtro "Sin asignar" en cada dimensión del headcount: token `none` en `f_<tipo>` (p. ej. `f_area=none,12`); OR dentro de la dimensión, AND entre dimensiones. Significa sin unidad de ese tipo en el cierre (activos) o vigente en la fecha del evento (altas y bajas) | ✅ Cerrada |
 
 ---
 
@@ -231,6 +232,7 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Open-14 | ~~**Mejora a SCD2** para campos críticos de people (D-040 fallback)~~ → resuelta para unidades organizativas con D-107 | ✅ Resuelta (alcance: unidades organizativas) |
 | Open-15 | **Programa de partners / implementadores** (v2.x+) | Al cerrar v1.x |
 | Open-16 | **T0 efectivo** (fecha real de arranque) | Cuando Winsy decida arrancar |
+| Open-17 | **Hub de dashboards y gestión por tenant**: una sola opción de menú que abre un hub; dashboards activos por tenant administrados desde el CMP; posible matriz de permisos por opción de menú | Después de terminar los 4 dashboards del MVP (M3) |
 
 ---
 
@@ -239,4 +241,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Fecha | Cambio |
 |---|---|
 | 2026-05-19 | Versión inicial. D-001 a D-105 cerradas durante el diseño de Fases 1-7. |
-| 2026-10-13 | D-106 a D-111: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |
+| 2026-10-13 | D-106 a D-112 y Open-17: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |

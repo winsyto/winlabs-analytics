@@ -11,7 +11,7 @@ import { EvolutionChart } from "./_components/evolution-chart";
 import { HeadcountFiltersBar } from "./_components/headcount-filters";
 import { TabbedDimensions } from "./_components/tabbed-dimensions";
 import { getDimensions } from "./_data/dimensions";
-import { hasActiveFilters, parseFilters } from "./_data/filters";
+import { filterTokens, hasActiveFilters, NONE_TOKEN, parseFilters } from "./_data/filters";
 import { detailHref, filtersQuery } from "./_data/hrefs";
 import { loadHeadcount } from "./_data/queries";
 
@@ -98,8 +98,8 @@ export default async function HeadcountPage({
           code: d.code,
           name: d.name,
           slug: d.slug,
-          options: d.options,
-          selected: (filters.dims[d.code] ?? []).map(String),
+          options: [{ value: NONE_TOKEN, label: "Sin asignar" }, ...d.options],
+          selected: filterTokens(filters.dims[d.code]),
         }))}
       />
 

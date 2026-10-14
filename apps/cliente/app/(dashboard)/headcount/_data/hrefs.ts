@@ -1,12 +1,13 @@
-import type { HeadcountFilters } from "./filters";
+import { filterTokens, type HeadcountFilters } from "./filters";
 
 export type DetailScope = "activos" | "altas" | "bajas" | "dim";
 
 export function filtersQuery(f: HeadcountFilters): URLSearchParams {
   const p = new URLSearchParams();
   if (f.p !== "month") p.set("p", f.p);
-  for (const [code, ids] of Object.entries(f.dims)) {
-    if (ids.length) p.set(`f_${code.toLowerCase()}`, ids.join(","));
+  for (const [code, sel] of Object.entries(f.dims)) {
+    const tokens = filterTokens(sel);
+    if (tokens.length) p.set(`f_${code.toLowerCase()}`, tokens.join(","));
   }
   return p;
 }

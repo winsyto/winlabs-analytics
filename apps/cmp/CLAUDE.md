@@ -21,11 +21,18 @@ Gestiona: tenants, usuarios de tenants, configuración global.
 ## Rutas actuales
 
 ```
-/login              → LoginForm (credentials)
-/dashboard          → Placeholder
-/tenants            → Lista + crear tenant (con roles y admin inicial)
-/users              → (pendiente) gestión de internal users
+/login                          → LoginForm (credentials)
+/dashboard                      → Placeholder
+/tenants                        → Lista + crear tenant (roles, admin inicial y configuración de unidades por defecto)
+/tenants/[tenantId]             → Detalle: info, módulos activos, unidades organizativas y dimensiones, usuarios
+/tenants/[tenantId]/users       → Usuarios del tenant (crear, resetear contraseña)
+/integrations                   → Integraciones de todos los tenants (crear, pausar/activar)
+/integrations/[tenantIntegrationId] → Detalle de la integración y sus ejecuciones
+/templates                      → Templates de integración (activar/inactivar)
+/data-models                    → Módulos activos por tenant en una tabla (también se editan en el detalle del tenant)
 ```
+
+La configuración de unidades organizativas y dimensiones por dashboard se administra en el detalle del tenant (ver `docs/modules/unidades-organizativas.md`).
 
 ## Notas
 

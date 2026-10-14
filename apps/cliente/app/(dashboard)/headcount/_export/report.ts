@@ -1,7 +1,7 @@
 import { prisma } from "@wla/db/client";
 import { loadDetail, EXPORT_MAX_ROWS, type PersonRow } from "../_data/detail-queries";
 import type { Dimension } from "../_data/dimensions";
-import type { HeadcountFilters } from "../_data/filters";
+import { filterTokens, NONE_TOKEN, type HeadcountFilters } from "../_data/filters";
 import { loadHeadcount } from "../_data/queries";
 import type { FilterOption, HeadcountData } from "../_data/types";
 
@@ -41,8 +41,12 @@ export async function collectReport(
   };
   const [activos, altas, bajas] = [await rowsOf("activos"), await rowsOf("altas"), await rowsOf("bajas")];
 
-  const names = (ids: number[], opts: FilterOption[]) =>
-    ids.length ? ids.map((id) => opts.find((o) => o.value === String(id))?.label ?? String(id)).join(", ") : "Todos";
+  const names = (tokens: string[], opts: FilterOption[]) =>
+    tokens.length
+      ? tokens
+          .map((t) => (t === NONE_TOKEN ? "Sin asignar" : (opts.find((o) => o.value === t)?.label ?? t)))
+          .join(", ")
+      : "Todos";
   const { period, kpis } = overview;
 
   return {
@@ -57,7 +61,7 @@ export async function collectReport(
     dimensions,
     filterLines: [
       { label: "Período", value: `${period.label} (comparado ${period.compareLabel})` },
-      ...overview.dimensions.map((d) => ({ label: d.name, value: names(filters.dims[d.code] ?? [], d.options) })),
+      ...overview.dimensions.map((d) => ({ label: d.name, value: names(filterTokens(filters.dims[d.code]), d.options) })),
     ],
     kpiRows: [
       { label: "Headcount al cierre", ...kpis.headcount },

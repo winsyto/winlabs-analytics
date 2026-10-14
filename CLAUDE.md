@@ -9,9 +9,10 @@
 **WinLabs Analytics (wlA)** es una plataforma SaaS de People Analytics multi-tenant para LATAM.
 Dos apps: `cmp` (console interna de WinLabs para gestionar tenants) y `cliente` (app que usa cada empresa).
 
-**Estado actual:** M0 cerrado. Entrando a M1 (modelo de datos + framework de integraciones).
+**Estado actual:** M0, M1 y M2 cerrados. M3 (dashboards) en curso: el Dashboard 1 (Headcount) está completo y en producción; siguen Ausentismos, Horas extras y Turnover, de a uno.
 **Roadmap detallado:** ver `BACKLOG.md` en la raíz.
 **Docs de producto:** ver `proyecto/` — especialmente `07-roadmap.md` y `05-modelo-datos.md`.
+**Docs técnicas:** `docs/modules/` (un doc por módulo), `docs/runbooks/` (procedimientos: deploy, pruebas locales, limpieza de datos) y `docs/database/` (DBML y changelog).
 
 ---
 
@@ -28,7 +29,7 @@ packages/
   email/        → Resend wrapper
   config/       → tsconfig, eslint compartidos
 packages/e2e/   → Playwright smoke tests
-jobs/           → (vacío — workers VPS deferred a milestone de integraciones)
+jobs/worker/    → Worker de integraciones (Fly.io): cargas de archivos y cierres mensuales
 proyecto/       → Documentación de producto (NO tocar sin motivo)
 ```
 
@@ -134,10 +135,13 @@ pnpm --filter @wla/cliente typecheck
 
 # Tests
 pnpm --filter @wla/db test          # RLS integration tests (solo en CI — ver nota abajo)
+pnpm --filter @wla/worker dev       # Worker local (lee jobs/worker/.env; ver docs/runbooks/prueba-local-de-archivos.md)
 
 # Base de datos — LOCAL
 pnpm --filter @wla/db db:migrate:dev    # Genera y aplica migración en winlabs_analytics_dev
 pnpm --filter @wla/db db:seed           # Seed de dev (tenants + usuarios de prueba + catálogo)
+pnpm --filter @wla/db db:seed:demo-people   # Solo datos demo de personas en acme (no recrea otros tenants)
+pnpm --filter @wla/db db:cleanup:tenant -- --tenant=acme   # Limpieza de datos de un tenant (simulación; --confirm ejecuta)
 pnpm --filter @wla/db db:studio         # Prisma Studio
 
 # Base de datos — PRODUCCIÓN (manual, ante cambios de schema o catálogo)
@@ -233,7 +237,7 @@ fly logs                            # ver logs en tiempo real
 - **Processor loop** (default 10s): toma jobs con `FOR UPDATE SKIP LOCKED`, ejecuta el handler.
 - **Snapshot loop** (cada hora, `SNAPSHOTS_INTERVAL_SECONDS`): para cada tenant activo genera los cierres mensuales (`hr_people_history`) que falten hasta el último mes cerrado, o la ventana de 24 meses si nunca tuvo. Además, al terminar un job `file_people` o `file_org_history` se reconstruye la ventana completa del tenant (`src/snapshots/peopleSnapshots.ts`; misma lógica SQL que `packages/db/src/snapshots/people-snapshots.ts`)
 - **Recovery loop** (cada 5min): detecta jobs con heartbeat vencido (+15min) y los re-agenda o marca failed.
-- **Handlers**: `src/handlers/index.ts` — mapa `job_type → handler`. Agregar handler nuevo = agregar entrada al mapa.
+- **Handlers**: `src/handlers/index.ts` — mapa `job_type → handler` (`file_people`, `file_org_history`, `file_time_attendance`, `file_absenteeism`, `file_payroll`). Agregar handler nuevo = agregar entrada al mapa. Toda consulta a tablas de tenant va con contexto de tenant (`withTenantClient`).
 
 ### Tablas de jobs (sin RLS — plataforma)
 
@@ -241,18 +245,17 @@ fly logs                            # ver logs en tiempo real
 
 ### Variables de entorno del worker
 
-Ver `jobs/worker/.env.example`. La variable crítica es `DATABASE_URL` que debe ser la URL de Supabase con el usuario `postgres` (superuser, no el anon/service-role de la API REST).
+Ver `jobs/worker/.env.example`. La variable crítica es `DATABASE_URL` que debe ser la URL de Supabase con el usuario `postgres` (superuser, no el anon/service-role de la API REST). Para correrlo en local hace falta `jobs/worker/.env` (ignorado por git) y un bucket R2 de desarrollo con CORS: ver `docs/runbooks/prueba-local-de-archivos.md`.
 
 ---
 
 ## Lo que NO está implementado todavía
 
-- Worker: deploy en Fly.io (el código está listo, falta crear la app en Fly.io)
+- Dashboards 2, 3 y 4 (Ausentismos, Horas extras, Turnover) y los benchmarks configurables por tenant (M3)
+- Hub de dashboards, activación de dashboards por tenant y permisos por opción de menú (etapa posterior a los dashboards; ver `BACKLOG.md`)
 - Forgot password / reset password (stubs existen, falta implementar con Resend)
-- Modelo de datos de People/Time/Payroll (viene en M1)
-- Framework de integraciones (viene en M1)
-- Dashboards de analytics (viene en M3)
-- IA/insights (viene en M5)
+- APIs Manú y Geovictoria (M4)
+- IA/insights (M5)
 
 ---
 
@@ -336,3 +339,6 @@ Están en `.claude/skills/` — leerlos antes de ejecutar la operación correspo
 | Schema Prisma actual | `packages/db/prisma/schema.prisma` |
 | Decisiones tomadas | `proyecto/DECISIONS.md` |
 | Estrategia workers/jobs | `proyecto/iniciativa/estrategia_workers_jobs_integraciones.md` |
+| Docs de módulos (dashboard de headcount, unidades organizativas, carga de archivos) | `docs/modules/` |
+| Runbooks (deploy con migraciones y worker, prueba local de archivos, limpieza de datos) | `docs/runbooks/` |
+| Skills de diseño de dashboards | `.claude/skills/dashboard-ux/` (con `references/wla-conventions.md`) y `.claude/skills/add-dashboard.md` |

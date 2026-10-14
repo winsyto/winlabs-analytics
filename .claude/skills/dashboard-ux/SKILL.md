@@ -58,7 +58,7 @@ Clasificar el dashboard como executive, operational, monitoring, diagnostic, exp
 ## Workflow
 
 1. **Clarify audience and decision.** Precisar audiencia, tareas, decisiones, acciones, cadence y contexto; separar hechos, supuestos y gaps.
-2. **Confirm the metric contract.** Revisar información, definiciones, comparaciones, dimensiones, guardrails y freshness sin reabrir decisiones analíticas acordadas.
+2. **Confirm the metric contract and data readiness.** Revisar información, definiciones, comparaciones, dimensiones, guardrails y freshness sin reabrir decisiones analíticas acordadas. Verificar además que las fuentes de datos existan y puedan cargarse (modelo, ingesta y datos de prueba) **antes de diseñar**; si no existen, registrar el gap y resolverlo primero en lugar de diseñar sobre datos supuestos.
 3. **Identify dashboard mode.** Elegir un modo dominante cuando aporte valor; separar vistas o zonas si tareas incompatibles compiten.
 4. **Identify primary questions and actions.** Formular qué debe comprenderse o hacerse primero.
 5. **Inventory and prioritize information.** Relacionar cada elemento con orientación, decisión, acción, riesgo o explicación.
@@ -114,6 +114,8 @@ Leer solo lo necesario:
 - Para comparisons, filtros, drill-down, cross-filtering, navegación o detail patterns, leer [references/exploration-and-comparison.md](references/exploration-and-comparison.md).
 - Para loading, empty, no-data, error, stale, partial, permisos, anomalías o recovery, leer [references/states-and-feedback.md](references/states-and-feedback.md).
 - Para keyboard, focus, labels, contraste, non-color encoding, información compleja o responsive hierarchy, leer [references/accessibility-and-responsive.md](references/accessibility-and-responsive.md).
+
+- Para proyectos de WinLabs Analytics (audiencia, pantalla objetivo, estructura canónica, contrato de comparación, estados, exportación y antipatrones ya vistos), leer [references/wla-conventions.md](references/wla-conventions.md) además de las anteriores que apliquen.
 
 No cargar todas las referencias por defecto ni tratarlas como checklists universales.
 
@@ -187,6 +189,8 @@ Antes de finalizar, comprobar:
 - [ ] En Review mode se conservaron elementos que ya funcionan.
 - [ ] Cada recomendación relevante es específica, razonada y accionable.
 - [ ] Los límites de la evidencia, assumptions y gaps están explícitos.
+- [ ] Las fuentes de datos y su ingesta existen, o el gap está registrado y resuelto antes del diseño.
+- [ ] En proyectos de WinLabs, el diseño respeta `references/wla-conventions.md`.
 - [ ] No se invadieron `product-analytics`, data visualization especializada ni implementación.
 
 ## Anti-patterns
