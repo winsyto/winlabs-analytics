@@ -14,3 +14,4 @@
 | 2026-10-15 | cfg_tenant_settings (modo de asistencia, horario por defecto, formato horas/días; RLS) | add_tenant_settings |
 | 2026-10-15 | cfg_tenant_metric_targets (metas por tenant; ausentismo 4% mensual; RLS) | add_tenant_metric_targets |
 | 2026-10-15 | Dimensiones del dashboard de ausentismos y SHIFT habilitado en todos los tenants | add_absenteeism_dimensions |
+| 2026-10-16 | att_absenteeism_events: days_count y hours_count opcionales (hours = por día) y CHECK end_date >= start_date | absenteeism_events_optional_amounts |

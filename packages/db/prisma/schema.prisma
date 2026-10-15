@@ -524,10 +524,10 @@ model AttAbsenteeismEvent {
   absenteeismTypeId   Int      @map("absenteeism_type_id")
   startDate           DateTime @map("start_date") @db.Date
   endDate             DateTime @map("end_date") @db.Date
-  /// Días de duración (puede ser fraccionario)
-  daysCount           Decimal  @map("days_count") @db.Decimal(5, 2)
-  /// Horas totales del evento
-  hoursCount          Decimal  @map("hours_count") @db.Decimal(6, 2)
+  /// Días del evento (puede ser fraccionario). NULL = no vino en el archivo: lo calcula el dashboard con el turno
+  daysCount           Decimal? @map("days_count") @db.Decimal(5, 2)
+  /// Horas de ausencia POR DÍA en una ausencia parcial (ej: 4 = medio día). NULL = día completo
+  hoursCount          Decimal? @map("hours_count") @db.Decimal(6, 2)
   justified           Boolean  @default(false)
   /// Costo estimado — puede venir del ETL de Payroll
   costEstimated       Decimal? @map("cost_estimated") @db.Decimal(12, 2)

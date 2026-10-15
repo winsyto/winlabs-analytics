@@ -48,11 +48,14 @@
    pnpm --filter @wla/db db:cleanup:tenant -- --tenant=acme --confirm  # ejecuta
    ```
 4. Entrar a `localhost:3000` (tenant `acme`, `admin@acme.com`) y subir desde Integraciones, **en este orden**: Personas, Historial de unidades, Asistencia, Ausentismo, Liquidaciones. Los archivos de ejemplo se descargan de la propia pantalla.
-5. Revisar el resultado de cada job en la pantalla de la integración y los dashboards.
+5. Entrar a **Configuración > Turnos** y cargar el horario de cada turno que llegó con el archivo de Personas (Administrativo y Part-time: lunes a viernes; Operativo 6x1: lunes a sábado; 8 horas por día, 6 el part-time). Sin horario propio se usa el de la empresa.
+6. Revisar el resultado de cada job en la pantalla de la integración y los dashboards.
 
 ## Qué esperar con los archivos de ejemplo
 - **Personas:** 48 filas, 0 errores, 10 personas con baja; se generan 24 cierres mensuales.
 - **Historial:** 18 filas aplicadas a 9 personas.
+- **Ausentismo:** 453 eventos de 24 meses (oct-2024 a sep-2026), 0 errores; ~4,8% de tasa aproximada. Crea un tipo nuevo sin clasificar (`TRAMITE`); aparece el aviso en Configuración > Tipos de ausencia. Hay eventos sin importes, con días y con ausencia parcial (horas por día), uno cancelado y una licencia por maternidad que sigue abierta.
+- **Archivo con errores** (`jobs/worker/scripts/fixtures/file_absenteeism_errors.xlsx`, no público): 5 filas válidas, 5 con error de validación, 2 personas inexistentes (aviso) y 2 tipos nuevos (uno clasificado desde el archivo y otro sin clasificar).
 - Los números exactos del dashboard dependen de la fecha en que se carguen (los cierres son de los últimos 24 meses cerrados).
 - Los archivos se regeneran con `npx tsx scripts/generate-examples.ts` desde `jobs/worker/` (escribe en `apps/cliente/public/examples/`).
 
@@ -71,3 +74,4 @@
 | Fecha | Cambio |
 |---|---|
 | 2026-10-14 | Versión inicial |
+| 2026-10-16 | Paso de turnos y ejemplos de Ausentismo |

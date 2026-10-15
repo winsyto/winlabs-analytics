@@ -74,6 +74,23 @@ Columnas: `employee_code`, `org_unit_type` (código del tipo), `org_unit_code`, 
 - Para cada (persona, tipo) los períodos no pueden solaparse y solo el último puede estar abierto; si no, se rechaza ese historial completo.
 - Reemplaza el historial existente de esa persona y tipo.
 
+## Archivo de Ausentismo
+
+Columnas: `employee_code`, `absenteeism_type_code`, `start_date`, `end_date` (obligatorias); `days_count`, `hours_count`, `justified`, `status`, `notes`, `absenteeism_type_name`, `absenteeism_class`, `counts_as_absence` (opcionales).
+
+- La persona debe existir: se carga **después** del archivo de Personas. Las filas de personas inexistentes se omiten (el resto se procesa) y el resultado trae un aviso con la cantidad y los códigos.
+- Validaciones por fila: fin no anterior al inicio, estado (`open | closed | cancelled`), clase válida, horas por día entre 0 y 24, días no negativos, `counts_as_absence` booleano. Las filas con error se informan con su número de fila de Excel.
+- Una ausencia se identifica por (persona, tipo, fecha de inicio): volver a cargar actualiza, no duplica.
+
+**Importes: qué significan.** `days_count` y `hours_count` son opcionales y se guardan solo si vienen (vacío o 0 = no informado):
+- `days_count`: días del evento.
+- `hours_count`: horas de ausencia **por día**, solo en una ausencia parcial (4 = medio día). Vacío = día completo. Un evento del 01/10 al 03/10 con `days_count = 3` y `hours_count = 4` son 3 × 4 = 12 horas, o 1,5 días con un turno de 8 horas.
+- El cálculo de días y horas efectivos **no se hace al cargar** sino al consultar (dashboard de Ausentismos), con el turno vigente de la persona, para que un cambio de horario en Configuración > Turnos sea coherente. Reglas: sin importes, los días laborables del rango según el turno; solo días, horas = días × horas diarias; con horas por día, horas = días × horas por día (tope: las horas diarias del turno) y días efectivos = horas ÷ horas diarias.
+
+**Tipos de ausencia.** Si el código no existe se crea; uno existente **no se modifica** (manda lo que edite el admin en Configuración > Tipos de ausencia). Un tipo nuevo se clasifica con, en orden: la clase del archivo (`absenteeism_class`), el catálogo global de tipos por defecto (mismo código) o nada (queda *sin clasificar*, cuenta como ausentismo y el resultado avisa).
+
+**Turnos.** El horario de cada turno no viaja en el archivo: la unidad de tipo Turno llega con el archivo de Personas (`shift_code` y `shift_name`, opcionales) y los horarios se cargan en Configuración > Turnos. Sin horario propio se usa el de la empresa (CMP, tarjeta Asistencia).
+
 ## Cierres mensuales (`hr_people_history`)
 
 - **Qué es:** el estado de cada persona al cierre de cada mes: quién estaba activo y con qué unidades vigentes. Cada fila se marca `source: "reconstructed"`.
@@ -105,9 +122,10 @@ Columnas: `employee_code`, `org_unit_type` (código del tipo), `org_unit_code`, 
 - [ ] Mostrar en el CMP los cierres mensuales por tenant y permitir regenerarlos a mano.
 - [ ] Reintentos y notificación al usuario cuando un job falla.
 - [ ] Soporte de archivos grandes (hoy 20 MB).
-- [ ] Verificar las demás cargas (Asistencia, Ausentismo, Liquidaciones) con archivos de volumen real.
+- [ ] Verificar las demás cargas (Asistencia, Liquidaciones) con archivos de volumen real. Ausentismo: probado con 24 meses y 453 eventos de ejemplo.
 
 ## Changelog
 | Fecha | Cambio |
 |---|---|
 | 2026-10-14 | Versión inicial |
+| 2026-10-16 | Archivo de Ausentismo: clasificación de tipos nuevos, validaciones, importes opcionales (horas por día), avisos de personas omitidas |

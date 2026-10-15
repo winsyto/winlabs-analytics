@@ -1,6 +1,6 @@
 import type { PoolClient } from "pg";
-import type { AbsenteeismRow } from "./types.js";
-import { parseBool, parseDecimal } from "../shared/parseFile.js";
+import { NON_ABSENCE_CLASSES, type AbsenteeismRow } from "./types.js";
+import { parseBool } from "../shared/parseFile.js";
 
 async function getPersonId(
   client: PoolClient,
@@ -14,24 +14,64 @@ async function getPersonId(
   return result.rows[0]?.id ?? null;
 }
 
+/**
+ * Devuelve el id del tipo de ausencia; si no existe lo crea.
+ * Un tipo existente NO se modifica (manda lo editado en el portal). Un tipo nuevo se clasifica con, en orden:
+ * 1) la clase que trae el archivo, 2) el catálogo global de tipos por defecto (mismo código),
+ * 3) nada: queda "sin clasificar" (clase other, cuenta como ausentismo).
+ */
 async function ensureAbsenteeismType(
   client: PoolClient,
   tenantId: string,
-  code: string
-): Promise<number> {
-  const result = await client.query<{ id: number }>(
-    `INSERT INTO cfg_absenteeism_types (tenant_id, code, name, class, is_classified)
-     VALUES ($1::uuid, $2::text, $2::text, 'other', false)
+  row: AbsenteeismRow
+): Promise<{ id: number; created: boolean; classified: boolean }> {
+  const code = row.absenteeism_type_code;
+  const existing = await client.query<{ id: number; is_classified: boolean }>(
+    `SELECT id, is_classified FROM cfg_absenteeism_types WHERE tenant_id = $1::uuid AND code = $2::text`,
+    [tenantId, code]
+  );
+  if (existing.rows[0]) {
+    return { id: existing.rows[0].id, created: false, classified: existing.rows[0].is_classified };
+  }
+
+  let name = row.absenteeism_type_name ?? code;
+  let cls = "other";
+  let counts = true;
+  let classified = false;
+
+  if (row.absenteeism_class) {
+    cls = row.absenteeism_class;
+    counts = row.counts_as_absence ?? !NON_ABSENCE_CLASSES.includes(cls);
+    classified = true;
+  } else {
+    const def = await client.query<{ name: string; class: string; counts_as_absence: boolean }>(
+      `SELECT name, class, counts_as_absence FROM cfg_absenteeism_type_defaults WHERE code = $1::text AND is_active = true`,
+      [code]
+    );
+    if (def.rows[0]) {
+      cls = def.rows[0].class;
+      counts = row.counts_as_absence ?? def.rows[0].counts_as_absence;
+      if (!row.absenteeism_type_name) name = def.rows[0].name;
+      classified = true;
+    } else if (row.counts_as_absence !== null) {
+      counts = row.counts_as_absence;
+    }
+  }
+
+  const ins = await client.query<{ id: number }>(
+    `INSERT INTO cfg_absenteeism_types (tenant_id, code, name, class, counts_as_absence, is_classified)
+     VALUES ($1::uuid, $2::text, $3::text, $4::text, $5::boolean, $6::boolean)
      ON CONFLICT (tenant_id, code) DO NOTHING
      RETURNING id`,
+    [tenantId, code, name, cls, counts, classified]
+  );
+  if (ins.rows[0]) return { id: ins.rows[0].id, created: true, classified };
+
+  const sel = await client.query<{ id: number; is_classified: boolean }>(
+    `SELECT id, is_classified FROM cfg_absenteeism_types WHERE tenant_id = $1::uuid AND code = $2::text`,
     [tenantId, code]
   );
-  if (result.rows[0]) return result.rows[0].id;
-  const sel = await client.query<{ id: number }>(
-    `SELECT id FROM cfg_absenteeism_types WHERE tenant_id = $1::uuid AND code = $2::text`,
-    [tenantId, code]
-  );
-  return sel.rows[0].id;
+  return { id: sel.rows[0].id, created: false, classified: sel.rows[0].is_classified };
 }
 
 async function upsertAbsenteeismEvent(
@@ -43,8 +83,6 @@ async function upsertAbsenteeismEvent(
   sourceIntegrationId: number
 ): Promise<"inserted" | "updated"> {
   const justified = parseBool(row.justified ?? "0");
-  const daysCount = parseDecimal(row.days_count ?? "0") ?? "0";
-  const hoursCount = parseDecimal(row.hours_count ?? "0") ?? "0";
   const status = row.status || "open";
 
   // Check if record already exists (no unique constraint on this table)
@@ -67,7 +105,7 @@ async function upsertAbsenteeismEvent(
         source_integration_id = $8::int,
         updated_at            = now()
        WHERE id = $1::int`,
-      [existing.rows[0].id, row.end_date, daysCount, hoursCount, justified, status, row.notes ?? null, sourceIntegrationId]
+      [existing.rows[0].id, row.end_date, row.days_count, row.hours_count, justified, status, row.notes ?? null, sourceIntegrationId]
     );
     return "updated";
   }
@@ -84,7 +122,7 @@ async function upsertAbsenteeismEvent(
       $8::boolean, $9::text, $10::text,
       $11::int, now()
     )`,
-    [tenantId, personId, absenteeismTypeId, row.start_date, row.end_date, daysCount, hoursCount, justified, status, row.notes ?? null, sourceIntegrationId]
+    [tenantId, personId, absenteeismTypeId, row.start_date, row.end_date, row.days_count, row.hours_count, justified, status, row.notes ?? null, sourceIntegrationId]
   );
   return "inserted";
 }
@@ -95,8 +133,14 @@ export interface UpsertAbsenteeismResult {
   rows_updated: number;
   rows_skipped: number;
   rows_error: number;
+  types_created: number;
   errors: Array<{ row: number; employee_code: string; message: string }>;
+  warnings: string[];
 }
+
+const SAMPLE = 10;
+const sample = (items: string[]) =>
+  items.length > SAMPLE ? `${items.slice(0, SAMPLE).join(", ")} y ${items.length - SAMPLE} más` : items.join(", ");
 
 export async function upsertAbsenteeism(
   client: PoolClient,
@@ -110,32 +154,62 @@ export async function upsertAbsenteeism(
     rows_updated: 0,
     rows_skipped: 0,
     rows_error: 0,
+    types_created: 0,
     errors: [],
+    warnings: [],
   };
+
+  const people = new Map<string, number | null>();
+  const types = new Map<string, number>();
+  const missingPeople = new Map<string, number>(); // código -> filas omitidas
+  const createdUnclassified = new Set<string>();
 
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     try {
-      const personId = await getPersonId(client, tenantId, row.employee_code);
+      let personId = people.get(row.employee_code);
+      if (personId === undefined) {
+        personId = await getPersonId(client, tenantId, row.employee_code);
+        people.set(row.employee_code, personId);
+      }
       if (!personId) {
         result.rows_skipped++;
-        result.errors.push({ row: i + 1, employee_code: row.employee_code, message: `Persona no encontrada: ${row.employee_code}` });
+        missingPeople.set(row.employee_code, (missingPeople.get(row.employee_code) ?? 0) + 1);
+        result.errors.push({ row: row.source_row, employee_code: row.employee_code, message: `Persona no encontrada: ${row.employee_code}` });
         continue;
       }
 
-      const absenteeismTypeId = await ensureAbsenteeismType(client, tenantId, row.absenteeism_type_code);
-      const op = await upsertAbsenteeismEvent(client, tenantId, personId, absenteeismTypeId, row, sourceIntegrationId);
+      let typeId = types.get(row.absenteeism_type_code);
+      if (typeId === undefined) {
+        const t = await ensureAbsenteeismType(client, tenantId, row);
+        typeId = t.id;
+        types.set(row.absenteeism_type_code, typeId);
+        if (t.created) result.types_created++;
+        if (!t.classified) createdUnclassified.add(row.absenteeism_type_code);
+      }
 
+      const op = await upsertAbsenteeismEvent(client, tenantId, personId, typeId, row, sourceIntegrationId);
       if (op === "inserted") result.rows_inserted++;
       else result.rows_updated++;
     } catch (err: unknown) {
       result.rows_error++;
       result.errors.push({
-        row: i + 1,
+        row: row.source_row,
         employee_code: row.employee_code,
         message: err instanceof Error ? err.message : String(err),
       });
     }
+  }
+
+  if (missingPeople.size > 0) {
+    result.warnings.push(
+      `${result.rows_skipped} fila(s) omitidas porque la persona no existe (${missingPeople.size} código(s) distintos): ${sample([...missingPeople.keys()])}. Cargá primero el archivo de Personas.`
+    );
+  }
+  if (createdUnclassified.size > 0) {
+    result.warnings.push(
+      `Tipos de ausencia nuevos sin clasificar: ${sample([...createdUnclassified])}. Mientras tanto cuentan como ausentismo; clasificalos en Configuración > Tipos de ausencia.`
+    );
   }
 
   return result;

@@ -7,7 +7,9 @@
  * cambios de unidad para 9 personas. Asistencia, ausentismo y liquidaciones usan los mismos códigos.
  */
 import ExcelJS from "exceljs";
+import fs from "node:fs/promises";
 import path from "node:path";
+import { ABSENCE_HEADERS, SHIFT_WEEK, generateAbsences, type ShiftCode } from "./absenteeism-gen";
 
 const OUT_DIR = path.resolve(__dirname, "../../../apps/cliente/public/examples");
 
@@ -101,6 +103,18 @@ interface Person {
   contract: (typeof CONTRACTS)[number];
 }
 
+const SHIFTS: Record<ShiftCode, { code: string; name: string }> = {
+  ADM: { code: "ADM", name: "Administrativo" },
+  OPE: { code: "OPE", name: "Operativo 6x1" },
+  PT: { code: "PT", name: "Part-time" },
+};
+/** Turno de ejemplo: operaciones y logística en el turno operativo; algunos part-time; el resto administrativo */
+function shiftOf(p: Person): ShiftCode {
+  if (p.area.code === "OPS" || p.area.code === "LOG") return "OPE";
+  if (Number(p.code.slice(3)) % 8 === 0) return "PT";
+  return "ADM";
+}
+
 const byCode = <T extends { code: string }>(arr: readonly T[], code: string) => arr.find((x) => x.code === code)!;
 const ANCHOR = utc(2026, 9, 1); // 2026-10-01
 
@@ -187,10 +201,11 @@ async function main() {
   await write(
     "file_people.xlsx",
     ["employee_code", "full_name", "hire_date", "status", "termination_date", "termination_reason_code", "email", "birth_date", "gender", "document_type", "document_number", "manager_code",
-     "company_code", "company_name", "location_code", "location_name", "area_code", "area_name", "position_code", "position_name", "contract_code", "contract_name"],
+     "company_code", "company_name", "location_code", "location_name", "area_code", "area_name", "position_code", "position_name", "contract_code", "contract_name", "shift_code", "shift_name"],
     people.map((p) => [
       p.code, p.name, iso(p.hire), p.term ? "inactive" : "active", p.term ? iso(p.term) : null, p.reason, p.email, iso(p.birth), p.gender, "DNI", p.doc, p.manager,
       p.company.code, p.company.name, p.location.code, p.location.name, p.area.code, p.area.name, p.position.code, p.position.name, p.contract.code, p.contract.name,
+      SHIFTS[shiftOf(p)].code, SHIFTS[shiftOf(p)].name,
     ])
   );
 
@@ -212,15 +227,34 @@ async function main() {
   }
   await write("file_time.xlsx", ["employee_code", "date", "is_working_day", "scheduled_hours", "worked_hours", "has_absence"], times);
 
-  const abs: (string | number)[][] = [
-    ["EMP001", "ENFERMEDAD", "2026-09-03", "2026-09-03", 1, 8, 1, "open", "Certificado médico"],
-    ["EMP003", "PERSONAL", "2026-09-10", "2026-09-11", 2, 16, 0, "open", ""],
-    ["EMP002", "VACACIONES", "2026-09-15", "2026-09-19", 5, 40, 1, "closed", ""],
+  const { rows: abs, stats } = generateAbsences(
+    people.map((p) => ({ code: p.code, gender: p.gender, hire: p.hire, term: p.term, shift: shiftOf(p) }))
+  );
+  await write("file_absenteeism.xlsx", ABSENCE_HEADERS, abs);
+  console.log("  eventos por tipo:", JSON.stringify(stats));
+  console.log("  semana laboral de cada turno (cargar en Configuración > Turnos, 8 h por día; part-time 6 h):", JSON.stringify(SHIFT_WEEK));
+
+  // Archivo con errores para probar validaciones y avisos (NO es público: se usa en pruebas locales)
+  const errRows: (string | number | null)[][] = [
+    ["EMP002", "ENFERMEDAD", "2026-09-21", "2026-09-22", 2, null, 1, "open", "Fila válida", null, null, null],
+    ["EMP002", "ENFERMEDAD", "2026-09-29", "2026-09-25", null, null, 1, "open", "Fin anterior al inicio", null, null, null],
+    ["EMP999", "ENFERMEDAD", "2026-09-21", "2026-09-21", null, null, 1, "open", "Persona inexistente", null, null, null],
+    ["EMP998", "ENFERMEDAD", "2026-09-22", "2026-09-22", null, null, 1, "open", "Otra persona inexistente", null, null, null],
+    ["EMP003", "NUEVO_MAL", "2026-08-03", "2026-08-03", null, null, 0, "open", "Clase inválida", "Tipo mal clasificado", "inventada", 1],
+    ["EMP003", "ENFERMEDAD", "2026-08-10", "2026-08-10", 1, 30, 0, "open", "Horas por día > 24", null, null, null],
+    ["EMP003", "ENFERMEDAD", "2026-08-11", "2026-08-11", null, null, 0, "pendiente", "Estado inválido", null, null, null],
+    ["EMP003", "ENFERMEDAD", "2026-08-12", "2026-08-12", "abc", null, 0, "open", "Días inválidos", null, null, null],
+    ["EMP003", "CURSO_EXTERNO", "2026-08-17", "2026-08-18", 2, null, 1, "closed", "Tipo nuevo clasificado desde el archivo", "Curso externo", "other", 0],
+    ["EMP003", "GESTION_PERSONAL", "2026-08-19", "2026-08-19", 1, 4, 1, "closed", "Tipo nuevo SIN clasificar, ausencia parcial", null, null, null],
   ];
-  active.slice(3, 11).forEach((p, i) => {
-    abs.push([p.code, ["ENFERMEDAD", "PERSONAL", "VACACIONES"][i % 3]!, `2026-09-${String(8 + i).padStart(2, "0")}`, `2026-09-${String(9 + i).padStart(2, "0")}`, 2, 16, i % 2, "closed", ""]);
-  });
-  await write("file_absenteeism.xlsx", ["employee_code", "absenteeism_type_code", "start_date", "end_date", "days_count", "hours_count", "justified", "status", "notes"], abs);
+  const fixtures = path.resolve(__dirname, "fixtures");
+  await fs.mkdir(fixtures, { recursive: true });
+  const wbErr = new ExcelJS.Workbook();
+  const wsErr = wbErr.addWorksheet("Datos");
+  wsErr.addRow(ABSENCE_HEADERS).font = { bold: true };
+  errRows.forEach((r) => wsErr.addRow(r));
+  await wbErr.xlsx.writeFile(path.join(fixtures, "file_absenteeism_errors.xlsx"));
+  console.log(`✓ fixtures/file_absenteeism_errors.xlsx: ${errRows.length} filas`);
 
   const pay: (string | number | null)[][] = [
     ["EMP001", "2026-09", "2026-09-01", "2026-09-30", "SUELDO_BASE", "Sueldo Básico", "basic_salary", 350000, null],
