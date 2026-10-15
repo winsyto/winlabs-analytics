@@ -16,19 +16,24 @@ export interface OrgTypeRow {
   enabled: boolean;
 }
 
+export interface DashboardDimensionsRow {
+  code: string;
+  label: string;
+  dimensions: string[];
+}
+
 interface Props {
   tenantId: string;
   types: OrgTypeRow[];
-  headcountDimensions: string[];
+  dashboards: DashboardDimensionsRow[];
 }
 
-export function TenantOrgConfigCard({ tenantId, types, headcountDimensions }: Props) {
+export function TenantOrgConfigCard({ tenantId, types, dashboards }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
   const nameOf = (code: string) => types.find((t) => t.code === code)?.name ?? code;
-  const available = types.filter((t) => t.enabled && !headcountDimensions.includes(t.code));
 
   function run(fn: () => Promise<{ error?: string }>) {
     setError(null);
@@ -39,15 +44,15 @@ export function TenantOrgConfigCard({ tenantId, types, headcountDimensions }: Pr
     });
   }
 
-  const saveDimensions = (codes: string[]) =>
-    run(() => setDashboardDimensionsAction({ tenantId, dashboardCode: "headcount", typeCodes: codes }));
+  const saveDimensions = (dashboardCode: string, codes: string[]) =>
+    run(() => setDashboardDimensionsAction({ tenantId, dashboardCode: dashboardCode as "headcount" | "absenteeism", typeCodes: codes }));
 
-  const move = (index: number, delta: -1 | 1) => {
-    const next = [...headcountDimensions];
+  const move = (d: DashboardDimensionsRow, index: number, delta: -1 | 1) => {
+    const next = [...d.dimensions];
     const target = index + delta;
     if (target < 0 || target >= next.length) return;
     [next[index], next[target]] = [next[target]!, next[index]!];
-    saveDimensions(next);
+    saveDimensions(d.code, next);
   };
 
   return (
@@ -125,73 +130,80 @@ export function TenantOrgConfigCard({ tenantId, types, headcountDimensions }: Pr
           </ul>
         </section>
 
-        <section aria-labelledby="org-dims-title">
-          <h4 id="org-dims-title" className="mb-2 text-sm font-medium text-foreground">
-            Dimensiones del dashboard Headcount
-          </h4>
-          <ol className="space-y-1.5">
-            {headcountDimensions.map((code, i) => (
-              <li key={code} className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
-                <span className="w-5 text-xs tabular-nums text-muted-foreground">{i + 1}.</span>
-                <span className="flex-1 text-sm font-medium">{nameOf(code)}</span>
-                <button
-                  type="button"
-                  aria-label={`Subir ${nameOf(code)}`}
-                  disabled={pending || i === 0}
-                  onClick={() => move(i, -1)}
-                  className="rounded p-1 hover:bg-muted disabled:opacity-30"
-                >
-                  <ArrowUp className="h-3.5 w-3.5" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Bajar ${nameOf(code)}`}
-                  disabled={pending || i === headcountDimensions.length - 1}
-                  onClick={() => move(i, 1)}
-                  className="rounded p-1 hover:bg-muted disabled:opacity-30"
-                >
-                  <ArrowDown className="h-3.5 w-3.5" aria-hidden />
-                </button>
-                <button
-                  type="button"
-                  aria-label={`Quitar ${nameOf(code)}`}
-                  disabled={pending}
-                  onClick={() => saveDimensions(headcountDimensions.filter((c) => c !== code))}
-                  className="rounded p-1 hover:bg-muted disabled:opacity-30"
-                >
-                  <X className="h-3.5 w-3.5" aria-hidden />
-                </button>
-              </li>
-            ))}
-          </ol>
+        <div className="space-y-6">
+          {dashboards.map((d) => {
+            const available = types.filter((t) => t.enabled && !d.dimensions.includes(t.code));
+            return (
+              <section key={d.code} aria-labelledby={`org-dims-${d.code}`}>
+                <h4 id={`org-dims-${d.code}`} className="mb-2 text-sm font-medium text-foreground">
+                  Dimensiones del dashboard {d.label}
+                </h4>
+                <ol className="space-y-1.5">
+                  {d.dimensions.map((code, i) => (
+                    <li key={code} className="flex items-center gap-2 rounded-md border bg-background px-3 py-2">
+                      <span className="w-5 text-xs tabular-nums text-muted-foreground">{i + 1}.</span>
+                      <span className="flex-1 text-sm font-medium">{nameOf(code)}</span>
+                      <button
+                        type="button"
+                        aria-label={`Subir ${nameOf(code)} en ${d.label}`}
+                        disabled={pending || i === 0}
+                        onClick={() => move(d, i, -1)}
+                        className="rounded p-1 hover:bg-muted disabled:opacity-30"
+                      >
+                        <ArrowUp className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Bajar ${nameOf(code)} en ${d.label}`}
+                        disabled={pending || i === d.dimensions.length - 1}
+                        onClick={() => move(d, i, 1)}
+                        className="rounded p-1 hover:bg-muted disabled:opacity-30"
+                      >
+                        <ArrowDown className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Quitar ${nameOf(code)} de ${d.label}`}
+                        disabled={pending}
+                        onClick={() => saveDimensions(d.code, d.dimensions.filter((c) => c !== code))}
+                        className="rounded p-1 hover:bg-muted disabled:opacity-30"
+                      >
+                        <X className="h-3.5 w-3.5" aria-hidden />
+                      </button>
+                    </li>
+                  ))}
+                </ol>
 
-          <div className="mt-3 flex items-center gap-2">
-            <label htmlFor="add-dimension" className="sr-only">
-              Agregar dimensión
-            </label>
-            <select
-              id="add-dimension"
-              disabled={pending || available.length === 0}
-              defaultValue=""
-              onChange={(e) => {
-                const code = e.target.value;
-                if (code) saveDimensions([...headcountDimensions, code]);
-                e.target.value = "";
-              }}
-              className="rounded-md border bg-background px-2 py-1.5 text-xs disabled:opacity-50"
-            >
-              <option value="">
-                {available.length === 0 ? "No hay más tipos habilitados" : "Agregar dimensión…"}
-              </option>
-              {available.map((t) => (
-                <option key={t.code} value={t.code}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-xs text-muted-foreground">Máximo 6. Solo tipos habilitados.</span>
-          </div>
-        </section>
+                <div className="mt-3 flex items-center gap-2">
+                  <label htmlFor={`add-dimension-${d.code}`} className="sr-only">
+                    Agregar dimensión a {d.label}
+                  </label>
+                  <select
+                    id={`add-dimension-${d.code}`}
+                    disabled={pending || available.length === 0}
+                    defaultValue=""
+                    onChange={(e) => {
+                      const code = e.target.value;
+                      if (code) saveDimensions(d.code, [...d.dimensions, code]);
+                      e.target.value = "";
+                    }}
+                    className="rounded-md border bg-background px-2 py-1.5 text-xs disabled:opacity-50"
+                  >
+                    <option value="">
+                      {available.length === 0 ? "No hay más tipos habilitados" : "Agregar dimensión…"}
+                    </option>
+                    {available.map((t) => (
+                      <option key={t.code} value={t.code}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs text-muted-foreground">Máximo 6. Solo tipos habilitados.</span>
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

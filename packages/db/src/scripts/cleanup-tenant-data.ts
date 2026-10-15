@@ -43,6 +43,7 @@ const TABLES = [
   "hr_people_history",
   "hr_people_org_assignments",
   "hr_people",
+  "hr_shift_schedules",
   "hr_org_units",
 ] as const;
 

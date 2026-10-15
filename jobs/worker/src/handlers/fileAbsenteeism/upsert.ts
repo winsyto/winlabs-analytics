@@ -20,8 +20,8 @@ async function ensureAbsenteeismType(
   code: string
 ): Promise<number> {
   const result = await client.query<{ id: number }>(
-    `INSERT INTO cfg_absenteeism_types (tenant_id, code, name, category)
-     VALUES ($1::uuid, $2::text, $2::text, 'other')
+    `INSERT INTO cfg_absenteeism_types (tenant_id, code, name, class, is_classified)
+     VALUES ($1::uuid, $2::text, $2::text, 'other', false)
      ON CONFLICT (tenant_id, code) DO NOTHING
      RETURNING id`,
     [tenantId, code]

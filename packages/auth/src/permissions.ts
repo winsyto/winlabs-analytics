@@ -27,7 +27,7 @@ export type Action = "read" | "create" | "edit" | "delete";
  * Matriz inicial:
  *   admin   → acceso total a todos los recursos
  *   analyst → puede leer todo, crear/editar reports; no toca users/roles/settings
- *   viewer  → solo lectura de users y reports; sin acceso a roles ni settings
+ *   viewer  → solo lectura de users, reports y settings; sin acceso a roles
  */
 const DEFAULT_PERMISSIONS: Record<Role, Record<Resource, ReadonlyArray<Action>>> = {
   admin: {
@@ -45,7 +45,7 @@ const DEFAULT_PERMISSIONS: Record<Role, Record<Resource, ReadonlyArray<Action>>>
   viewer: {
     users:    ["read"],
     roles:    [],
-    settings: [],
+    settings: ["read"],
     reports:  ["read"],
   },
 };

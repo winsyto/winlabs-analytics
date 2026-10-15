@@ -8,3 +8,9 @@
 | 2026-10-13 | Unidades organizativas con vigencia: hr_people_org_assignments (+org_unit_type_code, valid_from, valid_to; -is_primary; exclusión de solapamientos), catálogo de 15 tipos con sort_order, Contrato como unidad, nuevas cfg_tenant_org_unit_types y dsh_dimensions | add_org_unit_history_and_dimensions |
 | 2026-10-13 | Renombra índice de vigencias de asignaciones (nombre > 63 bytes) | rename_org_assignments_validity_index |
 | 2026-10-14 | Elimina hr_people.contract_type (el contrato es la unidad organizativa CONTRACT con vigencia) | drop_hr_people_contract_type |
+| 2026-10-15 | cfg_absenteeism_types: category -> class (10 clases) + is_classified | add_absenteeism_type_classification |
+| 2026-10-15 | cfg_absenteeism_type_defaults (catálogo global de tipos de ausencia) | add_absenteeism_type_defaults |
+| 2026-10-15 | hr_shift_schedules (horario por unidad SHIFT, RLS) | add_shift_schedules |
+| 2026-10-15 | cfg_tenant_settings (modo de asistencia, horario por defecto, formato horas/días; RLS) | add_tenant_settings |
+| 2026-10-15 | cfg_tenant_metric_targets (metas por tenant; ausentismo 4% mensual; RLS) | add_tenant_metric_targets |
+| 2026-10-15 | Dimensiones del dashboard de ausentismos y SHIFT habilitado en todos los tenants | add_absenteeism_dimensions |

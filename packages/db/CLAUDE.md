@@ -30,7 +30,11 @@ Tablas M1 implementadas:
 - `cfg_tenant_org_unit_types` — RLS por tenant_id (tipos de unidad que usa cada tenant)
 - `dsh_dimensions` — RLS por tenant_id (dimensiones por dashboard y tenant)
 - `hr_people_history` — RLS por tenant_id (caché mensual derivado de las asignaciones con vigencia)
-- `cfg_absenteeism_types` — RLS por tenant_id
+- `cfg_absenteeism_types` — RLS por tenant_id. `class` (10 clases) e `is_classified`
+- `cfg_absenteeism_type_defaults` — sin RLS (catálogo global de tipos de ausencia por defecto)
+- `hr_shift_schedules` — RLS por tenant_id (horario de cada unidad SHIFT)
+- `cfg_tenant_settings` — RLS por tenant_id (modo de asistencia, horario por defecto, formato horas/días)
+- `cfg_tenant_metric_targets` — RLS por tenant_id (metas por tenant; defaults en `METRIC_TARGET_DEFAULTS`)
 - `att_time_daily` — RLS por tenant_id
 - `att_time_daily_entries` — RLS por tenant_id
 - `att_absenteeism_events` — RLS por tenant_id

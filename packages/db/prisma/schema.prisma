@@ -26,6 +26,9 @@ model Tenant {
   auditLogs          AuditLog[]
   orgUnitTypeConfigs CfgTenantOrgUnitType[]
   dimensions         DshDimension[]
+  shiftSchedules     HrShiftSchedule[]
+  settings           CfgTenantSetting?
+  metricTargets      CfgTenantMetricTarget[]
 
   @@map("tenants")
 }
@@ -188,6 +191,7 @@ model HrOrgUnit {
   parent      HrOrgUnit?              @relation("OrgUnitHierarchy", fields: [parentOrgUnitId], references: [id])
   children    HrOrgUnit[]             @relation("OrgUnitHierarchy")
   assignments HrPeopleOrgAssignment[]
+  shiftSchedule HrShiftSchedule?
 
   @@unique([id, orgUnitTypeCode], name: "uq_hr_org_units_id_type", map: "uq_hr_org_units_id_type")
   @@unique([tenantId, orgUnitTypeCode, code], name: "uq_hr_org_units_tenant_type_code")
@@ -367,16 +371,94 @@ model CfgAbsenteeismType {
   /// Código del tipo en el sistema origen
   code            String  @db.VarChar(50)
   name            String  @db.VarChar(100)
-  /// medical | personal | justified | unjustified | other
-  category        String  @db.VarChar(30)
+  /// medical | accident | unpaid | unjustified | suspension | personal | other | vacation | legal_leave | day_off
+  class           String  @db.VarChar(30)
   /// false = no impacta en tasa de ausentismo
   countsAsAbsence Boolean @default(true) @map("counts_as_absence")
+  /// false = llegó de un archivo y todavía no fue clasificado por un admin
+  isClassified    Boolean @default(true) @map("is_classified")
   customFields    Json?   @map("custom_fields")
 
   events AttAbsenteeismEvent[]
 
   @@unique([tenantId, code], name: "uq_cfg_absenteeism_types_tenant_code")
   @@map("cfg_absenteeism_types")
+}
+
+/// Horario de una unidad organizativa de tipo SHIFT. Sin fila = usa el horario por defecto del tenant
+model HrShiftSchedule {
+  id              Int      @id @default(autoincrement())
+  /// RLS — tenant owner
+  tenantId        String   @map("tenant_id") @db.Uuid
+  orgUnitId       Int      @unique(map: "uq_hr_shift_schedules_org_unit") @map("org_unit_id")
+  /// Siempre SHIFT (CHECK en BD); forma la FK compuesta con hr_org_units
+  orgUnitTypeCode String   @default("SHIFT") @map("org_unit_type_code")
+  /// Horas por día trabajado
+  dailyHours      Decimal  @map("daily_hours") @db.Decimal(4, 2)
+  weeklyHours     Decimal? @map("weekly_hours") @db.Decimal(5, 2)
+  monthlyHours    Decimal? @map("monthly_hours") @db.Decimal(6, 2)
+  /// 7 caracteres 0/1, lunes a domingo. "1111100" = lunes a viernes
+  workWeek        String   @map("work_week") @db.Char(7)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orgUnit HrOrgUnit  @relation(fields: [orgUnitId, orgUnitTypeCode], references: [id, orgUnitTypeCode], onDelete: Cascade, map: "hr_shift_schedules_org_unit_fkey")
+
+  @@unique([orgUnitId, orgUnitTypeCode], name: "uq_hr_shift_schedules_unit_type", map: "uq_hr_shift_schedules_unit_type")
+  @@index([tenantId])
+  @@map("hr_shift_schedules")
+}
+
+/// Configuración de asistencia y visualización del tenant (una fila por tenant)
+model CfgTenantSetting {
+  id                Int      @id @default(autoincrement())
+  tenantId          String   @unique(map: "uq_cfg_tenant_settings_tenant") @map("tenant_id") @db.Uuid
+  /// basic = horario por unidades SHIFT; detailed = asistencia diaria por integración (pendiente)
+  attendanceMode    String   @default("basic") @map("attendance_mode") @db.VarChar(20)
+  /// Semana laboral de quien no tiene turno: 7 caracteres 0/1, lunes a domingo
+  defaultWorkWeek   String   @default("1111100") @map("default_work_week") @db.Char(7)
+  defaultDailyHours Decimal  @default(8) @map("default_daily_hours") @db.Decimal(4, 2)
+  /// hours | days | both
+  absenceDisplay    String   @default("both") @map("absence_display") @db.VarChar(10)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("cfg_tenant_settings")
+}
+
+/// Metas (benchmarks) por tenant. Sin fila = valor por defecto del código
+model CfgTenantMetricTarget {
+  id          Int      @id @default(autoincrement())
+  tenantId    String   @map("tenant_id") @db.Uuid
+  /// absenteeism_rate | overtime_rate | turnover_rate
+  metricCode  String   @map("metric_code") @db.VarChar(50)
+  targetValue Decimal  @map("target_value") @db.Decimal(8, 2)
+  /// percent_monthly | percent_annual
+  unit        String   @db.VarChar(20)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, metricCode], name: "uq_cfg_tenant_metric_targets", map: "uq_cfg_tenant_metric_targets")
+  @@map("cfg_tenant_metric_targets")
+}
+
+/// Catálogo global (sin RLS) de tipos de ausencia por defecto; se copia a cada tenant nuevo
+model CfgAbsenteeismTypeDefault {
+  id              Int     @id @default(autoincrement())
+  code            String  @unique @db.VarChar(50)
+  name            String  @db.VarChar(100)
+  /// Misma lista de clases que cfg_absenteeism_types.class
+  class           String  @db.VarChar(30)
+  countsAsAbsence Boolean @default(true) @map("counts_as_absence")
+  sortOrder       Int     @default(0) @map("sort_order")
+  isActive        Boolean @default(true) @map("is_active")
+
+  @@map("cfg_absenteeism_type_defaults")
 }
 
 // =============================================================================

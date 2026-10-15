@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { withTenantContext } from "@wla/auth";
-import { DASHBOARD_CODES, DEFAULT_DIMENSION_TYPES, ORG_UNIT_TYPES } from "@wla/db";
+import { DASHBOARD_CODES, DEFAULT_DASHBOARD_DIMENSIONS, DEFAULT_ENABLED_TYPES, ORG_UNIT_TYPES } from "@wla/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -116,21 +116,23 @@ export async function resetOrgConfigAction(input: z.infer<typeof resetSchema>): 
   try {
     await withTenantContext(tenantId, async (tx) => {
       for (const t of ORG_UNIT_TYPES) {
-        const enabled = (DEFAULT_DIMENSION_TYPES as readonly string[]).includes(t.code);
+        const enabled = (DEFAULT_ENABLED_TYPES as readonly string[]).includes(t.code);
         await tx.cfgTenantOrgUnitType.upsert({
           where: { uq_cfg_tenant_org_unit_types: { tenantId, orgUnitTypeCode: t.code } },
           update: { isEnabled: enabled, sortOrder: t.sortOrder },
           create: { tenantId, orgUnitTypeCode: t.code, isEnabled: enabled, sortOrder: t.sortOrder },
         });
       }
-      await tx.dshDimension.deleteMany({ where: { tenantId, dashboardCode: "headcount" } });
+      await tx.dshDimension.deleteMany({ where: { tenantId } });
       await tx.dshDimension.createMany({
-        data: DEFAULT_DIMENSION_TYPES.map((c, i) => ({
-          tenantId,
-          dashboardCode: "headcount",
-          orgUnitTypeCode: c,
-          sortOrder: i + 1,
-        })),
+        data: DASHBOARD_CODES.flatMap((dashboardCode) =>
+          DEFAULT_DASHBOARD_DIMENSIONS[dashboardCode].map((c, i) => ({
+            tenantId,
+            dashboardCode,
+            orgUnitTypeCode: c,
+            sortOrder: i + 1,
+          }))
+        ),
       });
     });
     refresh(tenantId);

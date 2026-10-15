@@ -274,8 +274,9 @@ Table cfg_absenteeism_types {
   tenant_id         uuid        [not null, ref: > tenants.id, note: 'RLS — cada tenant define sus propios tipos de ausentismo']
   code              varchar(50) [not null, note: 'Código del tipo en el sistema origen']
   name              varchar(100)[not null, note: 'Nombre legible']
-  category          varchar(30) [not null, note: 'medical | personal | justified | unjustified | other']
+  class             varchar(30) [not null, note: 'medical | accident | unpaid | unjustified | suspension | personal | other | vacation | legal_leave | day_off']
   counts_as_absence bool        [not null, default: true, note: 'false = tipo que no impacta en la tasa de ausentismo (ej: capacitación)']
+  is_classified     bool        [not null, default: true, note: 'false = creado desde un archivo, pendiente de clasificar']
   custom_fields     jsonb
 
   indexes {
@@ -489,4 +490,61 @@ Table int_run_errors {
   }
 
   Note: 'Errores y advertencias a nivel de fila por run de integración. Usados para el reporte descargable de errores en UI. RLS por tenant_id.'
+}
+
+
+Table cfg_absenteeism_type_defaults {
+  id                int          [pk, increment]
+  code              varchar(50)  [not null, unique]
+  name              varchar(100) [not null]
+  class             varchar(30)  [not null, note: 'Mismas clases que cfg_absenteeism_types.class']
+  counts_as_absence bool         [not null, default: true]
+  sort_order        int          [not null, default: 0]
+  is_active         bool         [not null, default: true]
+
+  Note: 'Catálogo global (sin RLS) de tipos de ausencia por defecto; se copia a cada tenant nuevo (applyDefaultAbsenteeismTypes).'
+}
+
+Table hr_shift_schedules {
+  id                 int         [pk, increment]
+  tenant_id          uuid        [not null, ref: > tenants.id, note: 'RLS']
+  org_unit_id        int         [not null, unique, note: 'FK compuesta (org_unit_id, org_unit_type_code) a hr_org_units; el tipo es siempre SHIFT']
+  org_unit_type_code text        [not null, default: 'SHIFT']
+  daily_hours        decimal(4,2) [not null, note: 'Horas por día trabajado']
+  weekly_hours       decimal(5,2)
+  monthly_hours      decimal(6,2)
+  work_week          char(7)     [not null, note: '7 caracteres 0/1, lunes a domingo. 1111100 = lunes a viernes']
+  created_at         timestamp   [not null]
+  updated_at         timestamp   [not null]
+
+  Note: 'Horario de una unidad de tipo SHIFT. Sin fila = usa el horario por defecto del tenant. RLS por tenant_id.'
+}
+
+Table cfg_tenant_settings {
+  id                  int          [pk, increment]
+  tenant_id           uuid         [not null, unique, ref: - tenants.id, note: 'RLS']
+  attendance_mode     varchar(20)  [not null, default: 'basic', note: 'basic (turnos SHIFT) | detailed (asistencia diaria por integración)']
+  default_work_week   char(7)      [not null, default: '1111100', note: 'Semana laboral de quien no tiene turno, lunes a domingo']
+  default_daily_hours decimal(4,2) [not null, default: 8]
+  absence_display     varchar(10)  [not null, default: 'both', note: 'hours | days | both']
+  created_at          timestamp    [not null]
+  updated_at          timestamp    [not null]
+
+  Note: 'Ajustes de asistencia y visualización por tenant. RLS por tenant_id.'
+}
+
+Table cfg_tenant_metric_targets {
+  id           int          [pk, increment]
+  tenant_id    uuid         [not null, ref: > tenants.id, note: 'RLS']
+  metric_code  varchar(50)  [not null, note: 'absenteeism_rate | overtime_rate | turnover_rate']
+  target_value decimal(8,2) [not null, note: '0 a 100']
+  unit         varchar(20)  [not null, note: 'percent_monthly | percent_annual']
+  created_at   timestamp    [not null]
+  updated_at   timestamp    [not null]
+
+  indexes {
+    (tenant_id, metric_code) [unique, name: 'uq_cfg_tenant_metric_targets']
+  }
+
+  Note: 'Metas (benchmarks) por tenant. Sin fila = valor por defecto del código (METRIC_TARGET_DEFAULTS). RLS por tenant_id.'
 }

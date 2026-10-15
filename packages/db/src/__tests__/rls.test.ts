@@ -508,3 +508,159 @@ describe("RLS — configuración de unidades organizativas y asignaciones con vi
     ).rejects.toThrow();
   });
 });
+
+describe("RLS — horarios de turnos (hr_shift_schedules)", () => {
+  let alphaShiftId: number;
+  let alphaAreaId: number;
+  let betaShiftId: number;
+
+  beforeAll(async () => {
+    await seedOrgUnitType("SHIFT", "Turno");
+    await seedOrgUnitType("AREA", "Área");
+    alphaShiftId = (await createTestOrgUnit(tenantAlphaId, "SHIFT", "MAN", "Mañana Alpha")).id;
+    alphaAreaId = (await createTestOrgUnit(tenantAlphaId, "AREA", "SCHED", "Área horarios Alpha")).id;
+    betaShiftId = (await createTestOrgUnit(tenantBetaId, "SHIFT", "MAN", "Mañana Beta")).id;
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrShiftSchedule.create({
+        data: { tenantId: tenantAlphaId, orgUnitId: alphaShiftId, dailyHours: 8, workWeek: "1111100" },
+      })
+    );
+    await withTenantContext(tenantBetaId, (tx) =>
+      tx.hrShiftSchedule.create({
+        data: { tenantId: tenantBetaId, orgUnitId: betaShiftId, dailyHours: 6, workWeek: "1111110" },
+      })
+    );
+  });
+
+  afterAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, async (tx) => {
+        await tx.hrShiftSchedule.deleteMany({ where: { tenantId } });
+        await tx.hrOrgUnit.deleteMany({ where: { tenantId } });
+      });
+    }
+  });
+
+  it("cada tenant ve solo los horarios de sus turnos", async () => {
+    const rows = await withTenantContext(tenantAlphaId, (tx) => tx.hrShiftSchedule.findMany());
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.orgUnitId).toBe(alphaShiftId);
+    const cross = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.hrShiftSchedule.findMany({ where: { tenantId: tenantBetaId } })
+    );
+    expect(cross).toHaveLength(0);
+  });
+
+  it("un tenant no puede crear un horario para la unidad de otro", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.hrShiftSchedule.create({
+          data: { tenantId: tenantBetaId, orgUnitId: betaShiftId, dailyHours: 8, workWeek: "1111100" },
+        })
+      )
+    ).rejects.toThrow();
+  });
+
+  it("rechaza semanas laborales mal formadas, horas inválidas y unidades que no son turno", async () => {
+    for (const workWeek of ["111110", "1111102", "abcdefg"]) {
+      await expect(
+        withTenantContext(tenantAlphaId, (tx) =>
+          tx.$executeRawUnsafe(
+            `UPDATE hr_shift_schedules SET work_week = '${workWeek}' WHERE org_unit_id = ${alphaShiftId}`
+          )
+        )
+      ).rejects.toThrow();
+    }
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.$executeRawUnsafe(`UPDATE hr_shift_schedules SET daily_hours = 25 WHERE org_unit_id = ${alphaShiftId}`)
+      )
+    ).rejects.toThrow();
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.hrShiftSchedule.create({
+          data: { tenantId: tenantAlphaId, orgUnitId: alphaAreaId, dailyHours: 8, workWeek: "1111100" },
+        })
+      )
+    ).rejects.toThrow();
+  });
+
+  it("no permite dos horarios para la misma unidad", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.hrShiftSchedule.create({
+          data: { tenantId: tenantAlphaId, orgUnitId: alphaShiftId, dailyHours: 7, workWeek: "1111100" },
+        })
+      )
+    ).rejects.toThrow();
+  });
+});
+
+describe("RLS — ajustes y metas por tenant", () => {
+  beforeAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, async (tx) => {
+        await tx.cfgTenantSetting.upsert({ where: { tenantId }, update: {}, create: { tenantId } });
+        await tx.cfgTenantMetricTarget.upsert({
+          where: { uq_cfg_tenant_metric_targets: { tenantId, metricCode: "absenteeism_rate" } },
+          update: {},
+          create: { tenantId, metricCode: "absenteeism_rate", targetValue: 4, unit: "percent_monthly" },
+        });
+      });
+    }
+  });
+
+  afterAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, async (tx) => {
+        await tx.cfgTenantSetting.deleteMany({ where: { tenantId } });
+        await tx.cfgTenantMetricTarget.deleteMany({ where: { tenantId } });
+      });
+    }
+  });
+
+  it("cada tenant ve solo sus ajustes y metas", async () => {
+    const settings = await withTenantContext(tenantAlphaId, (tx) => tx.cfgTenantSetting.findMany());
+    const targets = await withTenantContext(tenantAlphaId, (tx) => tx.cfgTenantMetricTarget.findMany());
+    expect(settings).toHaveLength(1);
+    expect(settings[0]?.tenantId).toBe(tenantAlphaId);
+    expect(targets).toHaveLength(1);
+    expect(targets[0]?.tenantId).toBe(tenantAlphaId);
+  });
+
+  it("un tenant no puede escribir ajustes ni metas de otro", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.cfgTenantMetricTarget.create({
+          data: { tenantId: tenantBetaId, metricCode: "turnover_rate", targetValue: 18, unit: "percent_annual" },
+        })
+      )
+    ).rejects.toThrow();
+    const updated = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.cfgTenantSetting.updateMany({ where: { tenantId: tenantBetaId }, data: { absenceDisplay: "hours" } })
+    );
+    expect(updated.count).toBe(0);
+  });
+
+  it("rechaza valores fuera de rango o desconocidos", async () => {
+    const run = (sql: string) => withTenantContext(tenantAlphaId, (tx) => tx.$executeRawUnsafe(sql));
+    await expect(run("UPDATE cfg_tenant_settings SET attendance_mode = 'otro'")).rejects.toThrow();
+    await expect(run("UPDATE cfg_tenant_settings SET default_work_week = '11111'")).rejects.toThrow();
+    await expect(run("UPDATE cfg_tenant_settings SET default_daily_hours = 0")).rejects.toThrow();
+    await expect(run("UPDATE cfg_tenant_settings SET absence_display = 'x'")).rejects.toThrow();
+    await expect(run("UPDATE cfg_tenant_metric_targets SET target_value = 101")).rejects.toThrow();
+    await expect(run("UPDATE cfg_tenant_metric_targets SET metric_code = 'inventada'")).rejects.toThrow();
+  });
+
+  it("las dimensiones admiten el dashboard de ausentismos por tenant", async () => {
+    await seedOrgUnitType("AREA", "Área");
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.dshDimension.create({ data: { tenantId: tenantAlphaId, dashboardCode: "absenteeism", orgUnitTypeCode: "AREA", sortOrder: 1 } })
+    );
+    const betaRows = await withTenantContext(tenantBetaId, (tx) =>
+      tx.dshDimension.findMany({ where: { dashboardCode: "absenteeism" } })
+    );
+    expect(betaRows).toHaveLength(0);
+    await withTenantContext(tenantAlphaId, (tx) => tx.dshDimension.deleteMany({ where: { dashboardCode: "absenteeism" } }));
+  });
+});

@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@wla/db/client";
-import { applyDefaultOrgConfig } from "@wla/db";
+import { applyDefaultAbsenteeismTypes, applyDefaultOrgConfig, applyDefaultTenantSettings } from "@wla/db";
 import { withTenantContext } from "@wla/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -115,8 +115,12 @@ export async function createTenantAction(
       });
     });
 
-    // 3. Configuración por defecto de unidades organizativas y dimensiones
-    await withTenantContext(tenant.id, (tx) => applyDefaultOrgConfig(tx, tenant.id));
+    // 3. Configuración por defecto de unidades organizativas, dimensiones y tipos de ausencia
+    await withTenantContext(tenant.id, async (tx) => {
+      await applyDefaultOrgConfig(tx, tenant.id);
+      await applyDefaultAbsenteeismTypes(tx, tenant.id);
+      await applyDefaultTenantSettings(tx, tenant.id);
+    });
 
     revalidatePath("/tenants");
     return { success: true };
@@ -209,6 +213,7 @@ export async function deleteTenantAction(
       await tx.$executeRaw`DELETE FROM hr_people_history WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM hr_people_org_assignments WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM hr_people WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM hr_shift_schedules WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM hr_org_units WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM dsh_dimensions WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM cfg_tenant_org_unit_types WHERE tenant_id = ${tenantId}::uuid`;

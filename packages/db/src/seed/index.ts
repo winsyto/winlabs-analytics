@@ -29,6 +29,8 @@ import { PrismaClient, type Prisma } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { seedDemoPeople } from "./demo-people";
 import { ORG_UNIT_TYPES, applyDefaultOrgConfig } from "../org-config";
+import { applyDefaultTenantSettings } from "../tenant-settings";
+import { applyDefaultAbsenteeismTypes, upsertAbsenteeismTypeDefaults } from "../absenteeism-config";
 import { TERMINATION_REASONS } from "./termination-reasons";
 
 const prisma = new PrismaClient();
@@ -224,9 +226,14 @@ async function main() {
     });
   }
 
-  // 5a. Configuración por defecto de unidades organizativas por tenant
+  // 5a. Catálogo de tipos de ausencia y configuración por defecto de cada tenant
+  await upsertAbsenteeismTypeDefaults(prisma);
   for (const tenant of [acme, globo]) {
-    await withTenantContext(tenant.id, (tx) => applyDefaultOrgConfig(tx, tenant.id));
+    await withTenantContext(tenant.id, async (tx) => {
+      await applyDefaultOrgConfig(tx, tenant.id);
+      await applyDefaultAbsenteeismTypes(tx, tenant.id);
+      await applyDefaultTenantSettings(tx, tenant.id);
+    });
   }
 
   // 5b. Datos demo de People (solo dev) — acme; winlabs queda vacío para probar el estado empty

@@ -8,6 +8,7 @@
 import { PrismaClient } from "@prisma/client";
 import { TERMINATION_REASONS } from "./termination-reasons";
 import { ORG_UNIT_TYPES } from "../org-config";
+import { ABSENTEEISM_TYPE_DEFAULTS, upsertAbsenteeismTypeDefaults } from "../absenteeism-config";
 
 const prisma = new PrismaClient();
 
@@ -21,6 +22,10 @@ async function main() {
     });
   }
   console.log(`✓ cfg_org_unit_types: ${ORG_UNIT_TYPES.length} registros`);
+
+  // ── cfg_absenteeism_type_defaults ────────────────────────────────────────
+  await upsertAbsenteeismTypeDefaults(prisma);
+  console.log(`✓ cfg_absenteeism_type_defaults: ${ABSENTEEISM_TYPE_DEFAULTS.length} registros`);
 
   // ── cfg_time_entry_types ─────────────────────────────────────────────────
   const timeEntryTypes = [

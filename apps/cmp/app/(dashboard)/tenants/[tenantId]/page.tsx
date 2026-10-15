@@ -8,6 +8,8 @@ import { TenantModulesCard } from "./_components/tenant-modules-card";
 import { TenantActionsHeader } from "./_components/tenant-actions-header";
 import { TenantInfoCard } from "./_components/tenant-info-card";
 import { TenantOrgConfigCard } from "./_components/tenant-org-config-card";
+import { TenantAttendanceCard, type AttendanceSettings } from "./_components/tenant-attendance-card";
+import { TENANT_SETTINGS_DEFAULTS } from "@wla/db";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,11 @@ const MODULES = [
   { key: "payroll", label: "Liquidaciones", description: "pay_periods, pay_entries, pay_concepts" },
 ] as const;
 
+const DASHBOARDS = [
+  { code: "headcount", label: "Headcount" },
+  { code: "absenteeism", label: "Ausentismos" },
+] as const;
+
 export type DataModule = typeof MODULES[number];
 
 async function getOrgConfig(tenantId: string) {
@@ -24,10 +31,7 @@ async function getOrgConfig(tenantId: string) {
     Promise.all([
       tx.cfgOrgUnitType.findMany({ orderBy: { sortOrder: "asc" } }),
       tx.cfgTenantOrgUnitType.findMany({ where: { tenantId } }),
-      tx.dshDimension.findMany({
-        where: { tenantId, dashboardCode: "headcount" },
-        orderBy: { sortOrder: "asc" },
-      }),
+      tx.dshDimension.findMany({ where: { tenantId }, orderBy: { sortOrder: "asc" } }),
     ])
   );
   const enabled = new Map(tenantTypes.map((t) => [t.orgUnitTypeCode, t.isEnabled]));
@@ -38,7 +42,21 @@ async function getOrgConfig(tenantId: string) {
       description: t.description,
       enabled: enabled.get(t.code) ?? false,
     })),
-    headcountDimensions: dims.map((d) => d.orgUnitTypeCode),
+    dashboards: DASHBOARDS.map((d) => ({
+      ...d,
+      dimensions: dims.filter((x) => x.dashboardCode === d.code).map((x) => x.orgUnitTypeCode),
+    })),
+  };
+}
+
+async function getAttendanceSettings(tenantId: string): Promise<AttendanceSettings> {
+  const row = await withTenantContext(tenantId, (tx) => tx.cfgTenantSetting.findUnique({ where: { tenantId } }));
+  if (!row) return { ...TENANT_SETTINGS_DEFAULTS };
+  return {
+    attendanceMode: row.attendanceMode as AttendanceSettings["attendanceMode"],
+    defaultWorkWeek: row.defaultWorkWeek,
+    defaultDailyHours: Number(row.defaultDailyHours),
+    absenceDisplay: row.absenceDisplay as AttendanceSettings["absenceDisplay"],
   };
 }
 
@@ -68,7 +86,11 @@ export default async function TenantDetailPage({
   params: Promise<{ tenantId: string }>;
 }) {
   const { tenantId } = await params;
-  const [tenant, orgConfig] = await Promise.all([getTenant(tenantId), getOrgConfig(tenantId)]);
+  const [tenant, orgConfig, attendance] = await Promise.all([
+    getTenant(tenantId),
+    getOrgConfig(tenantId),
+    getAttendanceSettings(tenantId),
+  ]);
   if (!tenant) notFound();
 
   return (
@@ -113,8 +135,10 @@ export default async function TenantDetailPage({
       <TenantOrgConfigCard
         tenantId={tenant.id}
         types={orgConfig.types}
-        headcountDimensions={orgConfig.headcountDimensions}
+        dashboards={orgConfig.dashboards}
       />
+
+      <TenantAttendanceCard tenantId={tenant.id} settings={attendance} />
 
       <div className="rounded-xl border bg-card p-5">
         <div className="flex items-center justify-between mb-3">
