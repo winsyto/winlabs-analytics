@@ -207,6 +207,12 @@
 | D-110 | Contrato del archivo de Personas: las dimensiones del tenant son columnas obligatorias (`<tipo>_code`, `<tipo>_name` opcional); `inactive` exige `termination_date` y `termination_reason_code` (catálogo); fecha de efecto de una unidad nueva = `hire_date`; un cambio detectado en una re-carga cierra el período anterior el día previo y abre el nuevo en la fecha de carga. El archivo de **historial de unidades** (`file_org_history`) reemplaza por persona y tipo y fija las fechas exactas | ✅ Cerrada |
 | D-111 | El dashboard de headcount lee sus dimensiones de `dsh_dimensions`: filtros `f_<tipo>`, un panel por dimensión (dona hasta 4 unidades, barras si hay más; pestañas pasadas las 5 dimensiones), detalle en `/headcount/dim/<tipo>/<id>`. Altas y bajas se filtran por la unidad vigente en la fecha del evento y las listas muestran la unidad vigente a la fecha de referencia. Se elimina `hr_people.contract_type` (el contrato es la unidad CONTRACT) | ✅ Cerrada |
 | D-112 | Filtro "Sin asignar" en cada dimensión del headcount: token `none` en `f_<tipo>` (p. ej. `f_area=none,12`); OR dentro de la dimensión, AND entre dimensiones. Significa sin unidad de ese tipo en el cierre (activos) o vigente en la fecha del evento (altas y bajas) | ✅ Cerrada |
+| D-113 | Tipos de ausencia con **clase** (10: medical, accident, unpaid, unjustified, suspension, personal, other, vacation, legal_leave, day_off) y marca `counts_as_absence`; catálogo global de 14 tipos por defecto (CMP) que se copia a cada tenant. Un tipo nuevo del archivo se clasifica por la clase del archivo, por el catálogo o queda *sin clasificar* (`is_classified = false`, cuenta como ausentismo y el dashboard avisa). Un tipo existente nunca lo modifica un archivo: manda lo editado en el portal por el admin | ✅ Cerrada |
+| D-114 | El horario sale de la unidad de tipo `SHIFT` (`hr_shift_schedules`: horas por día y semana laboral de 7 caracteres 0/1); sin turno o sin horario propio se usa el de la empresa (`cfg_tenant_settings`). Modo de asistencia `basic` (turnos) o `detailed` (asistencia diaria por API, pendiente). Sin feriados en esta etapa. Resuelve parcialmente Open-7 | ✅ Cerrada |
+| D-115 | `days_count` es la cantidad de días del evento y `hours_count` las horas de ausencia **por día** (ausencia parcial); ambos opcionales. Las horas y los días efectivos se calculan **al consultar** con el turno vigente (no al cargar) | ✅ Cerrada |
+| D-116 | Tasa de ausentismo = horas de ausencia ÷ horas programadas; los períodos de varios meses suman numeradores y denominadores. Unidad y turno vigentes **cada día** en numerador y denominador; la persona deja de contar desde el día de su baja; los meses sin cobertura figuran como "sin datos" | ✅ Cerrada |
+| D-117 | Metas por tenant en `cfg_tenant_metric_targets` (ausentismo, horas extra, rotación) con valor por defecto en el código; las edita el admin en Configuración > Metas | ✅ Cerrada |
+| D-118 | Privacidad en ausentismo: sin ranking de personas ni orden por cantidad de ausencia, sin mostrar ni exportar observaciones; el detalle por persona solo bajo drill-down | ✅ Cerrada |
 
 ---
 
@@ -222,7 +228,7 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Open-4 | **Trigger.dev vs Supabase Edge Functions + pg_cron** (re-eval D-026) | Al iniciar M1 (framework de integraciones) |
 | Open-5 | **Llama hosting**: Groq vs Together.ai vs Fireworks | Antes de M5 (capa IA) |
 | Open-6 | **APIs Manú y Geovictoria**: docs, sandbox, auth, paginación, rate limits | Idealmente antes de M0; bloquea M4 |
-| Open-7 | **Calendario laboral**: modelo propio vs depender de Geovictoria | Al diseñar Time & Attendance en detalle |
+| Open-7 | **Calendario laboral**: modelo propio vs depender de Geovictoria. Avance: semana laboral y horas por turno propias (D-114); faltan feriados y la asistencia diaria por API | Al diseñar Time & Attendance en detalle |
 | Open-8 | **Costos en métricas**: pre-calculados vs derivados en wlA | Al diseñar Payroll en detalle |
 | Open-9 | **Período histórico inicial** del cliente ancla (D-046, default 24 meses) | Al negociar con el cliente ancla |
 | Open-10 | **Provider de billing v2.x**: Stripe vs MercadoPago | Al iniciar v2.x |
@@ -242,3 +248,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 |---|---|
 | 2026-05-19 | Versión inicial. D-001 a D-105 cerradas durante el diseño de Fases 1-7. |
 | 2026-10-13 | D-106 a D-112 y Open-17: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |
+| 2026-10-16 | D-113 a D-118: clasificación de tipos de ausencia, horario por turno, importes de ausencia, tasa de ausentismo, metas por tenant y privacidad. Avance en Open-7. |

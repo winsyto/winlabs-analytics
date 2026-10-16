@@ -29,6 +29,9 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /headcount/export               → Descarga Excel/PDF (?format=xlsx|pdf)
 /integrations                   → Carga de archivos: lista de integraciones del tenant
 /integrations/[id]              → Subida de archivo, columnas del template y resultados de cada job
+/absenteeism                    → Dashboard 2 (Ausentismos): tasa vs meta, evolución, clase y tipo, tasa por dimensión
+/absenteeism/[scope]/[[...id]]  → Drill-down: eventos, personas, clase/<código>, tipo/<código>, dim/<tipo>/<id>
+/absenteeism/export             → Descarga Excel/PDF (?format=xlsx|pdf)
 /reports, /team                 → Stubs
 /settings                       → Índice de configuración
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa
@@ -37,7 +40,7 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /settings/users                 → Gestión de usuarios del tenant (cambiar rol, activar/desactivar)
 ```
 
-Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
+Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/dashboard-ausentismo.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
 
 ## Permisos en settings
 

@@ -282,13 +282,16 @@
 - [x] Dashboard 1: **Headcount / Cubo** (KPIs, drill-down por dimensión con breadcrumb, filtros, exportación Excel y PDF paginado) — completo y en producción
   - [x] Cierre: notas de ajustes y aprendizajes, documentación (`docs/modules/dashboard-headcount.md`, `unidades-organizativas.md`, `carga-de-archivos.md`, runbooks), skill `ADD_DASHBOARD` reescrito y `dashboard-ux` ajustado con `references/wla-conventions.md`
   - [ ] Pendientes del módulo (ver su doc): accesibilidad verificada con lector de pantalla, comportamiento en tablet/móvil, rendimiento con un tenant grande
-- [ ] Dashboard 2: **Ausentismos** (tasa, tipos, tendencia, ranking)
+- [x] Dashboard 2: **Ausentismos** (tasa vs meta, evolución, clase y tipo, tasa por dimensión, drill-down con breadcrumb, exportación Excel y PDF) — completo en local (2026-10-16); `docs/modules/dashboard-ausentismo.md`
+  - [x] E1 modelo y administración (clases de ausencia, tipos por defecto en el CMP, turnos y horarios, ajustes de asistencia, metas) · E2 carga de archivos (clasificación de tipos, importes opcionales, avisos) · E3 motor, resumen, detalle y exportaciones
+  - [ ] E4: reporte por fecha y unidad y cuadro por tipo de licencia (anexo del dashboard) — requiere diseño aprobado
+  - [ ] Pendientes del módulo (ver su doc): feriados, modo de asistencia `detailed`, accesibilidad con lector de pantalla, comportamiento en tablet/móvil, cierre mensual en el worker si hay tenants grandes
 - [ ] Dashboard 3: **Horas extras** (total, distribución, alertas)
 - [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
 - [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
 - [x] Exportación Excel y PDF paginado (Dashboard 1; reutilizable en los siguientes)
-- [ ] Benchmarks configurables por tenant (defaults Argentina: ausentismo 4% mensual, horas extra 10%, rotación 18% anual) — aplica desde el Dashboard 2
-- [ ] Al construir el Dashboard 2: generalizar las piezas atadas a `headcount` (código de dashboard en `getDimensions`, `DASHBOARD_CODES`, defaults por tenant, tarjeta de dimensiones del CMP, `period.ts`/`queries.ts` al kit) — lista en `.claude/skills/add-dashboard.md`
+- [x] Benchmarks configurables por tenant (`cfg_tenant_metric_targets`; defaults Argentina: ausentismo 4% mensual, horas extra 10%, rotación 18% anual): ausentismo en uso; horas extra y rotación quedan listas para sus dashboards
+- [x] Generalización de las piezas atadas a `headcount` (hecha con el Dashboard 2: `period`, `dimensions` y filtros de dimensión en el kit, `DASHBOARD_CODES`, defaults por tenant y tarjeta de dimensiones del CMP por dashboard). Referencia original: (código de dashboard en `getDimensions`, `DASHBOARD_CODES`, defaults por tenant, tarjeta de dimensiones del CMP, `period.ts`/`queries.ts` al kit) — lista en `.claude/skills/add-dashboard.md`
 
 ---
 

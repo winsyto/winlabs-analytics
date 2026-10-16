@@ -542,6 +542,7 @@ model AttAbsenteeismEvent {
   person          HrPerson           @relation(fields: [personId], references: [id])
   absenteeismType CfgAbsenteeismType @relation(fields: [absenteeismTypeId], references: [id])
 
+  @@index([tenantId, startDate, endDate], map: "att_absenteeism_events_tenant_dates_idx")
   @@index([tenantId, personId, startDate])
   @@index([tenantId, absenteeismTypeId])
   @@map("att_absenteeism_events")

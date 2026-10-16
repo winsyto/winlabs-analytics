@@ -10,6 +10,8 @@ import type { Prisma } from "@prisma/client";
  * antes de llamar a `fn`, de modo que las políticas RLS de Postgres
  * filtran automáticamente todas las queries al tenant correcto.
  *
+ * `options.timeout` (ms) sube el límite de la transacción para consultas analíticas pesadas (por defecto 5 s).
+ *
  * @example
  * const users = await withTenantContext(tenantId, (tx) =>
  *   tx.user.findMany()
@@ -17,10 +19,11 @@ import type { Prisma } from "@prisma/client";
  */
 export async function withTenantContext<T>(
   tenantId: string,
-  fn: (tx: Prisma.TransactionClient) => Promise<T>
+  fn: (tx: Prisma.TransactionClient) => Promise<T>,
+  options?: { timeout?: number; maxWait?: number }
 ): Promise<T> {
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     await tx.$executeRaw`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`;
     return fn(tx);
-  });
+  }, options);
 }

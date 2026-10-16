@@ -22,7 +22,7 @@ Usar esta referencia al diseñar o revisar cualquier dashboard de este proyecto.
 - Períodos estándar: último mes cerrado, últimos 12 meses y año en curso.
 - Comparación: contra el período equivalente anterior; referencia secundaria con el promedio de los últimos 12 meses. Si el historial no cubre la comparación, decirlo en vez de mostrar un cero.
 - Variaciones en color neutro con flecha, signo y texto. Reservar verde/rojo para cuando exista un benchmark acordado, y aun así acompañarlos de texto o forma.
-- Benchmarks (ausentismo, horas extra, rotación): configurables por tenant con un valor por defecto; no inventarlos en pantalla sin ese contrato.
+- Benchmarks (ausentismo, horas extra, rotación): configurables por tenant con un valor por defecto (`cfg_tenant_metric_targets`, editables en Configuración > Metas); se muestran como línea de referencia y como estado en la tarjeta con ícono y texto, sin rojo/verde por sí solos. No inventarlos en pantalla sin ese contrato.
 - Una persona o registro cuenta en la unidad que tenía **en la fecha del evento o del cierre**, no en la actual.
 
 ## Filtros y navegación
@@ -67,6 +67,6 @@ Usar esta referencia al diseñar o revisar cualquier dashboard de este proyecto.
 
 ## Gaps abiertos para product-analytics y producto
 
-- Benchmarks y metas por tenant.
+- Benchmarks y metas por tenant (resuelto con el Dashboard 2; falta usarlos en horas extra y rotación).
 - Permisos por dashboard y por opción de menú.
 - Hub de dashboards y administración de dashboards activos por tenant (posterior a los dashboards del MVP).

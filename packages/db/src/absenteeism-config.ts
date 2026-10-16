@@ -4,8 +4,8 @@ import type { Prisma } from "@prisma/client";
 export const ABSENTEEISM_CLASSES = [
   { code: "medical", name: "Enfermedad", countsAsAbsence: true },
   { code: "accident", name: "Accidente", countsAsAbsence: true },
-  { code: "unpaid", name: "Sin goce de haberes", countsAsAbsence: true },
-  { code: "unjustified", name: "Sin aviso / injustificada", countsAsAbsence: true },
+  { code: "unpaid", name: "Sin goce", countsAsAbsence: true },
+  { code: "unjustified", name: "Sin aviso", countsAsAbsence: true },
   { code: "suspension", name: "Suspensión", countsAsAbsence: true },
   { code: "personal", name: "Personal / familiar", countsAsAbsence: true },
   { code: "other", name: "Otra", countsAsAbsence: true },

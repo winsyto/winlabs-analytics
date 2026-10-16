@@ -15,3 +15,4 @@
 | 2026-10-15 | cfg_tenant_metric_targets (metas por tenant; ausentismo 4% mensual; RLS) | add_tenant_metric_targets |
 | 2026-10-15 | Dimensiones del dashboard de ausentismos y SHIFT habilitado en todos los tenants | add_absenteeism_dimensions |
 | 2026-10-16 | att_absenteeism_events: days_count y hours_count opcionales (hours = por día) y CHECK end_date >= start_date | absenteeism_events_optional_amounts |
+| 2026-10-17 | Funciones wla_workdays / wla_workdays_until e índice de eventos de ausencia por fechas (motor del Dashboard 2) | add_workdays_function |

@@ -2,7 +2,7 @@
 
 **Trigger:** cuando se deba agregar o modificar un dashboard de People Analytics.
 
-**Implementación de referencia:** Dashboard 1 (Headcount): `apps/cliente/app/(dashboard)/headcount/` y su documentación `docs/modules/dashboard-headcount.md`. Copiar su estructura, no reinventarla.
+**Implementaciones de referencia:** Dashboard 1 (Headcount): `apps/cliente/app/(dashboard)/headcount/` y `docs/modules/dashboard-headcount.md`; Dashboard 2 (Ausentismos, con motor de cálculo propio y meta): `apps/cliente/app/(dashboard)/absenteeism/` y `docs/modules/dashboard-ausentismo.md`. Copiar su estructura, no reinventarla.
 
 **Otras referencias:**
 - Diseño: skill `dashboard-ux` (`.claude/skills/dashboard-ux/`), más `references/wla-conventions.md` (convenciones de este proyecto). Es obligatorio para el diseño; no se implementa antes de que el usuario apruebe el diseño funcional y visual.
@@ -17,7 +17,7 @@
 | # | Dashboard | Estado | Fuentes | Notas |
 |---|---|---|---|---|
 | 1 | Headcount / Cubo | Completo | `hr_people`, `hr_people_history`, `hr_people_org_assignments` | Referencia |
-| 2 | Ausentismos | Pendiente | `att_absenteeism_events`, `cfg_absenteeism_types`, `hr_people_history` (denominador) | Benchmark por defecto 4% mensual, configurable por tenant |
+| 2 | Ausentismos | Completo en local (falta el anexo E4) | `att_absenteeism_events`, `cfg_absenteeism_types`, `hr_shift_schedules`, `hr_people`, `hr_people_org_assignments` | Motor SQL de tramos y piezas (`docs/modules/dashboard-ausentismo.md`); meta por tenant, default 4% mensual |
 | 3 | Horas extras | Pendiente | `att_time_daily` y entradas con categoría `overtime` | Benchmark por defecto 10% sobre horas regulares |
 | 4 | Turnover / Rotación | Pendiente | `hr_people` (bajas y motivos), `hr_people_history` (headcount promedio), `cfg_termination_reasons` | Benchmark por defecto 18% anual |
 
@@ -90,16 +90,16 @@ Kit compartido en `apps/cliente/app/(dashboard)/_dashboard-kit/` (reutilizar, no
 
 ---
 
-## Al construir el Dashboard 2 (pendientes de generalización)
-El Dashboard 1 dejó algunas piezas atadas a `headcount` que hay que generalizar la primera vez que se repiten:
-- `getDimensions` usa el código de dashboard `"headcount"` fijo: pasarlo como parámetro y moverlo al kit.
-- `DASHBOARD_CODES` y `applyDefaultOrgConfig` (`packages/db/src/org-config.ts`) solo conocen `headcount`: agregar el código nuevo, sus dimensiones por defecto, y una migración que las cree para los tenants existentes.
-- La tarjeta de dimensiones del CMP administra solo el dashboard `headcount`: extenderla a los dashboards disponibles.
-- `period.ts` y `queries.ts` (frescura, cobertura, comparación) viven en `headcount/_data/`: moverlos al kit al reutilizarlos.
-- Benchmarks por tenant: definir dónde se guardan (configuración por tenant con valor por defecto) antes del Dashboard 2.
+## Lo que dejó el Dashboard 2 (ya generalizado)
+- Al kit pasaron `period.ts`, `dimensions.ts` (`getDashboardDimensions(tenantId, código)`) y `dimension-filters.ts` (`f_<tipo>`, `none`). `MetricCard` admite `formatValue`, `formatDiff`, `formatAvg` y contenido propio (`children`).
+- `DASHBOARD_CODES` y `applyDefaultOrgConfig` recorren todos los dashboards (`DEFAULT_DASHBOARD_DIMENSIONS`); el CMP muestra y restaura las dimensiones de cada dashboard.
+- **Metas por tenant:** `cfg_tenant_metric_targets` + `METRIC_TARGET_DEFAULTS` (`absenteeism_rate`, `overtime_rate`, `turnover_rate`); se editan en `/settings/targets`. Un dashboard nuevo solo agrega la métrica a la lista de esa pantalla.
+- **Si el dashboard necesita un cálculo propio (tasas, horas, exposición):** hacerlo en SQL, evaluar el motor **una sola vez** por pantalla (CTE materializado) y reutilizarlo en el detalle y las exportaciones. Ver `absenteeism/_data/engine.ts` y las lecciones de rendimiento del doc del módulo.
+- **Verificación independiente:** un script que arme un tenant temporal con casos de borde y compare contra una implementación día por día (`apps/cliente/scripts/verify-absenteeism-engine.ts`).
+- Pendiente de generalizar al repetirse: el filtro de período de `queries.ts` (`resolveRange`) y los componentes de gráfico de barras con meta.
 
 ## Pendiente de producto (posterior a los 4 dashboards)
 Hub de dashboards (una sola opción de menú que lleva a todos), administración en el CMP de qué dashboards están activos por tenant y permisos por opción de menú. Ver `BACKLOG.md`.
 
 ## Errores comunes (ver el doc del módulo para el detalle)
-Consultas a tablas con RLS sin contexto de tenant, filtros por el estado actual en vez del vigente en la fecha del evento, contenedores de gráficos sin altura definida, tablas `sr-only` sin envolver, filtros o paneles escritos para dimensiones concretas.
+Consultas a tablas con RLS sin contexto de tenant, `withTenantContext` con el límite de 5 s en consultas analíticas (usar `{ timeout }`), medir rendimiento con tablas sin `ANALYZE` o con argumentos constantes, filtros por el estado actual en vez del vigente en la fecha del evento, contenedores de gráficos sin altura definida, tablas `sr-only` sin envolver, filtros o paneles escritos para dimensiones concretas.

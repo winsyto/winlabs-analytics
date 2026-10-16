@@ -15,6 +15,14 @@ interface MetricCardProps {
   hidePct?: boolean;
   /** Si se define, la tarjeta navega al detalle de personas */
   href?: string;
+  /** Formato del valor (por defecto, entero). Útil para porcentajes o cantidades con unidad */
+  formatValue?: (n: number) => string;
+  /** Formato de la variación absoluta (por defecto, entero con signo) */
+  formatDiff?: (n: number) => string;
+  /** Formato de la referencia secundaria (por defecto, un decimal) */
+  formatAvg?: (n: number) => string;
+  /** Contenido adicional bajo la variación (referencias, metas, avisos) */
+  children?: React.ReactNode;
 }
 
 export function MetricCard({
@@ -27,6 +35,10 @@ export function MetricCard({
   signed,
   hidePct,
   href,
+  formatValue,
+  formatDiff,
+  formatAvg,
+  children,
 }: MetricCardProps) {
   const diff = value !== null && prev !== null ? value - prev : null;
   const pct =
@@ -47,7 +59,7 @@ export function MetricCard({
         {href && <ChevronRight className="h-3.5 w-3.5" aria-hidden />}
       </p>
       <p className="mt-0.5 text-3xl font-bold tabular-nums text-foreground">
-        {value === null ? "—" : signed ? fmtSigned(value) : fmtInt(value)}
+        {value === null ? "—" : formatValue ? formatValue(value) : signed ? fmtSigned(value) : fmtInt(value)}
       </p>
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         {diff === null ? (
@@ -56,17 +68,18 @@ export function MetricCard({
           <span className="inline-flex items-center gap-1 font-medium text-foreground">
             <Icon className="h-3.5 w-3.5" aria-hidden />
             <span className="sr-only">Variación </span>
-            {fmtSigned(diff)}
+            {formatDiff ? formatDiff(diff) : fmtSigned(diff)}
             {pct !== null && ` (${fmtSignedPct(pct)})`}
             <span className="font-normal text-muted-foreground">{compareLabel}</span>
           </span>
         )}
         {avg !== null && (
           <span className="rounded bg-muted px-1.5 py-0.5 text-[11px] text-muted-foreground">
-            {avgLabel}: {fmtDec(avg)}
+            {avgLabel}: {formatAvg ? formatAvg(avg) : fmtDec(avg)}
           </span>
         )}
       </div>
+      {children}
     </div>
   );
 }
