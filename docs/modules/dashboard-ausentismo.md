@@ -1,7 +1,7 @@
 # Dashboard Ausentismos (Dashboard 2 de M3)
 
 **Fecha:** 2026-10-16
-**Estado:** MVP (resumen, detalle y exportaciones completos; el reporte por fecha y unidad queda para la etapa E4)
+**Estado:** MVP (resumen, detalle y exportaciones completos, más el reporte «Resumen por fecha y unidad» (E4.1); falta el cuadro por tipo y unidad (E4.2))
 
 ## Resumen
 
@@ -29,6 +29,7 @@ Todo bajo `apps/cliente/app/(dashboard)/absenteeism/`:
 | `page.tsx` | Resumen (Server Component): KPIs, gráficos, filtros, avisos y estados |
 | `[scope]/[[...id]]/page.tsx` | Drill-down: `eventos`, `personas`, `clase/<código>`, `tipo/<código>`, `dim/<tipo>/<id>` |
 | `export/route.ts` | Descarga Excel y PDF (`?format=xlsx|pdf` + filtros) |
+| `reportes/fecha/` | Reporte «Resumen por fecha y unidad» (`page.tsx`, `export/route.ts`), con `reportes/_data/by-date.ts`, `_components/` y `_export/` |
 | `_data/engine.ts` | **Motor de cálculo en SQL** (ver abajo) |
 | `_data/queries.ts` | `loadAbsenteeism` (una sola evaluación del motor) y `resolveRange` (mes de referencia y cobertura) |
 | `_data/detail-queries.ts` | Listados del drill-down, calculados con el mismo motor |
@@ -99,6 +100,21 @@ Se evalúa **una sola vez por pantalla** y de esa evaluación salen todos los ag
 - **Estados:** carga, vacío (sin eventos, con enlace a Integraciones), sin resultados (con "Limpiar filtros"), desactualizado (más de 45 días sin carga), cobertura parcial, comparación no disponible, tipos sin clasificar (aviso con enlace a Configuración) y asistencia detallada pendiente.
 - **Accesibilidad:** resumen textual y tabla equivalente por gráfico, flechas con signo y texto, filtros y pestañas operables con teclado.
 
+## Reporte: resumen por fecha y unidad (`/absenteeism/reportes/fecha`)
+
+Anexo del dashboard, pensado para el seguimiento diario (basado en reportes reales de clientes).
+
+- **Filas:** unidades de la dimensión elegida (`g=<tipo>`; `g=total` = solo total general), con fila de total general. **Columnas:** dotación asignada · presentes (estimado) · franco · vacaciones · licencia de ley · sin aviso · sin goce · enfermedad · accidente · suspensión · otras · total de ausentes · % de ausentismo.
+- **Fecha:** un día (`from`) o un período (`from`–`to`, máximo 366 días). Por defecto, el último día hábil del mes de referencia. Las fechas inválidas vuelven al valor por defecto.
+- **Filtros:** las dimensiones del dashboard (`f_<tipo>`, con "Sin asignar"). No lleva filtros de clase ni de tipo porque las clases son las columnas.
+- **Cálculo** (mismo motor que el resumen):
+  - Dotación asignada = personas con día laborable según su turno ese día (en un período, suma de personas-día).
+  - Francos, vacaciones, licencias y ausencias salen de la clase de cada evento; las ausencias parciales cuentan como fracción de día.
+  - Presentes (estimado) = dotación − francos − vacaciones − licencias − ausentes. Los presentes reales requieren asistencia detallada (por API).
+  - % de ausentismo = ausentes ÷ dotación asignada. «Otras» agrupa las clases `personal` y `other`.
+  - En un solo día, una persona con más de un evento se cuenta una vez (prioridad al que cuenta como ausentismo); en un período se suman personas-día.
+- **Exportaciones:** Excel (una hoja con metadatos, filtros, filas y notas) y PDF apaisado.
+
 ## Detalle y exportaciones
 
 - **Detalle:** páginas con breadcrumb, búsqueda por nombre o legajo, orden y paginación. Eventos: persona, legajo, una columna por dimensión (unidad vigente al inicio del evento), tipo, clase, fechas, días y horas del período, estado. Personas: eventos, días y horas. **No se ordena por cantidad de ausencia ni se muestran observaciones** (decisión de privacidad: no hay ranking de personas).
@@ -135,7 +151,8 @@ Se evalúa **una sola vez por pantalla** y de esa evaluación salen todos los ag
 - **Scripts de prueba:** el runner `tsx` suelto no carga `@react-pdf/renderer`; el PDF se verifica por HTTP contra el servidor de desarrollo.
 
 ## Pendientes
-- [ ] **E4:** reporte por fecha y unidad (dotación asignada, francos, vacaciones, licencias y ausentismo por clase, por día) y cuadro por tipo de licencia con índices por grupo y por empresa.
+- [x] **E4.1:** reporte por fecha y unidad.
+- [ ] **E4.2:** cuadro por tipo de licencia y unidad, con índices por grupo y por empresa.
 - [ ] Modo de asistencia `detailed` (asistencia diaria teórica y efectiva por integración): presentes, y denominadores propios.
 - [ ] Feriados por tenant (hoy se asume que todos los días de la semana laboral son laborables).
 - [ ] Si algún tenant supera unas 5.000 personas: cierre mensual de ausentismo en el worker (como el de personas) en lugar de calcular al consultar.
@@ -145,3 +162,4 @@ Se evalúa **una sola vez por pantalla** y de esa evaluación salen todos los ag
 | Fecha | Cambio |
 |---|---|
 | 2026-10-16 | Versión inicial: motor, resumen, detalle y exportaciones |
+| 2026-10-17 | E4.1: reporte «Resumen por fecha y unidad» |

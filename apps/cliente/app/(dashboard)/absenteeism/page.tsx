@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { AlertTriangle, CalendarDays, CheckCircle2, Info } from "lucide-react";
 import { auth } from "@/auth";
 import { ChartCard } from "../_dashboard-kit/chart-card";
 import { DashboardShell, PendingRegion } from "../_dashboard-kit/dashboard-shell";
@@ -114,6 +114,13 @@ export default async function AbsenteeismPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <AbsenteeismFreshness {...freshness} />
+          <Link
+            href="/absenteeism/reportes/fecha"
+            className="inline-flex items-center gap-1 rounded-md border bg-card px-2.5 py-1 text-xs font-medium hover:bg-muted"
+          >
+            <CalendarDays className="h-3.5 w-3.5" aria-hidden />
+            Resumen por fecha
+          </Link>
           <ExportMenu xlsxHref={exportHref("xlsx")} pdfHref={exportHref("pdf")} />
         </div>
       </div>

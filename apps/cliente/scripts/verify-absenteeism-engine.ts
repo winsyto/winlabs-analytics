@@ -5,11 +5,13 @@
  */
 import { prisma, applyDefaultOrgConfig, applyDefaultTenantSettings } from "@wla/db";
 import { withTenantContext } from "@wla/auth";
+import { loadDateReport } from "../app/(dashboard)/absenteeism/reportes/_data/by-date";
 import { loadDetail } from "../app/(dashboard)/absenteeism/_data/detail-queries";
 import { loadAbsenteeism } from "../app/(dashboard)/absenteeism/_data/queries";
 import type { AbsenteeismFilters } from "../app/(dashboard)/absenteeism/_data/filters";
 import { buildPeriod } from "../app/(dashboard)/_dashboard-kit/period";
 import type { Dimension } from "../app/(dashboard)/_dashboard-kit/dimensions";
+import type { DimensionFilter } from "../app/(dashboard)/_dashboard-kit/dimension-filters";
 
 const d = (s: string) => new Date(`${s}T00:00:00Z`);
 const iso = (x: Date) => x.toISOString().slice(0, 10);
@@ -127,6 +129,43 @@ function brute(q: Q): Res {
     }
   }
   return r;
+}
+
+// ── Resumen por fecha y unidad (independiente) ──────────────────────────────────────────────────────────────
+const COUNTING_COLS = ["unjustified", "unpaid", "medical", "accident", "suspension", "personal", "other"];
+interface DateGroup { assigned: number; cls: Record<string, number> }
+function bruteDateReport(from: string, to: string, groupBy: "AREA" | "SHIFT" | null, areaSel?: DimSel): Map<string, DateGroup> {
+  const out = new Map<string, DateGroup>();
+  const g = (k: string) => {
+    if (!out.has(k)) out.set(k, { assigned: 0, cls: {} });
+    return out.get(k)!;
+  };
+  const single = from === to;
+  for (const p of people) {
+    for (let day = d(from); iso(day) <= to; day = addDay(day, 1)) {
+      const ds = iso(day);
+      if (ds < p.hire || (p.term !== null && ds >= p.term)) continue;
+      const area = unitAt(p, "AREA", ds);
+      const shift = unitAt(p, "SHIFT", ds);
+      if (areaSel && !(area === null ? areaSel.none : areaSel.ids.includes(area))) continue;
+      const sc = sched(shift);
+      if (!isWork(sc.week, day)) continue;
+      const key = groupBy === null ? "total" : ((groupBy === "AREA" ? area : shift) ?? "none");
+      g(key).assigned += 1;
+      const hits = events
+        .filter((e) => e.person === p.code && e.status !== "cancelled" && ds >= e.start && ds <= e.end)
+        .map((e) => {
+          const wd = wdEvent(e);
+          const f = e.days === null || wd === 0 ? 1 : e.days / wd;
+          const h = (e.hours === null ? sc.dh : Math.min(e.hours, sc.dh)) * f;
+          return { cls: TYPES[e.type]!.cls, counts: TYPES[e.type]!.counts, days: h / sc.dh, h };
+        })
+        .filter((x) => x.h > 0);
+      const used = single ? hits.sort((a, b) => Number(b.counts) - Number(a.counts) || b.h - a.h).slice(0, 1) : hits;
+      for (const x of used) g(key).cls[x.cls] = (g(key).cls[x.cls] ?? 0) + x.days;
+    }
+  }
+  return out;
 }
 
 // ── Ejecución ───────────────────────────────────────────────────────────────────────────────────────────────
@@ -285,6 +324,46 @@ async function main() {
       }
       if (fails.length) { failures++; console.log(`✗ ${c.name}\n   - ${fails.slice(0, 8).join("\n   - ")}`); }
       else console.log(`✓ ${c.name}: tasa ${data.kpis.rate.value?.toFixed(3)} % · ${data.kpis.absence.cur.hours.toFixed(1)} h · ${data.kpis.events.value} eventos · ${data.kpis.people.value}/${data.kpis.people.exposed} personas`);
+    }
+    // Resumen por fecha y unidad
+    const dateCases: { name: string; from: string; to: string; groupBy: "AREA" | "SHIFT" | null; area?: DimSel; areaF?: DimensionFilter }[] = [
+      { name: "fecha 16/09 por área", from: "2026-09-16", to: "2026-09-16", groupBy: "AREA" },
+      { name: "fecha 10/09 por área (cambio de área de P2)", from: "2026-09-10", to: "2026-09-10", groupBy: "AREA" },
+      { name: "fecha 08/07 por turno (vacaciones)", from: "2026-07-08", to: "2026-07-08", groupBy: "SHIFT" },
+      { name: "fecha 18/08 total (cambio de turno, sábado excluido)", from: "2026-08-18", to: "2026-08-18", groupBy: null },
+      { name: "rango 10/08–18/09 por área", from: "2026-08-10", to: "2026-09-18", groupBy: "AREA" },
+      { name: "rango 01/06–30/09 por turno", from: "2026-06-01", to: "2026-09-30", groupBy: "SHIFT" },
+      { name: "rango por área, filtro Área X", from: "2026-08-10", to: "2026-09-18", groupBy: "AREA", area: { ids: ["X"], none: false }, areaF: { ids: [uid("AREA", "X")], none: false } },
+    ];
+    for (const c of dateCases) {
+      const fails: string[] = [];
+      const params = { from: c.from, to: c.to, groupBy: c.groupBy, dims: (c.areaF ? { AREA: c.areaF } : {}) as Record<string, DimensionFilter> };
+      const rep = await loadDateReport(tenantId, dims, params);
+      if (rep.status !== "ok") { failures++; console.log(`✗ ${c.name}: ${rep.status}`); continue; }
+      const exp = bruteDateReport(c.from, c.to, c.groupBy, c.area);
+      const nameToKey = (label: string, key: string) => (c.groupBy === null ? "total" : key === "none" ? "none" : [...ids.units].find(([, v]) => String(v) === key)![0].split(":")[1]!);
+      const seen = new Set<string>();
+      for (const r of rep.rows) {
+        const code = nameToKey(r.label, r.key);
+        seen.add(code);
+        const e = exp.get(code) ?? { assigned: 0, cls: {} };
+        near(r.assigned, e.assigned, `${code} dotación`, fails);
+        near(r.dayOff, e.cls.day_off ?? 0, `${code} franco`, fails);
+        near(r.vacation, e.cls.vacation ?? 0, `${code} vacaciones`, fails);
+        near(r.legalLeave, e.cls.legal_leave ?? 0, `${code} lic. ley`, fails);
+        near(r.unjustified, e.cls.unjustified ?? 0, `${code} sin aviso`, fails);
+        near(r.unpaid, e.cls.unpaid ?? 0, `${code} sin goce`, fails);
+        near(r.medical, e.cls.medical ?? 0, `${code} enfermedad`, fails);
+        near(r.accident, e.cls.accident ?? 0, `${code} accidente`, fails);
+        near(r.suspension, e.cls.suspension ?? 0, `${code} suspensión`, fails);
+        near(r.other, (e.cls.personal ?? 0) + (e.cls.other ?? 0), `${code} otras`, fails);
+        const absent = COUNTING_COLS.reduce((a, k) => a + (e.cls[k] ?? 0), 0);
+        near(r.absent, absent, `${code} total ausentes`, fails);
+        near(r.pct, e.assigned > 0 ? (absent / e.assigned) * 100 : null, `${code} %`, fails);
+      }
+      for (const [code, e] of exp) if ((e.assigned > 0 || Object.keys(e.cls).length) && !seen.has(code)) fails.push(`${code}: falta en el reporte`);
+      if (fails.length) { failures++; console.log(`✗ ${c.name}` + String.fromCharCode(10) + "   - " + fails.slice(0, 8).join(String.fromCharCode(10) + "   - ")); }
+      else console.log(`✓ ${c.name}: dotación ${rep.total.assigned} · ausentes ${rep.total.absent.toFixed(2)} · ${rep.rows.length} fila(s)`);
     }
     console.log(failures === 0 ? "\nTODOS LOS CASOS COINCIDEN" : `\n${failures} caso(s) con diferencias`);
   } finally {

@@ -32,6 +32,8 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /absenteeism                    → Dashboard 2 (Ausentismos): tasa vs meta, evolución, clase y tipo, tasa por dimensión
 /absenteeism/[scope]/[[...id]]  → Drill-down: eventos, personas, clase/<código>, tipo/<código>, dim/<tipo>/<id>
 /absenteeism/export             → Descarga Excel/PDF (?format=xlsx|pdf)
+/absenteeism/reportes/fecha     → Resumen por fecha y unidad (dotación, presentismo y ausentismo por clase; ?from, ?to, ?g=<dimensión>)
+/absenteeism/reportes/fecha/export → Excel/PDF del reporte
 /reports, /team                 → Stubs
 /settings                       → Índice de configuración
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa

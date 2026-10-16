@@ -284,7 +284,8 @@
   - [ ] Pendientes del módulo (ver su doc): accesibilidad verificada con lector de pantalla, comportamiento en tablet/móvil, rendimiento con un tenant grande
 - [x] Dashboard 2: **Ausentismos** (tasa vs meta, evolución, clase y tipo, tasa por dimensión, drill-down con breadcrumb, exportación Excel y PDF) — completo en local (2026-10-16); `docs/modules/dashboard-ausentismo.md`
   - [x] E1 modelo y administración (clases de ausencia, tipos por defecto en el CMP, turnos y horarios, ajustes de asistencia, metas) · E2 carga de archivos (clasificación de tipos, importes opcionales, avisos) · E3 motor, resumen, detalle y exportaciones
-  - [ ] E4: reporte por fecha y unidad y cuadro por tipo de licencia (anexo del dashboard) — requiere diseño aprobado
+  - [x] E4.1: reporte «Resumen por fecha y unidad» (anexo del dashboard; en local)
+  - [ ] E4.2: cuadro por tipo de licencia y unidad, con índices por grupo y por empresa (diseño aprobado)
   - [ ] Pendientes del módulo (ver su doc): feriados, modo de asistencia `detailed`, accesibilidad con lector de pantalla, comportamiento en tablet/móvil, cierre mensual en el worker si hay tenants grandes
 - [ ] Dashboard 3: **Horas extras** (total, distribución, alertas)
 - [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
