@@ -9,7 +9,7 @@
 **WinLabs Analytics (wlA)** es una plataforma SaaS de People Analytics multi-tenant para LATAM.
 Dos apps: `cmp` (console interna de WinLabs para gestionar tenants) y `cliente` (app que usa cada empresa).
 
-**Estado actual:** M0, M1 y M2 cerrados. M3 (dashboards) en curso: el Dashboard 1 (Headcount) está en producción y el Dashboard 2 (Ausentismos) está completo en local (su anexo, el reporte por fecha y unidad, queda pendiente); siguen Horas extras y Turnover, de a uno.
+**Estado actual:** M0, M1 y M2 cerrados. M3 (dashboards) en curso: el Dashboard 1 (Headcount) está en producción y el Dashboard 2 (Ausentismos) está completo (con sus dos reportes anexos: resumen por fecha y unidad y cuadro por tipo y unidad); siguen Horas extras y Turnover, de a uno.
 **Roadmap detallado:** ver `BACKLOG.md` en la raíz.
 **Docs de producto:** ver `proyecto/` — especialmente `07-roadmap.md` y `05-modelo-datos.md`.
 **Docs técnicas:** `docs/modules/` (un doc por módulo), `docs/runbooks/` (procedimientos: deploy, pruebas locales, limpieza de datos) y `docs/database/` (DBML y changelog).
@@ -251,7 +251,7 @@ Ver `jobs/worker/.env.example`. La variable crítica es `DATABASE_URL` que debe 
 
 ## Lo que NO está implementado todavía
 
-- Dashboards 3 y 4 (Horas extras, Turnover) y el anexo del Dashboard 2 (reporte por fecha y unidad) (M3)
+- Dashboards 3 y 4 (Horas extras, Turnover) (M3)
 - Hub de dashboards, activación de dashboards por tenant y permisos por opción de menú (etapa posterior a los dashboards; ver `BACKLOG.md`)
 - Forgot password / reset password (stubs existen, falta implementar con Resend)
 - APIs Manú y Geovictoria (M4)

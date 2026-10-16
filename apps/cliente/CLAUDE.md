@@ -34,6 +34,8 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /absenteeism/export             → Descarga Excel/PDF (?format=xlsx|pdf)
 /absenteeism/reportes/fecha     → Resumen por fecha y unidad (dotación, presentismo y ausentismo por clase; ?from, ?to, ?g=<dimensión>)
 /absenteeism/reportes/fecha/export → Excel/PDF del reporte
+/absenteeism/reportes/tipos     → Cuadro por tipo de ausencia y unidad (índices por grupo y por empresa; ?g, ?m=events|days|hours, ?all=1 y los filtros del dashboard)
+/absenteeism/reportes/tipos/export → Excel/PDF del cuadro
 /reports, /team                 → Stubs
 /settings                       → Índice de configuración
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa

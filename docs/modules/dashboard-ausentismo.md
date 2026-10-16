@@ -1,7 +1,7 @@
 # Dashboard Ausentismos (Dashboard 2 de M3)
 
 **Fecha:** 2026-10-16
-**Estado:** MVP (resumen, detalle y exportaciones completos, más el reporte «Resumen por fecha y unidad» (E4.1); falta el cuadro por tipo y unidad (E4.2))
+**Estado:** MVP (resumen, detalle y exportaciones completos, más los dos reportes anexos: «Resumen por fecha y unidad» y «Cuadro por tipo y unidad»)
 
 ## Resumen
 
@@ -30,6 +30,7 @@ Todo bajo `apps/cliente/app/(dashboard)/absenteeism/`:
 | `[scope]/[[...id]]/page.tsx` | Drill-down: `eventos`, `personas`, `clase/<código>`, `tipo/<código>`, `dim/<tipo>/<id>` |
 | `export/route.ts` | Descarga Excel y PDF (`?format=xlsx|pdf` + filtros) |
 | `reportes/fecha/` | Reporte «Resumen por fecha y unidad» (`page.tsx`, `export/route.ts`), con `reportes/_data/by-date.ts`, `_components/` y `_export/` |
+| `reportes/tipos/` | Reporte «Cuadro por tipo y unidad» (`page.tsx`, `export/route.ts`), con `reportes/_data/by-type.ts` |
 | `_data/engine.ts` | **Motor de cálculo en SQL** (ver abajo) |
 | `_data/queries.ts` | `loadAbsenteeism` (una sola evaluación del motor) y `resolveRange` (mes de referencia y cobertura) |
 | `_data/detail-queries.ts` | Listados del drill-down, calculados con el mismo motor |
@@ -115,6 +116,16 @@ Anexo del dashboard, pensado para el seguimiento diario (basado en reportes real
   - En un solo día, una persona con más de un evento se cuenta una vez (prioridad al que cuenta como ausentismo); en un período se suman personas-día.
 - **Exportaciones:** Excel (una hoja con metadatos, filtros, filas y notas) y PDF apaisado.
 
+## Reporte: cuadro por tipo de ausencia y unidad (`/absenteeism/reportes/tipos`)
+
+- **Filas:** tipos de ausencia que cuentan como ausentismo (los demás son los «tipos excluidos»); por defecto solo los que tienen ausencias en el período (`all=1` muestra todos). **Columnas:** las unidades de la dimensión elegida (`g=<tipo>`, o `g=total`), más **Total**, **Incidencia** y **Índice**.
+- **Filtros:** los mismos del dashboard (período, dimensiones, clase y tipo, todo en la URL).
+- **Cantidad (`m`):** eventos (por defecto), días u horas efectivos. Los días y las horas son los del período y los filtros, calculados por el mismo motor.
+- **Pie del cuadro:** total de ausencias, dotación (personas con horas programadas en el período), **índice del grupo** (ausencias de la unidad ÷ personas de la unidad) e **índice sobre la empresa** (ausencias de la unidad ÷ personas de toda la empresa).
+- **Índices** = cantidad cada 100 personas (se muestran sin `%` y pueden superar 100 en períodos largos). **Incidencia** = peso del tipo sobre el total de ausencias; **Índice** de un tipo = su total ÷ personas de la empresa × 100.
+- **Totales sin repetir eventos:** una persona que cambió de unidad en el período figura en ambas, y un evento que cruza unidades se cuenta en cada una; el total y la dotación general no repiten.
+- **Exportaciones:** Excel (todas las unidades) y PDF apaisado (hasta 14 unidades; el Excel trae el resto).
+
 ## Detalle y exportaciones
 
 - **Detalle:** páginas con breadcrumb, búsqueda por nombre o legajo, orden y paginación. Eventos: persona, legajo, una columna por dimensión (unidad vigente al inicio del evento), tipo, clase, fechas, días y horas del período, estado. Personas: eventos, días y horas. **No se ordena por cantidad de ausencia ni se muestran observaciones** (decisión de privacidad: no hay ranking de personas).
@@ -151,8 +162,7 @@ Anexo del dashboard, pensado para el seguimiento diario (basado en reportes real
 - **Scripts de prueba:** el runner `tsx` suelto no carga `@react-pdf/renderer`; el PDF se verifica por HTTP contra el servidor de desarrollo.
 
 ## Pendientes
-- [x] **E4.1:** reporte por fecha y unidad.
-- [ ] **E4.2:** cuadro por tipo de licencia y unidad, con índices por grupo y por empresa.
+- [x] **E4:** reporte por fecha y unidad y cuadro por tipo y unidad (anexos del dashboard).
 - [ ] Modo de asistencia `detailed` (asistencia diaria teórica y efectiva por integración): presentes, y denominadores propios.
 - [ ] Feriados por tenant (hoy se asume que todos los días de la semana laboral son laborables).
 - [ ] Si algún tenant supera unas 5.000 personas: cierre mensual de ausentismo en el worker (como el de personas) en lugar de calcular al consultar.
@@ -163,3 +173,4 @@ Anexo del dashboard, pensado para el seguimiento diario (basado en reportes real
 |---|---|
 | 2026-10-16 | Versión inicial: motor, resumen, detalle y exportaciones |
 | 2026-10-17 | E4.1: reporte «Resumen por fecha y unidad» |
+| 2026-10-18 | E4.2: «Cuadro por tipo y unidad» con índices por grupo y por empresa |

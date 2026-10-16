@@ -5,6 +5,7 @@
  */
 import { prisma, applyDefaultOrgConfig, applyDefaultTenantSettings } from "@wla/db";
 import { withTenantContext } from "@wla/auth";
+import { loadTypeReport } from "../app/(dashboard)/absenteeism/reportes/_data/by-type";
 import { loadDateReport } from "../app/(dashboard)/absenteeism/reportes/_data/by-date";
 import { loadDetail } from "../app/(dashboard)/absenteeism/_data/detail-queries";
 import { loadAbsenteeism } from "../app/(dashboard)/absenteeism/_data/queries";
@@ -82,10 +83,11 @@ interface Q {
   area?: DimSel; shift?: DimSel; classes?: string[]; types?: string[];
   groupBy?: "AREA" | "SHIFT";
 }
-interface Res { byClass: Map<string, number>; byType: Map<string, number>; exclHours: number; exclDays: number; sched: number; hours: number; days: number; events: Set<string>; persons: Set<string>; exposed: Set<string>; groups: Map<string, { sched: number; hours: number; days: number; people: Set<string> }> }
+interface TCell { ev: Set<string>; h: number; d: number }
+interface Res { cells: Map<string, Map<string, TCell>>; typeTot: Map<string, TCell>; byClass: Map<string, number>; byType: Map<string, number>; exclHours: number; exclDays: number; sched: number; hours: number; days: number; events: Set<string>; persons: Set<string>; exposed: Set<string>; groups: Map<string, { sched: number; hours: number; days: number; people: Set<string> }> }
 
 function brute(q: Q): Res {
-  const r: Res = { byClass: new Map(), byType: new Map(), exclHours: 0, exclDays: 0, sched: 0, hours: 0, days: 0, events: new Set(), persons: new Set(), exposed: new Set(), groups: new Map() };
+  const r: Res = { cells: new Map(), typeTot: new Map(), byClass: new Map(), byType: new Map(), exclHours: 0, exclDays: 0, sched: 0, hours: 0, days: 0, events: new Set(), persons: new Set(), exposed: new Set(), groups: new Map() };
   const pass = (sel: DimSel | undefined, unit: string | null) =>
     !sel || (unit === null ? sel.none : sel.ids.includes(unit));
   const grp = (k: string) => {
@@ -118,6 +120,16 @@ function brute(q: Q): Res {
         if (!t.counts) { r.exclHours += h; r.exclDays += h / s.dh; continue; }
         if (q.classes?.length && !q.classes.includes(t.cls)) continue;
         if (q.types?.length && !q.types.includes(e.type)) continue;
+        const evKey = `${e.person}|${e.start}|${e.type}`;
+        const gk = g ?? "none";
+        const cellMap = r.cells.get(e.type) ?? new Map<string, TCell>();
+        r.cells.set(e.type, cellMap);
+        const cc = cellMap.get(gk) ?? { ev: new Set<string>(), h: 0, d: 0 };
+        cellMap.set(gk, cc);
+        cc.ev.add(evKey); cc.h += h; cc.d += h / s.dh;
+        const tt = r.typeTot.get(e.type) ?? { ev: new Set<string>(), h: 0, d: 0 };
+        r.typeTot.set(e.type, tt);
+        tt.ev.add(evKey); tt.h += h; tt.d += h / s.dh;
         r.byClass.set(t.cls, (r.byClass.get(t.cls) ?? 0) + h);
         r.byType.set(e.type, (r.byType.get(e.type) ?? 0) + h);
         r.hours += h;
@@ -364,6 +376,46 @@ async function main() {
       for (const [code, e] of exp) if ((e.assigned > 0 || Object.keys(e.cls).length) && !seen.has(code)) fails.push(`${code}: falta en el reporte`);
       if (fails.length) { failures++; console.log(`✗ ${c.name}` + String.fromCharCode(10) + "   - " + fails.slice(0, 8).join(String.fromCharCode(10) + "   - ")); }
       else console.log(`✓ ${c.name}: dotación ${rep.total.assigned} · ausentes ${rep.total.absent.toFixed(2)} · ${rep.rows.length} fila(s)`);
+    }
+    // Cuadro por tipo y unidad
+    const typeCases: { name: string; base: (typeof cases)[number]; groupBy: "AREA" | "SHIFT" | null }[] = [
+      { name: "año por área", base: cases[0]!, groupBy: "AREA" },
+      { name: "mes por turno", base: cases[1]!, groupBy: "SHIFT" },
+      { name: "12m total", base: cases[2]!, groupBy: null },
+      { name: "año, Área X, por turno", base: cases[3]!, groupBy: "SHIFT" },
+      { name: "año, clase medical, por área", base: cases[8]!, groupBy: "AREA" },
+      { name: "año, tipo TRAMITE, por área", base: cases[9]!, groupBy: "AREA" },
+    ];
+    for (const c of typeCases) {
+      const fails: string[] = [];
+      const filters: AbsenteeismFilters = { p: c.base.p, dims: c.base.dimsF, classes: c.base.classes ?? [], types: c.base.types ?? [] };
+      const rep = await loadTypeReport(tenantId, dims, { filters, groupBy: c.groupBy, measure: "events", showAll: false });
+      if (rep.status !== "ok") { failures++; console.log(`✗ ${c.name}: ${rep.status}`); continue; }
+      const per = buildPeriod(c.base.p, REF);
+      const exp = brute({ from: per.start > FIRST ? per.start : FIRST, to: per.end, ...c.base.q, groupBy: c.groupBy ?? undefined });
+      const codeOfKey = (key: string) => (c.groupBy === null || key === "none" ? "none" : [...ids.units].find(([, v]) => String(v) === key)![0].split(":")[1]!);
+      for (const row of rep.rows) {
+        const t = exp.typeTot.get(row.code);
+        near(row.total.events, t?.ev.size ?? 0, `${row.code} total eventos`, fails);
+        near(row.total.hours, t?.h ?? 0, `${row.code} total horas`, fails);
+        near(row.total.days, t?.d ?? 0, `${row.code} total días`, fails);
+        for (const col of rep.columns) {
+          const cell = exp.cells.get(row.code)?.get(codeOfKey(col.key));
+          const got = row.cells[col.key];
+          near(got?.events ?? 0, cell?.ev.size ?? 0, `${row.code}/${col.label} eventos`, fails);
+          near(got?.hours ?? 0, cell?.h ?? 0, `${row.code}/${col.label} horas`, fails);
+        }
+      }
+      for (const [type, tt] of exp.typeTot) if (tt.ev.size > 0 && !rep.rows.find((r) => r.code === type)) fails.push(`${type}: falta la fila`);
+      for (const col of rep.columns) {
+        const g = c.groupBy === null ? undefined : exp.groups.get(codeOfKey(col.key));
+        near(col.people, c.groupBy === null ? exp.exposed.size : (g?.people.size ?? 0), `${col.label} dotación`, fails);
+      }
+      near(rep.people, exp.exposed.size, "dotación total", fails);
+      near(rep.totals.all.hours, exp.hours, "total horas", fails);
+      near(rep.totals.all.events, exp.events.size, "total eventos", fails);
+      if (fails.length) { failures++; console.log(`✗ cuadro ${c.name}` + String.fromCharCode(10) + "   - " + fails.slice(0, 8).join(String.fromCharCode(10) + "   - ")); }
+      else console.log(`✓ cuadro ${c.name}: ${rep.rows.length} tipo(s) · ${rep.columns.length} columna(s) · ${rep.totals.all.events} eventos · dotación ${rep.people}`);
     }
     console.log(failures === 0 ? "\nTODOS LOS CASOS COINCIDEN" : `\n${failures} caso(s) con diferencias`);
   } finally {
