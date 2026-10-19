@@ -29,6 +29,7 @@ model Tenant {
   shiftSchedules     HrShiftSchedule[]
   settings           CfgTenantSetting?
   metricTargets      CfgTenantMetricTarget[]
+  timeEntryTypes     CfgTenantTimeEntryType[]
 
   @@map("tenants")
 }
@@ -146,19 +147,42 @@ model CfgTerminationReason {
 
 model CfgTimeEntryType {
   /// Código único. Ej: OVERTIME, ABSENT, HOLIDAY, NIGHT, TRAINING
-  code     String  @unique @db.VarChar(50)
+  code      String  @unique @db.VarChar(50)
   /// Nombre legible
-  name     String  @db.VarChar(100)
-  /// overtime | absence | special | other
-  category String  @db.VarChar(30)
+  name      String  @db.VarChar(100)
+  /// regular | overtime | overtime_na | training | holiday | absence | other
+  category  String  @db.VarChar(30)
   /// +1 suma al total trabajado, -1 detrae (ej: ABSENT = -1)
-  sign     Int     @default(1) @db.SmallInt
-  isActive Boolean @default(true) @map("is_active")
-
-  timeEntries AttTimeDailyEntry[]
+  sign      Int     @default(1) @db.SmallInt
+  sortOrder Int     @default(0) @map("sort_order")
+  isActive  Boolean @default(true) @map("is_active")
 
   @@id([code])
   @@map("cfg_time_entry_types")
+}
+
+/// Tipos de hora de un tenant (copia del catálogo global; el portal define la categoría)
+model CfgTenantTimeEntryType {
+  id           Int      @id @default(autoincrement())
+  /// RLS
+  tenantId     String   @map("tenant_id") @db.Uuid
+  code         String   @db.VarChar(50)
+  name         String   @db.VarChar(100)
+  /// regular | overtime | overtime_na | training | holiday | absence | other
+  category     String   @db.VarChar(30)
+  /// +1 suma al total trabajado, -1 detrae
+  sign         Int      @default(1) @db.SmallInt
+  /// false = llegó de un archivo y todavía no fue clasificado por un admin
+  isClassified Boolean  @default(true) @map("is_classified")
+  sortOrder    Int      @default(0) @map("sort_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant  Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  entries AttTimeDailyEntry[]
+
+  @@unique([tenantId, code], map: "uq_cfg_tenant_time_entry_types_tenant_code")
+  @@map("cfg_tenant_time_entry_types")
 }
 
 // =============================================================================
@@ -187,10 +211,10 @@ model HrOrgUnit {
   /// Soft delete
   deletedAt       DateTime? @map("deleted_at")
 
-  orgUnitType CfgOrgUnitType          @relation(fields: [orgUnitTypeCode], references: [code])
-  parent      HrOrgUnit?              @relation("OrgUnitHierarchy", fields: [parentOrgUnitId], references: [id])
-  children    HrOrgUnit[]             @relation("OrgUnitHierarchy")
-  assignments HrPeopleOrgAssignment[]
+  orgUnitType   CfgOrgUnitType          @relation(fields: [orgUnitTypeCode], references: [code])
+  parent        HrOrgUnit?              @relation("OrgUnitHierarchy", fields: [parentOrgUnitId], references: [id])
+  children      HrOrgUnit[]             @relation("OrgUnitHierarchy")
+  assignments   HrPeopleOrgAssignment[]
   shiftSchedule HrShiftSchedule?
 
   @@unique([id, orgUnitTypeCode], name: "uq_hr_org_units_id_type", map: "uq_hr_org_units_id_type")
@@ -402,8 +426,8 @@ model HrShiftSchedule {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @updatedAt @map("updated_at")
 
-  tenant  Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  orgUnit HrOrgUnit  @relation(fields: [orgUnitId, orgUnitTypeCode], references: [id, orgUnitTypeCode], onDelete: Cascade, map: "hr_shift_schedules_org_unit_fkey")
+  tenant  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orgUnit HrOrgUnit @relation(fields: [orgUnitId, orgUnitTypeCode], references: [id, orgUnitTypeCode], onDelete: Cascade, map: "hr_shift_schedules_org_unit_fkey")
 
   @@unique([orgUnitId, orgUnitTypeCode], name: "uq_hr_shift_schedules_unit_type", map: "uq_hr_shift_schedules_unit_type")
   @@index([tenantId])
@@ -421,6 +445,8 @@ model CfgTenantSetting {
   defaultDailyHours Decimal  @default(8) @map("default_daily_hours") @db.Decimal(4, 2)
   /// hours | days | both
   absenceDisplay    String   @default("both") @map("absence_display") @db.VarChar(10)
+  /// scheduled = horas extra / horas programadas; worked = / horas trabajadas
+  overtimeBase      String   @default("scheduled") @map("overtime_base") @db.VarChar(10)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
@@ -497,21 +523,21 @@ model AttTimeDaily {
 
 model AttTimeDailyEntry {
   /// PK autoincrement
-  id                Int      @id @default(autoincrement())
+  id              Int      @id @default(autoincrement())
   /// RLS — denormalizado para simplificar policy
-  tenantId          String   @map("tenant_id") @db.Uuid
-  timeDailyId       Int      @map("time_daily_id")
-  /// Tipo de hora (code de cfg_time_entry_types)
-  timeEntryTypeCode String   @map("time_entry_type_code")
+  tenantId        String   @map("tenant_id") @db.Uuid
+  timeDailyId     Int      @map("time_daily_id")
+  /// Tipo de hora del tenant (cfg_tenant_time_entry_types)
+  timeEntryTypeId Int      @map("time_entry_type_id")
   /// Horas de este tipo en el día
-  hours             Decimal  @db.Decimal(6, 2)
-  createdAt         DateTime @default(now()) @map("created_at")
+  hours           Decimal  @db.Decimal(6, 2)
+  createdAt       DateTime @default(now()) @map("created_at")
 
-  timeDaily     AttTimeDaily     @relation(fields: [timeDailyId], references: [id])
-  timeEntryType CfgTimeEntryType @relation(fields: [timeEntryTypeCode], references: [code])
+  timeDaily     AttTimeDaily           @relation(fields: [timeDailyId], references: [id])
+  timeEntryType CfgTenantTimeEntryType @relation(fields: [timeEntryTypeId], references: [id])
 
-  @@unique([tenantId, timeDailyId, timeEntryTypeCode], name: "uq_att_time_daily_entries")
-  @@index([tenantId, timeEntryTypeCode])
+  @@unique([tenantId, timeDailyId, timeEntryTypeId], name: "uq_att_time_daily_entries", map: "uq_att_time_daily_entries")
+  @@index([tenantId, timeEntryTypeId])
   @@map("att_time_daily_entries")
 }
 

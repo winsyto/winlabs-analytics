@@ -16,14 +16,21 @@ export {
 } from "./absenteeism-config";
 export type { AbsenteeismClass } from "./absenteeism-config";
 export {
+  TIME_ENTRY_CATEGORIES,
+  TIME_ENTRY_TYPE_DEFAULTS,
+  applyDefaultTimeEntryTypes,
+} from "./time-entry-config";
+export type { TimeEntryCategory } from "./time-entry-config";
+export {
   METRIC_TARGET_DEFAULTS,
   METRIC_CODES,
   ATTENDANCE_MODES,
   ABSENCE_DISPLAYS,
+  OVERTIME_BASES,
   TENANT_SETTINGS_DEFAULTS,
   applyDefaultTenantSettings,
 } from "./tenant-settings";
-export type { MetricCode, AttendanceMode, AbsenceDisplay } from "./tenant-settings";
+export type { MetricCode, AttendanceMode, AbsenceDisplay, OvertimeBase } from "./tenant-settings";
 export type {
   Tenant,
   InternalUser,
@@ -46,6 +53,7 @@ export type {
   // M1 — Config por tenant
   CfgAbsenteeismType,
   CfgAbsenteeismTypeDefault,
+  CfgTenantTimeEntryType,
   CfgTenantOrgUnitType,
   DshDimension,
   // M1 — Time & Attendance

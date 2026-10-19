@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { withTenantContext } from "@wla/auth";
-import { ABSENCE_DISPLAYS, ATTENDANCE_MODES } from "@wla/db";
+import { ABSENCE_DISPLAYS, ATTENDANCE_MODES, OVERTIME_BASES } from "@wla/db";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -17,6 +17,7 @@ const schema = z.object({
     .refine((w) => w.includes("1"), "La semana laboral debe tener al menos un día laborable"),
   defaultDailyHours: z.number().gt(0, "Las horas diarias deben ser mayores a 0").max(24, "Máximo 24 horas por día"),
   absenceDisplay: z.enum(ABSENCE_DISPLAYS),
+  overtimeBase: z.enum(OVERTIME_BASES),
 });
 
 export async function updateAttendanceSettingsAction(

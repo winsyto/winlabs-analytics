@@ -15,6 +15,11 @@ const AVAILABLE = [
     label: "Tasa de ausentismo",
     description: "Horas de ausencia sobre horas programadas, por mes. Se muestra como línea de referencia en el dashboard de Ausentismos.",
   },
+  {
+    code: "overtime_rate",
+    label: "Tasa de horas extras",
+    description: "Horas extra sobre horas programadas, por mes. Se muestra como línea de referencia en el dashboard de Horas extras.",
+  },
 ] as const;
 
 export default async function TargetsSettingsPage() {

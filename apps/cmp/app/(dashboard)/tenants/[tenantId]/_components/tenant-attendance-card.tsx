@@ -9,6 +9,7 @@ export interface AttendanceSettings {
   defaultWorkWeek: string;
   defaultDailyHours: number;
   absenceDisplay: "hours" | "days" | "both";
+  overtimeBase: "scheduled" | "worked";
 }
 
 const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
@@ -137,6 +138,20 @@ export function TenantAttendanceCard({ tenantId, settings }: { tenantId: string;
                 <option value="both">Horas y días</option>
                 <option value="hours">Horas</option>
                 <option value="days">Días</option>
+              </select>
+            </div>
+            <div>
+              <label htmlFor="overtime-base" className="mb-1 block text-sm font-medium text-foreground">
+                Tasa de horas extra sobre
+              </label>
+              <select
+                id="overtime-base"
+                value={form.overtimeBase}
+                onChange={(e) => setForm({ ...form, overtimeBase: e.target.value as AttendanceSettings["overtimeBase"] })}
+                className="rounded-md border bg-background px-2 py-1.5 text-sm"
+              >
+                <option value="scheduled">Horas programadas</option>
+                <option value="worked">Horas trabajadas</option>
               </select>
             </div>
           </div>

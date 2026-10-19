@@ -16,3 +16,6 @@
 | 2026-10-15 | Dimensiones del dashboard de ausentismos y SHIFT habilitado en todos los tenants | add_absenteeism_dimensions |
 | 2026-10-16 | att_absenteeism_events: days_count y hours_count opcionales (hours = por día) y CHECK end_date >= start_date | absenteeism_events_optional_amounts |
 | 2026-10-17 | Funciones wla_workdays / wla_workdays_until e índice de eventos de ausencia por fechas (motor del Dashboard 2) | add_workdays_function |
+| 2026-10-18 | cfg_tenant_time_entry_types (tipos de hora por tenant, RLS); cfg_time_entry_types: categorías nuevas, sort_order y tipos de horas extra (OT50, OT100, OC, NA, OTNIGHT); att_time_daily_entries apunta al tipo del tenant | add_tenant_time_entry_types |
+| 2026-10-18 | cfg_tenant_settings.overtime_base (scheduled / worked) y dimensiones del dashboard de horas extras | add_overtime_settings_and_dimensions |
+| 2026-10-18 | Tipos de hora: la autorización pasa de columna is_authorized a la categoría overtime_na (hora extra no autorizada) | time_entry_unauthorized_category |

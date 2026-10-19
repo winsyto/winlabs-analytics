@@ -213,6 +213,11 @@
 | D-116 | Tasa de ausentismo = horas de ausencia ÷ horas programadas; los períodos de varios meses suman numeradores y denominadores. Unidad y turno vigentes **cada día** en numerador y denominador; la persona deja de contar desde el día de su baja; los meses sin cobertura figuran como "sin datos" | ✅ Cerrada |
 | D-117 | Metas por tenant en `cfg_tenant_metric_targets` (ausentismo, horas extra, rotación) con valor por defecto en el código; las edita el admin en Configuración > Metas | ✅ Cerrada |
 | D-118 | Privacidad en ausentismo: sin ranking de personas ni orden por cantidad de ausencia, sin mostrar ni exportar observaciones; el detalle por persona solo bajo drill-down | ✅ Cerrada |
+| D-119 | Dashboard 3 = Horas extras **por tiempo** (cantidades de horas por tipo, no importes). Los importes y conceptos de liquidación pasan a un Dashboard 5 de Payroll; Turnover sigue siendo el 4 | ✅ Cerrada |
+| D-120 | Tipos de hora por tenant (`cfg_tenant_time_entry_types`), copia del catálogo base `cfg_time_entry_types`; la categoría `overtime` define qué es hora extra. Las entradas diarias apuntan al tipo del tenant. El portal define la categoría; el archivo crea tipos nuevos sin clasificar y no pisa los existentes (mismo patrón que ausentismo) | ✅ Cerrada |
+| D-121 | La autorización va en la categoría del tipo de hora: `overtime` (hora extra: forma la tasa; `OT50`, `OT100` y variantes) y `overtime_na` (hora extra no autorizada: `OT50NA`, `OT100NA`; se muestra aparte, sin entrar en la tasa). Se calculan en el sistema origen y se cargan como cantidades por persona, día y tipo; wlA no las deriva. Si el cliente no carga las no autorizadas, el dashboard no muestra ese indicador | ✅ Cerrada |
+| D-122 | Nocturnas: `NIGHT` (regular nocturna) y `OTNIGHT` (extra nocturna) son tipos distintos, porque en payroll tienen valor base distinto. Solo cuenta como hora extra la de categoría `overtime` | ✅ Cerrada |
+| D-123 | Tasa de horas extras = horas extra ÷ horas programadas por defecto; configurable por tenant (`overtime_base` = `scheduled` o `worked`). Meta por defecto 10% mensual (`overtime_rate`) | ✅ Cerrada |
 
 ---
 
@@ -249,3 +254,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-05-19 | Versión inicial. D-001 a D-105 cerradas durante el diseño de Fases 1-7. |
 | 2026-10-13 | D-106 a D-112 y Open-17: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |
 | 2026-10-16 | D-113 a D-118: clasificación de tipos de ausencia, horario por turno, importes de ausencia, tasa de ausentismo, metas por tenant y privacidad. Avance en Open-7. |
+| 2026-10-18 | D-119 a D-123 (la autorización de D-121 es una categoría, `overtime_na`): Dashboard 3 de horas extras por tiempo, tipos de hora por tenant, autorización en el tipo, nocturnas y base de la tasa. Payroll queda como Dashboard 5. |

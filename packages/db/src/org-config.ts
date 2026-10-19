@@ -25,13 +25,14 @@ export const DEFAULT_DIMENSION_TYPES = ["COMPANY", "LOCATION", "AREA", "POSITION
 /** Tipos habilitados por defecto: las dimensiones por defecto más SHIFT (opcional, para turnos y horarios). */
 export const DEFAULT_ENABLED_TYPES = [...DEFAULT_DIMENSION_TYPES, "SHIFT"] as const;
 
-export const DASHBOARD_CODES = ["headcount", "absenteeism"] as const;
+export const DASHBOARD_CODES = ["headcount", "absenteeism", "overtime"] as const;
 export type DashboardCode = (typeof DASHBOARD_CODES)[number];
 
 /** Dimensiones por defecto de cada dashboard. */
 export const DEFAULT_DASHBOARD_DIMENSIONS: Record<DashboardCode, readonly string[]> = {
   headcount: DEFAULT_DIMENSION_TYPES,
   absenteeism: DEFAULT_DIMENSION_TYPES,
+  overtime: DEFAULT_DIMENSION_TYPES,
 };
 
 /**

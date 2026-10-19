@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarOff, Clock, Target, Users } from "lucide-react";
+import { CalendarOff, Clock, Target, Timer, Users } from "lucide-react";
 
 const SECTIONS = [
   {
@@ -13,6 +13,12 @@ const SECTIONS = [
     title: "Tipos de ausencia",
     description: "Cómo se clasifica cada tipo de ausencia y si cuenta como ausentismo.",
     icon: CalendarOff,
+  },
+  {
+    href: "/settings/time-entry-types",
+    title: "Tipos de hora",
+    description: "Categoría de cada tipo de hora y cuáles son horas extra o no autorizadas.",
+    icon: Timer,
   },
   {
     href: "/settings/targets",

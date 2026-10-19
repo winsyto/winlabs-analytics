@@ -16,12 +16,17 @@ export type AttendanceMode = (typeof ATTENDANCE_MODES)[number];
 export const ABSENCE_DISPLAYS = ["hours", "days", "both"] as const;
 export type AbsenceDisplay = (typeof ABSENCE_DISPLAYS)[number];
 
+/** Base de la tasa de horas extra: horas programadas (por defecto) u horas trabajadas. */
+export const OVERTIME_BASES = ["scheduled", "worked"] as const;
+export type OvertimeBase = (typeof OVERTIME_BASES)[number];
+
 /** Valores por defecto de cfg_tenant_settings (los mismos que las columnas de la tabla). */
 export const TENANT_SETTINGS_DEFAULTS = {
   attendanceMode: "basic" as AttendanceMode,
   defaultWorkWeek: "1111100",
   defaultDailyHours: 8,
   absenceDisplay: "both" as AbsenceDisplay,
+  overtimeBase: "scheduled" as OvertimeBase,
 };
 
 /**

@@ -40,6 +40,7 @@ const TABLES = [
   "pay_periods",
   "pay_concepts",
   "cfg_absenteeism_types",
+  "cfg_tenant_time_entry_types",
   "hr_people_history",
   "hr_people_org_assignments",
   "hr_people",

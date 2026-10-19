@@ -287,8 +287,11 @@
   - [x] E4.1: reporte «Resumen por fecha y unidad» (anexo del dashboard; en local)
   - [x] E4.2: cuadro por tipo de licencia y unidad, con índices por grupo y por empresa (en local)
   - [ ] Pendientes del módulo (ver su doc): feriados, modo de asistencia `detailed`, accesibilidad con lector de pantalla, comportamiento en tablet/móvil, cierre mensual en el worker si hay tenants grandes
-- [ ] Dashboard 3: **Horas extras** (total, distribución, alertas)
+- [ ] Dashboard 3: **Horas extras** (por tiempo: cantidades de horas por tipo; tasa vs meta, distribución por tipo, horas extra no autorizadas aparte, por dimensión) — en curso
+  - [x] E1 modelo y administración: tipos de hora por tenant (`cfg_tenant_time_entry_types`), catálogo base con OT50/OT100/OC/NA/OTNIGHT (categoría `overtime_na` para las no autorizadas), base de la tasa (`overtime_base`), dimensiones, pantalla de tipos de hora en el CMP y en el portal, meta `overtime_rate` editable (en local)
+  - [ ] E2 carga de archivo (una fila por persona, día y tipo; clasificación de tipos nuevos; horas programadas opcionales) · E3 dashboard, detalle y exportaciones · E4 anexos
 - [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
+- [ ] Dashboard 5: **Payroll** (importes y conceptos de liquidación: sueldo básico, horas extras, bonos, descuentos por ausencias, bruto, neto, impuestos, utilidades). Datos ya preparados: `pay_concepts`, `pay_entries` y el archivo `file_payroll`. Sin diseñar
 - [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
 - [x] Exportación Excel y PDF paginado (Dashboard 1; reutilizable en los siguientes)
 - [x] Benchmarks configurables por tenant (`cfg_tenant_metric_targets`; defaults Argentina: ausentismo 4% mensual, horas extra 10%, rotación 18% anual): ausentismo en uso; horas extra y rotación quedan listas para sus dashboards

@@ -22,6 +22,7 @@ const MODULES = [
 const DASHBOARDS = [
   { code: "headcount", label: "Headcount" },
   { code: "absenteeism", label: "Ausentismos" },
+  { code: "overtime", label: "Horas extras" },
 ] as const;
 
 export type DataModule = typeof MODULES[number];
@@ -57,6 +58,7 @@ async function getAttendanceSettings(tenantId: string): Promise<AttendanceSettin
     defaultWorkWeek: row.defaultWorkWeek,
     defaultDailyHours: Number(row.defaultDailyHours),
     absenceDisplay: row.absenceDisplay as AttendanceSettings["absenceDisplay"],
+    overtimeBase: row.overtimeBase as AttendanceSettings["overtimeBase"],
   };
 }
 

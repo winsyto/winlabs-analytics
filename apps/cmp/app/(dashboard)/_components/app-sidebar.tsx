@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarNav } from "@wla/ui";
-import { Building2, CalendarOff, LayoutDashboard, LayoutList, Plug, Users } from "lucide-react";
+import { Building2, CalendarOff, Clock, LayoutDashboard, LayoutList, Plug, Users } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard",    label: "Dashboard",           icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/integrations", label: "Integraciones",       icon: Plug },
   { href: "/templates",    label: "Templates",            icon: LayoutList },
   { href: "/absence-types", label: "Tipos de ausencia",  icon: CalendarOff },
+  { href: "/time-entry-types", label: "Tipos de hora",   icon: Clock },
   { href: "/users",        label: "Usuarios internos",   icon: Users },
 ];
 

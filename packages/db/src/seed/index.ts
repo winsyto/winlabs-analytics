@@ -31,6 +31,7 @@ import { seedDemoPeople } from "./demo-people";
 import { ORG_UNIT_TYPES, applyDefaultOrgConfig } from "../org-config";
 import { applyDefaultTenantSettings } from "../tenant-settings";
 import { applyDefaultAbsenteeismTypes, upsertAbsenteeismTypeDefaults } from "../absenteeism-config";
+import { applyDefaultTimeEntryTypes, upsertTimeEntryTypeDefaults } from "../time-entry-config";
 import { TERMINATION_REASONS } from "./termination-reasons";
 
 const prisma = new PrismaClient();
@@ -201,22 +202,7 @@ async function main() {
     });
   }
 
-  const timeEntryTypes = [
-    { code: "REGULAR",    name: "Horas regulares",        category: "special",  sign:  1 },
-    { code: "OVERTIME",   name: "Horas extra",            category: "overtime", sign:  1 },
-    { code: "NIGHT",      name: "Horas nocturnas",        category: "overtime", sign:  1 },
-    { code: "TRAINING",   name: "Capacitación",           category: "special",  sign:  1 },
-    { code: "HOLIDAY",    name: "Día feriado",            category: "special",  sign:  1 },
-    { code: "ABSENT",     name: "Ausencia",               category: "absence",  sign: -1 },
-    { code: "SICK_LEAVE", name: "Licencia por enfermedad",category: "absence",  sign: -1 },
-  ];
-  for (const t of timeEntryTypes) {
-    await prisma.cfgTimeEntryType.upsert({
-      where:  { code: t.code },
-      update: { name: t.name, category: t.category, sign: t.sign, isActive: true },
-      create: { ...t, isActive: true },
-    });
-  }
+  await upsertTimeEntryTypeDefaults(prisma);
 
   for (const t of TERMINATION_REASONS) {
     await prisma.cfgTerminationReason.upsert({
@@ -232,6 +218,7 @@ async function main() {
     await withTenantContext(tenant.id, async (tx) => {
       await applyDefaultOrgConfig(tx, tenant.id);
       await applyDefaultAbsenteeismTypes(tx, tenant.id);
+      await applyDefaultTimeEntryTypes(tx, tenant.id);
       await applyDefaultTenantSettings(tx, tenant.id);
     });
   }

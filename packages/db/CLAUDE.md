@@ -23,7 +23,8 @@ Tablas M0 implementadas:
 Tablas M1 implementadas:
 - `cfg_org_unit_types` — sin RLS (catálogo global)
 - `cfg_termination_reasons` — sin RLS (catálogo global)
-- `cfg_time_entry_types` — sin RLS (catálogo global)
+- `cfg_time_entry_types` — sin RLS (catálogo global base de tipos de hora; categorías regular/overtime/overtime_na/training/holiday/absence/other)
+- `cfg_tenant_time_entry_types` — RLS por tenant_id (tipos de hora de cada tenant; `att_time_daily_entries` apunta acá)
 - `hr_org_units` — RLS por tenant_id
 - `hr_people` — RLS por tenant_id
 - `hr_people_org_assignments` — RLS por tenant_id. Asignaciones con vigencia (`valid_from`/`valid_to`), una por persona y tipo en cada momento. Fuente de verdad de la historia de unidades organizativas

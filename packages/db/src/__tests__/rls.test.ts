@@ -664,3 +664,88 @@ describe("RLS — ajustes y metas por tenant", () => {
     await withTenantContext(tenantAlphaId, (tx) => tx.dshDimension.deleteMany({ where: { dashboardCode: "absenteeism" } }));
   });
 });
+
+describe("RLS — tipos de hora por tenant (cfg_tenant_time_entry_types)", () => {
+  let alphaTypeId: number;
+
+  beforeAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, (tx) =>
+        tx.cfgTenantTimeEntryType.upsert({
+          where: { tenantId_code: { tenantId, code: "OT50" } },
+          update: {},
+          create: { tenantId, code: "OT50", name: "Hora extra 50%", category: "overtime" },
+        })
+      );
+    }
+    const alpha = await withTenantContext(tenantAlphaId, (tx) => tx.cfgTenantTimeEntryType.findFirstOrThrow());
+    alphaTypeId = alpha.id;
+  });
+
+  afterAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, async (tx) => {
+        await tx.attTimeDailyEntry.deleteMany({ where: { tenantId } });
+        await tx.attTimeDaily.deleteMany({ where: { tenantId } });
+        await tx.cfgTenantTimeEntryType.deleteMany({ where: { tenantId } });
+        await tx.hrPerson.deleteMany({ where: { tenantId } });
+      });
+    }
+  });
+
+  it("cada tenant ve solo sus tipos de hora", async () => {
+    const rows = await withTenantContext(tenantAlphaId, (tx) => tx.cfgTenantTimeEntryType.findMany());
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.tenantId).toBe(tenantAlphaId);
+  });
+
+  it("un tenant no puede escribir ni modificar tipos de otro", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.cfgTenantTimeEntryType.create({
+          data: { tenantId: tenantBetaId, code: "OT100", name: "Hora extra 100%", category: "overtime" },
+        })
+      )
+    ).rejects.toThrow();
+    const updated = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.cfgTenantTimeEntryType.updateMany({ where: { tenantId: tenantBetaId }, data: { category: "other" } })
+    );
+    expect(updated.count).toBe(0);
+  });
+
+  it("rechaza categorías desconocidas y signos inválidos", async () => {
+    const run = (sql: string) => withTenantContext(tenantAlphaId, (tx) => tx.$executeRawUnsafe(sql));
+    await expect(run("UPDATE cfg_tenant_time_entry_types SET category = 'special'")).rejects.toThrow();
+    await expect(run("UPDATE cfg_tenant_time_entry_types SET sign = 0")).rejects.toThrow();
+    // overtime_na (hora extra no autorizada) es una categoría válida
+    await expect(run("UPDATE cfg_tenant_time_entry_types SET category = 'overtime_na'")).resolves.toBeDefined();
+  });
+
+  it("las horas por tipo quedan aisladas por tenant y no admiten negativas", async () => {
+    const person = await createTestPerson(tenantAlphaId, "OT-1", "Persona Horas");
+    const daily = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.attTimeDaily.create({
+        data: { tenantId: tenantAlphaId, personId: person.id, date: new Date("2026-10-18"), isWorkingDay: true },
+      })
+    );
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.attTimeDailyEntry.create({
+        data: { tenantId: tenantAlphaId, timeDailyId: daily.id, timeEntryTypeId: alphaTypeId, hours: 2 },
+      })
+    );
+    const betaEntries = await withTenantContext(tenantBetaId, (tx) => tx.attTimeDailyEntry.findMany());
+    expect(betaEntries).toHaveLength(0);
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.attTimeDailyEntry.create({
+          data: { tenantId: tenantAlphaId, timeDailyId: daily.id, timeEntryTypeId: alphaTypeId, hours: 1 },
+        })
+      )
+    ).rejects.toThrow(); // misma persona, día y tipo
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.$executeRawUnsafe("UPDATE att_time_daily_entries SET hours = -1")
+      )
+    ).rejects.toThrow();
+  });
+});

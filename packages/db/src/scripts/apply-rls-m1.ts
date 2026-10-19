@@ -8,6 +8,7 @@ const tables = [
   "hr_people_org_assignments",
   "hr_people_history",
   "cfg_absenteeism_types",
+  "cfg_tenant_time_entry_types",
   "att_time_daily",
   "att_time_daily_entries",
   "att_absenteeism_events",
