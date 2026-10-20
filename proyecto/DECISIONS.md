@@ -218,6 +218,10 @@
 | D-121 | La autorización va en la categoría del tipo de hora: `overtime` (hora extra: forma la tasa; `OT50`, `OT100` y variantes) y `overtime_na` (hora extra no autorizada: `OT50NA`, `OT100NA`; se muestra aparte, sin entrar en la tasa). Se calculan en el sistema origen y se cargan como cantidades por persona, día y tipo; wlA no las deriva. Si el cliente no carga las no autorizadas, el dashboard no muestra ese indicador | ✅ Cerrada |
 | D-122 | Nocturnas: `NIGHT` (regular nocturna) y `OTNIGHT` (extra nocturna) son tipos distintos, porque en payroll tienen valor base distinto. Solo cuenta como hora extra la de categoría `overtime` | ✅ Cerrada |
 | D-123 | Tasa de horas extras = horas extra ÷ horas programadas por defecto; configurable por tenant (`overtime_base` = `scheduled` o `worked`). Meta por defecto 10% mensual (`overtime_rate`) | ✅ Cerrada |
+| D-124 | Tasa de horas extra: solo cuentan los tipos de categoría `overtime`. Las horas extra no autorizadas (`overtime_na`) son un dato de color que se muestra aparte y **no entra en ninguna tasa ni meta**; no hay interruptor para sumarlas (no son sumables con las autorizadas) | ✅ Cerrada |
+| D-125 | Denominador de la tasa de horas extra: horas programadas (o trabajadas, según `overtime_base`) de las personas **con horas informadas en ese mes** (cobertura por persona y mes). Si el sistema de origen exporta solo una parte de la empresa, la tasa no se diluye; el pie informa "X de Y personas" | ✅ Cerrada |
+| D-126 | Detalle de personas de Horas extras: se ordena por horas de mayor a menor (y admite cambiar el orden). Excepción a D-118: las horas extra no son un dato sensible y el control de excesos es un uso real | ✅ Cerrada |
+| D-127 | La carga de Asistencia reemplaza por día y tipo (persona + día + tipo de hora) y nunca borra horas; para anular una hora se envía con 0. Un archivo parcial (solo horas extra, por ejemplo) no borra las regulares | ✅ Cerrada |
 
 ---
 
@@ -256,3 +260,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-10-16 | D-113 a D-118: clasificación de tipos de ausencia, horario por turno, importes de ausencia, tasa de ausentismo, metas por tenant y privacidad. Avance en Open-7. |
 | 2026-10-18 | D-119 a D-123 (la autorización de D-121 es una categoría, `overtime_na`): Dashboard 3 de horas extras por tiempo, tipos de hora por tenant, autorización en el tipo, nocturnas y base de la tasa. Payroll queda como Dashboard 5. |
 | 2026-10-20 | Nueva etapa M3.5 (mejoras generales de UI/UX y herramientas) entre M3 y M4; absorbe el hub de dashboards (Open-17) |
+| 2026-10-20 | D-124 a D-127: tasa de horas extra (no autorizadas fuera de la tasa, denominador por cobertura persona y mes), orden por horas en el detalle de personas y reemplazo por día y tipo en la carga de Asistencia |

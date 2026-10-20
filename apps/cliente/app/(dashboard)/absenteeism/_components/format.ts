@@ -1,16 +1,8 @@
-import { fmtDec, fmtInt } from "../../_dashboard-kit/format";
+import { fmtDec, fmtHours, fmtPct, fmtPp } from "../../_dashboard-kit/format";
 import type { AbsenceDisplay, Amount } from "../_data/types";
 
-export const fmtPct = (n: number) => `${fmtDec(n)} %`;
+export { fmtPct, fmtPp, fmtHours };
 
-/** Diferencia en puntos porcentuales con signo: "+0,8 pp" */
-export function fmtPp(n: number): string {
-  const v = Math.round(n * 10) / 10;
-  if (v === 0) return "0,0 pp";
-  return `${v > 0 ? "+" : "−"}${fmtDec(Math.abs(v))} pp`;
-}
-
-export const fmtHours = (n: number) => `${n >= 100 ? fmtInt(n) : fmtDec(n)} h`;
 export const fmtDays = (n: number) => `${fmtDec(n)} ${Math.round(n * 10) / 10 === 1 ? "día" : "días"}`;
 
 /** Cantidad principal según la preferencia del tenant (con "ambas" se muestran los días y las horas aparte). */

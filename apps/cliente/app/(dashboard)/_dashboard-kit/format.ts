@@ -40,3 +40,16 @@ export function monthShort(ymd: string): string {
   const m = Number(ymd.slice(5, 7)) - 1;
   return `${MONTHS_SHORT[m]} ${ymd.slice(2, 4)}`;
 }
+
+/** Porcentaje con unidad: "6,9 %" */
+export const fmtPct = (n: number) => `${fmtDec(n)} %`;
+
+/** Diferencia en puntos porcentuales con signo: "+0,8 pp" */
+export function fmtPp(n: number): string {
+  const v = Math.round(n * 10) / 10;
+  if (v === 0) return "0,0 pp";
+  return `${v > 0 ? "+" : "−"}${fmtDec(Math.abs(v))} pp`;
+}
+
+/** Horas con unidad: "12,5 h" (sin decimales desde 100) */
+export const fmtHours = (n: number) => `${n >= 100 ? fmtInt(n) : fmtDec(n)} h`;

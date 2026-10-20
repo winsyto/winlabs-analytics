@@ -26,6 +26,12 @@ export function addMonths(ymd: string, n: number): string {
   return `${Math.floor(total / 12)}-${pad((total % 12) + 1)}-01`;
 }
 
+/** Primer día del último mes calendario cerrado (el mes anterior al actual, UTC). */
+export function lastClosedMonth(now: Date = new Date()): string {
+  const first = `${now.getUTCFullYear()}-${pad(now.getUTCMonth() + 1)}-01`;
+  return addMonths(first, -1);
+}
+
 export function monthEnd(ymd: string): string {
   const next = addMonths(ymd, 1);
   const d = new Date(`${next}T00:00:00Z`);

@@ -1,7 +1,7 @@
 import { withTenantContext } from "@wla/auth";
 import { METRIC_TARGET_DEFAULTS, Prisma } from "@wla/db";
 import type { Dimension } from "../../_dashboard-kit/dimensions";
-import { addMonths, buildPeriod, monthEnd } from "../../_dashboard-kit/period";
+import { addMonths, buildPeriod, lastClosedMonth, monthEnd } from "../../_dashboard-kit/period";
 import { engineCtes } from "./engine";
 import { CLASS_LABELS, hasActiveFilters, type AbsenteeismFilters } from "./filters";
 import {
@@ -17,11 +17,7 @@ import {
 /** El motor trabaja sobre todo el historial: las consultas pesadas necesitan más que los 5 s por defecto. */
 const TX_OPTIONS = { timeout: 60_000, maxWait: 10_000 };
 
-/** Primer día del último mes calendario cerrado (el mes anterior al actual, UTC). */
-export function lastClosedMonth(now: Date = new Date()): string {
-  const first = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}-01`;
-  return addMonths(first, -1);
-}
+export { lastClosedMonth };
 
 const pct = (num: number, den: number) => (den > 0 ? (num / den) * 100 : null);
 

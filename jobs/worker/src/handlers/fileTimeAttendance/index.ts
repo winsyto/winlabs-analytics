@@ -58,6 +58,13 @@ export async function handleFileTimeAttendance(job: JobRow, pool: Pool): Promise
 
     await markIntegrationSuccess(pool, job.tenant_id, job.integration_id);
 
+    // Tras una carga grande las estadísticas de las tablas quedan viejas y los dashboards pueden elegir malos planes
+    // hasta que el autovacuum las actualice: se actualizan acá (no es crítico, un fallo solo se registra).
+    await client
+      .query("ANALYZE att_time_daily")
+      .then(() => client.query("ANALYZE att_time_daily_entries"))
+      .catch((err: unknown) => logger.warn("file_time_attendance: ANALYZE falló", { error: String(err) }));
+
     (job as JobRow & { _result?: unknown })._result = {
       ...stats,
       rows_read: rows.length + errors.length,

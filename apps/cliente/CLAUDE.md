@@ -36,6 +36,9 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /absenteeism/reportes/fecha/export → Excel/PDF del reporte
 /absenteeism/reportes/tipos     → Cuadro por tipo de ausencia y unidad (índices por grupo y por empresa; ?g, ?m=events|days|hours, ?all=1 y los filtros del dashboard)
 /absenteeism/reportes/tipos/export → Excel/PDF del cuadro
+/overtime                       → Dashboard 3 (Horas extras): tasa vs meta, evolución, horas por tipo (no autorizadas aparte), tasa por dimensión
+/overtime/[scope]/[[...id]]     → Drill-down: horas, personas (por horas de mayor a menor), tipo/<código>, dim/<tipo>/<id>
+/overtime/export                → Descarga Excel/PDF (?format=xlsx|pdf)
 /reports, /team                 → Stubs
 /settings                       → Índice de configuración
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa
@@ -45,7 +48,7 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /settings/users                 → Gestión de usuarios del tenant (cambiar rol, activar/desactivar)
 ```
 
-Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/dashboard-ausentismo.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
+Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/dashboard-ausentismo.md`, `docs/modules/dashboard-horas-extras.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
 
 ## Permisos en settings
 

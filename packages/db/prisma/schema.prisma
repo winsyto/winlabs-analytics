@@ -537,6 +537,7 @@ model AttTimeDailyEntry {
   timeEntryType CfgTenantTimeEntryType @relation(fields: [timeEntryTypeId], references: [id])
 
   @@unique([tenantId, timeDailyId, timeEntryTypeId], name: "uq_att_time_daily_entries", map: "uq_att_time_daily_entries")
+  @@index([timeDailyId])
   @@index([tenantId, timeEntryTypeId])
   @@map("att_time_daily_entries")
 }

@@ -287,10 +287,11 @@
   - [x] E4.1: reporte «Resumen por fecha y unidad» (anexo del dashboard; en local)
   - [x] E4.2: cuadro por tipo de licencia y unidad, con índices por grupo y por empresa (en local)
   - [ ] Pendientes del módulo (ver su doc): feriados, modo de asistencia `detailed`, accesibilidad con lector de pantalla, comportamiento en tablet/móvil, cierre mensual en el worker si hay tenants grandes
-- [ ] Dashboard 3: **Horas extras** (por tiempo: cantidades de horas por tipo; tasa vs meta, distribución por tipo, horas extra no autorizadas aparte, por dimensión) — en curso
-  - [x] E1 modelo y administración: tipos de hora por tenant (`cfg_tenant_time_entry_types`), catálogo base con OT50/OT100/OC/NA/OTNIGHT (categoría `overtime_na` para las no autorizadas), base de la tasa (`overtime_base`), dimensiones, pantalla de tipos de hora en el CMP y en el portal, meta `overtime_rate` editable (en local)
-  - [x] E2 carga de archivo: una fila por persona, día y tipo; tipos nuevos sin clasificar; reemplazo por día y tipo; carga por lotes; ejemplo de 6 meses (en local)
-  - [ ] E3 dashboard, detalle y exportaciones · E4 anexos
+- [x] Dashboard 3: **Horas extras** (por tiempo: cantidades de horas por tipo; tasa vs meta, evolución, horas por tipo con las no autorizadas aparte, tasa por dimensión, drill-down con breadcrumb, exportación Excel y PDF) — completo en local (2026-10-20); `docs/modules/dashboard-horas-extras.md`
+  - [x] E1 modelo y administración: tipos de hora por tenant (`cfg_tenant_time_entry_types`), catálogo base con OT50/OT100/OC/NA/OTNIGHT (categoría `overtime_na` para las no autorizadas), base de la tasa (`overtime_base`), dimensiones, pantalla de tipos de hora en el CMP y en el portal, meta `overtime_rate` editable
+  - [x] E2 carga de archivo: una fila por persona, día y tipo; tipos nuevos sin clasificar; reemplazo por día y tipo; carga por lotes; ejemplo de 6 meses
+  - [x] E3 motor (exposición compartida con Ausentismos, cobertura por persona y mes), resumen, detalle y exportaciones; gráficos de tasa generalizados al kit; índice en `att_time_daily_entries.time_daily_id`
+  - [ ] E4 anexos (reportes por fecha y unidad y cuadro por tipo y unidad), solo si el uso los pide · pendientes del módulo (ver su doc): feriados, topes legales por persona, cierre mensual en el worker si hay tenants de más de 3.000 personas, accesibilidad con lector de pantalla, tablet y móvil
 - [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
 - [ ] Dashboard 5: **Payroll** (importes y conceptos de liquidación: sueldo básico, horas extras, bonos, descuentos por ausencias, bruto, neto, impuestos, utilidades). Datos ya preparados: `pay_concepts`, `pay_entries` y el archivo `file_payroll`. Sin diseñar
 - [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
@@ -309,6 +310,7 @@
 - [ ] **Grillas paginadas.**
 - [ ] **Formularios largos en fichas** (pestañas o secciones), no en una sola columna.
 - [ ] Revisar otras prácticas estándar de diseño e incorporar una skill si hace falta.
+- [ ] **Más color en los dashboards** (hoy son casi monocromos, con barras y líneas en gris oscuro): definir una paleta de acento coherente para series, estados y destacados, sin depender solo del color (accesibilidad) y sin mezclar el significado de la meta (ámbar) con el resto. Aplica a Headcount, Ausentismos, Horas extras y los que sigan; ajustar `dashboard-ux/references/wla-conventions.md` y el kit (`_dashboard-kit/`) en un solo lugar.
 
 **CMP**
 - UI/UX:

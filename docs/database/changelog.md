@@ -19,3 +19,4 @@
 | 2026-10-18 | cfg_tenant_time_entry_types (tipos de hora por tenant, RLS); cfg_time_entry_types: categorías nuevas, sort_order y tipos de horas extra (OT50, OT100, OC, NA, OTNIGHT); att_time_daily_entries apunta al tipo del tenant | add_tenant_time_entry_types |
 | 2026-10-18 | cfg_tenant_settings.overtime_base (scheduled / worked) y dimensiones del dashboard de horas extras | add_overtime_settings_and_dimensions |
 | 2026-10-18 | Tipos de hora: la autorización pasa de columna is_authorized a la categoría overtime_na (hora extra no autorizada) | time_entry_unauthorized_category |
+| 2026-10-19 | Índice sobre att_time_daily_entries.time_daily_id (clave foránea sin índice propio: borrar días recorría toda la tabla de horas) | add_time_daily_entries_fk_index |

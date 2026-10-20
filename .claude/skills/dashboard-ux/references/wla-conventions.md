@@ -40,6 +40,11 @@ Usar esta referencia al diseñar o revisar cualquier dashboard de este proyecto.
 - Con más dimensiones que paneles posibles, el excedente va en un panel con pestañas.
 - Todo gráfico trae un resumen textual y una tabla equivalente para lectores de pantalla; el significado no depende solo del color.
 
+## Tasas sobre datos que pueden venir incompletos
+
+- Si la fuente puede cubrir solo una parte de la empresa, el denominador son las personas **con datos informados en el mes** y el dashboard muestra la cobertura ("37 de 38 personas con horas informadas"). Una tasa sobre toda la dotación quedaría artificialmente baja.
+- Lo que no es sumable con la métrica de decisión (por ejemplo, horas extra no autorizadas frente a las autorizadas) se muestra **aparte** y no entra en ninguna tasa ni meta; no se ofrece un interruptor para mezclarlas.
+
 ## Estados y frescura
 
 - Mostrar siempre "datos al cierre de <mes>" y el historial disponible.
@@ -67,6 +72,6 @@ Usar esta referencia al diseñar o revisar cualquier dashboard de este proyecto.
 
 ## Gaps abiertos para product-analytics y producto
 
-- Benchmarks y metas por tenant (resuelto con el Dashboard 2; falta usarlos en horas extra y rotación).
+- Benchmarks y metas por tenant (resuelto con los Dashboards 2 y 3; falta usarlo en rotación).
 - Permisos por dashboard y por opción de menú.
 - Hub de dashboards y administración de dashboards activos por tenant (posterior a los dashboards del MVP).

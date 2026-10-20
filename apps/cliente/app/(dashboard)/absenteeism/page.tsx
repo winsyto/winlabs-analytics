@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, CalendarDays, CheckCircle2, Info, Table2 } from "lucide-react";
+import { AlertTriangle, CalendarDays, Info, Table2 } from "lucide-react";
 import { auth } from "@/auth";
 import { ChartCard } from "../_dashboard-kit/chart-card";
 import { DashboardShell, PendingRegion } from "../_dashboard-kit/dashboard-shell";
@@ -9,6 +9,7 @@ import { getDashboardDimensions } from "../_dashboard-kit/dimensions";
 import { fmtInt, monthLabel } from "../_dashboard-kit/format";
 import { ExportMenu } from "../_dashboard-kit/export-menu";
 import { MetricCard } from "../_dashboard-kit/metric-card";
+import { TargetStatus } from "../_dashboard-kit/target-status";
 import { AbsenteeismFiltersBar } from "./_components/absenteeism-filters";
 import { AbsenteeismFreshness } from "./_components/absenteeism-freshness";
 import { BreakdownPanel } from "./_components/breakdown-panel";
@@ -33,19 +34,6 @@ const COLS: Record<number, string> = {
 };
 
 const signed = (fmt: (n: number) => string) => (n: number) => `${n > 0 ? "+" : n < 0 ? "−" : ""}${fmt(Math.abs(n))}`;
-
-function TargetStatus({ value, target }: { value: number | null; target: number }) {
-  if (value === null) return <p className="mt-1 text-[11px] text-muted-foreground">Meta {fmtPct(target)}</p>;
-  const diff = value - target;
-  const above = diff > 0.05;
-  const Icon = above ? AlertTriangle : CheckCircle2;
-  return (
-    <p className={`mt-1 inline-flex items-center gap-1 text-[11px] font-medium ${above ? "text-amber-800" : "text-foreground"}`}>
-      <Icon className="h-3.5 w-3.5" aria-hidden />
-      Meta {fmtPct(target)}: {above ? `${fmtPp(diff)} sobre la meta` : `dentro de la meta (${fmtPp(diff)})`}
-    </p>
-  );
-}
 
 export default async function AbsenteeismPage({
   searchParams,

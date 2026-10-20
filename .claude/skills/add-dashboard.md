@@ -2,7 +2,7 @@
 
 **Trigger:** cuando se deba agregar o modificar un dashboard de People Analytics.
 
-**Implementaciones de referencia:** Dashboard 1 (Headcount): `apps/cliente/app/(dashboard)/headcount/` y `docs/modules/dashboard-headcount.md`; Dashboard 2 (Ausentismos, con motor de cálculo propio y meta): `apps/cliente/app/(dashboard)/absenteeism/` y `docs/modules/dashboard-ausentismo.md`. Copiar su estructura, no reinventarla.
+**Implementaciones de referencia:** Dashboard 1 (Headcount): `apps/cliente/app/(dashboard)/headcount/` y `docs/modules/dashboard-headcount.md`; Dashboard 2 (Ausentismos, con motor de cálculo propio y meta): `apps/cliente/app/(dashboard)/absenteeism/` y `docs/modules/dashboard-ausentismo.md`; Dashboard 3 (Horas extras, el más corto de copiar porque ya reutiliza la exposición y los gráficos de tasa del kit): `apps/cliente/app/(dashboard)/overtime/` y `docs/modules/dashboard-horas-extras.md`. Copiar su estructura, no reinventarla.
 
 **Otras referencias:**
 - Diseño: skill `dashboard-ux` (`.claude/skills/dashboard-ux/`), más `references/wla-conventions.md` (convenciones de este proyecto). Es obligatorio para el diseño; no se implementa antes de que el usuario apruebe el diseño funcional y visual.
@@ -18,7 +18,7 @@
 |---|---|---|---|---|
 | 1 | Headcount / Cubo | Completo | `hr_people`, `hr_people_history`, `hr_people_org_assignments` | Referencia |
 | 2 | Ausentismos | Completo en local (falta el anexo E4) | `att_absenteeism_events`, `cfg_absenteeism_types`, `hr_shift_schedules`, `hr_people`, `hr_people_org_assignments` | Motor SQL de tramos y piezas (`docs/modules/dashboard-ausentismo.md`); meta por tenant, default 4% mensual |
-| 3 | Horas extras | Pendiente | `att_time_daily` y entradas con categoría `overtime` | Benchmark por defecto 10% sobre horas regulares |
+| 3 | Horas extras | Completo en local | `att_time_daily_entries` (horas por tipo), `cfg_tenant_time_entry_types`, `hr_shift_schedules`, `hr_people`, `hr_people_org_assignments` | Exposición compartida con Ausentismos; cobertura por persona y mes; no autorizadas fuera de la tasa; meta por defecto 10% mensual (`docs/modules/dashboard-horas-extras.md`) |
 | 4 | Turnover / Rotación | Pendiente | `hr_people` (bajas y motivos), `hr_people_history` (headcount promedio), `cfg_termination_reasons` | Benchmark por defecto 18% anual |
 
 Se construyen **de a uno**: se cierra y ajusta uno antes de diseñar el siguiente, aplicando lo aprendido.
@@ -98,7 +98,15 @@ Kit compartido en `apps/cliente/app/(dashboard)/_dashboard-kit/` (reutilizar, no
 - **Verificación independiente:** un script que arme un tenant temporal con casos de borde y compare contra una implementación día por día (`apps/cliente/scripts/verify-absenteeism-engine.ts`).
 - Pendiente de generalizar al repetirse: el filtro de período de `queries.ts` (`resolveRange`) y los componentes de gráfico de barras con meta.
 
-## Pendiente de producto (posterior a los 4 dashboards)
+## Lo que dejó el Dashboard 3 (ya generalizado)
+- **Exposición común:** `_dashboard-kit/exposure.ts` (`exposureCtes`, `groupCarry`) arma tramos y piezas con horas programadas y unidades vigentes cada día. Un dashboard de tasa sobre tiempo programado (rotación sobre dotación promedio no lo necesita) lo usa y solo agrega su numerador.
+- **Gráficos de tasa:** `rate-trend-chart.tsx` (evolución con meta), `rate-bars-chart.tsx` (barras por unidad con meta y panel con pestañas) y `target-status.tsx` (estado contra la meta con ícono y texto). Cada dashboard los envuelve en un componente cliente fino que les pasa los formatos y las líneas del tooltip.
+- **Cobertura:** si el dato de origen puede venir solo de una parte de la empresa, el denominador son las personas con datos informados en el mes y el pie lo dice ("X de Y personas").
+- **Índices de claves foráneas:** toda clave foránea de una tabla grande necesita un índice que **empiece** por esa columna; sin él, borrar o actualizar el lado padre recorre la tabla entera por cada fila.
+- **Consultas que no dependan de las estadísticas:** tras una carga grande, el planner puede elegir un plan que tarda minutos. Pasar listas de ids chicas como constantes, partir del subconjunto indexado y ejecutar `ANALYZE` en el worker al terminar la carga.
+- **Medir con volumen:** `apps/cliente/scripts/bench-overtime.ts` carga 3.000 personas y 12 meses de asistencia diaria y mide con y sin `ANALYZE`; usar el mismo patrón para el siguiente motor.
+
+## Pendiente de producto (posterior a los dashboards del MVP)
 Hub de dashboards (una sola opción de menú que lleva a todos), administración en el CMP de qué dashboards están activos por tenant y permisos por opción de menú. Ver `BACKLOG.md`.
 
 ## Errores comunes (ver el doc del módulo para el detalle)
