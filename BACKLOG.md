@@ -292,7 +292,9 @@
   - [x] E2 carga de archivo: una fila por persona, día y tipo; tipos nuevos sin clasificar; reemplazo por día y tipo; carga por lotes; ejemplo de 6 meses
   - [x] E3 motor (exposición compartida con Ausentismos, cobertura por persona y mes), resumen, detalle y exportaciones; gráficos de tasa generalizados al kit; índice en `att_time_daily_entries.time_daily_id`
   - [ ] E4 anexos (reportes por fecha y unidad y cuadro por tipo y unidad), solo si el uso los pide · pendientes del módulo (ver su doc): feriados, topes legales por persona, cierre mensual en el worker si hay tenants de más de 3.000 personas, accesibilidad con lector de pantalla, tablet y móvil
-- [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
+- [x] Dashboard 4: **Rotación** (rotación = bajas ÷ headcount promedio contra la meta anual prorrateada, rotación voluntaria, bajas por categoría y motivo, bajas tempranas, evolución con ingresos y egresos, tasa por dimensión, drill-down con breadcrumb, exportación Excel y PDF) — completo en local (2026-10-21); `docs/modules/dashboard-rotacion.md`
+  - [x] Sin tablas ni archivos nuevos (sale del archivo de Personas); dimensiones `turnover`, meta `turnover_rate`, filtros por unidad movidos al kit (Headcount sin diferencias) y verificación contra un cálculo independiente que parte de las fechas
+  - [ ] Pendientes del módulo (ver su doc): apertura calculada desde las fechas para el primer cierre, cruces por antigüedad, accesibilidad con lector de pantalla, tablet y móvil
 - [ ] Dashboard 5: **Payroll** (importes y conceptos de liquidación: sueldo básico, horas extras, bonos, descuentos por ausencias, bruto, neto, impuestos, utilidades). Datos ya preparados: `pay_concepts`, `pay_entries` y el archivo `file_payroll`. Sin diseñar
 - [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
 - [x] Exportación Excel y PDF paginado (Dashboard 1; reutilizable en los siguientes)

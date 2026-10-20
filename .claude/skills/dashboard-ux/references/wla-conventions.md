@@ -24,6 +24,7 @@ Usar esta referencia al diseñar o revisar cualquier dashboard de este proyecto.
 - Variaciones en color neutro con flecha, signo y texto. Reservar verde/rojo para cuando exista un benchmark acordado, y aun así acompañarlos de texto o forma.
 - Benchmarks (ausentismo, horas extra, rotación): configurables por tenant con un valor por defecto (`cfg_tenant_metric_targets`, editables en Configuración > Metas); se muestran como línea de referencia y como estado en la tarjeta con ícono y texto, sin rojo/verde por sí solos. No inventarlos en pantalla sin ese contrato.
 - Una persona o registro cuenta en la unidad que tenía **en la fecha del evento o del cierre**, no en la actual.
+- Si la meta del tenant está definida en otra unidad de tiempo que el período (rotación: anual), se **prorratea al período** y la tarjeta dice cuál usa; nunca se compara un mes contra una meta anual.
 
 ## Filtros y navegación
 
@@ -72,6 +73,6 @@ Usar esta referencia al diseñar o revisar cualquier dashboard de este proyecto.
 
 ## Gaps abiertos para product-analytics y producto
 
-- Benchmarks y metas por tenant (resuelto con los Dashboards 2 y 3; falta usarlo en rotación).
+- Benchmarks y metas por tenant (resuelto con los Dashboards 2, 3 y 4).
 - Permisos por dashboard y por opción de menú.
 - Hub de dashboards y administración de dashboards activos por tenant (posterior a los dashboards del MVP).

@@ -222,6 +222,9 @@
 | D-125 | Denominador de la tasa de horas extra: horas programadas (o trabajadas, según `overtime_base`) de las personas **con horas informadas en ese mes** (cobertura por persona y mes). Si el sistema de origen exporta solo una parte de la empresa, la tasa no se diluye; el pie informa "X de Y personas" | ✅ Cerrada |
 | D-126 | Detalle de personas de Horas extras: se ordena por horas de mayor a menor (y admite cambiar el orden). Excepción a D-118: las horas extra no son un dato sensible y el control de excesos es un uso real | ✅ Cerrada |
 | D-127 | La carga de Asistencia reemplaza por día y tipo (persona + día + tipo de hora) y nunca borra horas; para anular una hora se envía con 0. Un archivo parcial (solo horas extra, por ejemplo) no borra las regulares | ✅ Cerrada |
+| D-128 | Rotación: todas las bajas (voluntaria, involuntaria, fin de contrato, jubilación y otra) entran en la tasa total; la rotación voluntaria es una tarjeta aparte y la categoría y el motivo son filtros (quien excluye fin de contrato o jubilación lo resuelve con el filtro) | ✅ Cerrada |
+| D-129 | Rotación = bajas ÷ headcount promedio (cierre de apertura y cierres del período); solo cuentan bajas, los ingresos no entran en la tasa y se ven en la pestaña "Ingresos y egresos". El primer cierre, sin apertura, figura como "sin datos" | ✅ Cerrada |
+| D-130 | El detalle de bajas se ordena por fecha de baja descendente, sin ranking por otro criterio; las bajas ya se listan con nombre y motivo en Headcount. La meta de rotación del tenant es anual y se prorratea al período (18 % anual = 1,5 % por mes) | ✅ Cerrada |
 
 ---
 
@@ -261,3 +264,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-10-18 | D-119 a D-123 (la autorización de D-121 es una categoría, `overtime_na`): Dashboard 3 de horas extras por tiempo, tipos de hora por tenant, autorización en el tipo, nocturnas y base de la tasa. Payroll queda como Dashboard 5. |
 | 2026-10-20 | Nueva etapa M3.5 (mejoras generales de UI/UX y herramientas) entre M3 y M4; absorbe el hub de dashboards (Open-17) |
 | 2026-10-20 | D-124 a D-127: tasa de horas extra (no autorizadas fuera de la tasa, denominador por cobertura persona y mes), orden por horas en el detalle de personas y reemplazo por día y tipo en la carga de Asistencia |
+| 2026-10-21 | D-128 a D-130: Dashboard 4 de rotación (todas las bajas en la tasa, fórmula con headcount promedio, meta anual prorrateada y orden del detalle) |

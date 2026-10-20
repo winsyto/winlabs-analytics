@@ -24,7 +24,7 @@ Gestiona: tenants, usuarios de tenants, configuración global.
 /login                          → LoginForm (credentials)
 /dashboard                      → Placeholder
 /tenants                        → Lista + crear tenant (roles, admin inicial y configuración de unidades por defecto)
-/tenants/[tenantId]             → Detalle: info, módulos activos, unidades organizativas y dimensiones (Headcount, Ausentismos y Horas extras), asistencia (modo, semana laboral y horas por defecto, formato horas/días, base de la tasa de horas extra), usuarios
+/tenants/[tenantId]             → Detalle: info, módulos activos, unidades organizativas y dimensiones (Headcount, Ausentismos, Horas extras y Rotación), asistencia (modo, semana laboral y horas por defecto, formato horas/días, base de la tasa de horas extra), usuarios
 /absence-types                  → Catálogo global de tipos de ausencia por defecto (lo heredan los tenants nuevos)
 /time-entry-types               → Catálogo global de tipos de hora por defecto (nombre y categoría; lo heredan los tenants nuevos)
 /tenants/[tenantId]/users       → Usuarios del tenant (crear, resetear contraseña)

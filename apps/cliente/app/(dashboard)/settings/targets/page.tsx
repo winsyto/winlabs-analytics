@@ -20,6 +20,11 @@ const AVAILABLE = [
     label: "Tasa de horas extras",
     description: "Horas extra sobre horas programadas, por mes. Se muestra como línea de referencia en el dashboard de Horas extras.",
   },
+  {
+    code: "turnover_rate",
+    label: "Tasa de rotación",
+    description: "Bajas sobre el headcount promedio, por año. El dashboard de Rotación la prorratea al período: 18 % anual equivale a 1,5 % por mes.",
+  },
 ] as const;
 
 export default async function TargetsSettingsPage() {

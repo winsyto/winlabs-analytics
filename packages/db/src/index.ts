@@ -1,5 +1,6 @@
 export { prisma } from "./client";
 export { Prisma } from "@prisma/client";
+export { rebuildPeopleSnapshots } from "./snapshots/people-snapshots";
 export {
   ORG_UNIT_TYPES,
   DEFAULT_DIMENSION_TYPES,

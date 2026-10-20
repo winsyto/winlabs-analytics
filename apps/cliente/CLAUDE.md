@@ -39,16 +39,19 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /overtime                       → Dashboard 3 (Horas extras): tasa vs meta, evolución, horas por tipo (no autorizadas aparte), tasa por dimensión
 /overtime/[scope]/[[...id]]     → Drill-down: horas, personas (por horas de mayor a menor), tipo/<código>, dim/<tipo>/<id>
 /overtime/export                → Descarga Excel/PDF (?format=xlsx|pdf)
+/turnover                       → Dashboard 4 (Rotación): rotación vs meta anual prorrateada, voluntaria, bajas por categoría y motivo, bajas tempranas, evolución e ingresos/egresos, tasa por dimensión
+/turnover/[scope]/[[...id]]     → Drill-down: bajas, tempranas, categoria/<código>, motivo/<código>, dim/<tipo>/<id>
+/turnover/export                → Descarga Excel/PDF (?format=xlsx|pdf)
 /reports, /team                 → Stubs
 /settings                       → Índice de configuración
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa
 /settings/absence-types         → Clase de cada tipo de ausencia y si cuenta como ausentismo; avisa los tipos sin clasificar
 /settings/time-entry-types      → Categoría de cada tipo de hora (regular, hora extra, hora extra no autorizada, etc.); avisa los tipos sin clasificar
-/settings/targets               → Metas por tenant (tasa de ausentismo 4% y tasa de horas extras 10% mensual por defecto)
+/settings/targets               → Metas por tenant (ausentismo 4% y horas extras 10% mensual; rotación 18% anual, prorrateada al período)
 /settings/users                 → Gestión de usuarios del tenant (cambiar rol, activar/desactivar)
 ```
 
-Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/dashboard-ausentismo.md`, `docs/modules/dashboard-horas-extras.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
+Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/dashboard-ausentismo.md`, `docs/modules/dashboard-horas-extras.md`, `docs/modules/dashboard-rotacion.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
 
 ## Permisos en settings
 

@@ -19,7 +19,7 @@
 | 1 | Headcount / Cubo | Completo | `hr_people`, `hr_people_history`, `hr_people_org_assignments` | Referencia |
 | 2 | Ausentismos | Completo en local (falta el anexo E4) | `att_absenteeism_events`, `cfg_absenteeism_types`, `hr_shift_schedules`, `hr_people`, `hr_people_org_assignments` | Motor SQL de tramos y piezas (`docs/modules/dashboard-ausentismo.md`); meta por tenant, default 4% mensual |
 | 3 | Horas extras | Completo en local | `att_time_daily_entries` (horas por tipo), `cfg_tenant_time_entry_types`, `hr_shift_schedules`, `hr_people`, `hr_people_org_assignments` | Exposición compartida con Ausentismos; cobertura por persona y mes; no autorizadas fuera de la tasa; meta por defecto 10% mensual (`docs/modules/dashboard-horas-extras.md`) |
-| 4 | Turnover / Rotación | Pendiente | `hr_people` (bajas y motivos), `hr_people_history` (headcount promedio), `cfg_termination_reasons` | Benchmark por defecto 18% anual |
+| 4 | Rotación | Completo en local | `hr_people` (bajas y motivos), `hr_people_history` (headcount de cada cierre), `cfg_termination_reasons`, `hr_people_org_assignments` | Meta anual prorrateada al período (18% anual = 1,5% por mes); filtros por unidad compartidos con Headcount (`docs/modules/dashboard-rotacion.md`) |
 
 Se construyen **de a uno**: se cierra y ajusta uno antes de diseñar el siguiente, aplicando lo aprendido.
 
@@ -105,6 +105,13 @@ Kit compartido en `apps/cliente/app/(dashboard)/_dashboard-kit/` (reutilizar, no
 - **Índices de claves foráneas:** toda clave foránea de una tabla grande necesita un índice que **empiece** por esa columna; sin él, borrar o actualizar el lado padre recorre la tabla entera por cada fila.
 - **Consultas que no dependan de las estadísticas:** tras una carga grande, el planner puede elegir un plan que tarda minutos. Pasar listas de ids chicas como constantes, partir del subconjunto indexado y ejecutar `ANALYZE` en el worker al terminar la carga.
 - **Medir con volumen:** `apps/cliente/scripts/bench-overtime.ts` carga 3.000 personas y 12 meses de asistencia diaria y mide con y sin `ANALYZE`; usar el mismo patrón para el siguiente motor.
+
+## Lo que dejó el Dashboard 4 (ya generalizado)
+- **Filtros por unidad sobre cierres y eventos:** `_dashboard-kit/snapshot-filters.ts` (`snapFilter`, `eventFilter`, `SNAP_ARR`) los comparten Headcount y Rotación; un dashboard que lea los cierres mensuales o altas y bajas los usa sin copiarlos.
+- **Mover algo de un dashboard en producción:** capturar los resultados antes (resumen y detalle con varios filtros), mover y comparar el JSON; cero diferencias es el criterio.
+- **Metas anuales contra períodos cortos:** prorratear la meta al largo del período (mes = anual ÷ 12) y aclararlo en la tarjeta (`TargetStatus` admite una `note`).
+- **Verificar contra otra fuente:** si el dashboard lee un caché derivado (los cierres), la verificación independiente debe partir de los datos de origen (fechas), no del caché.
+- **Series con meses en cero:** `RateTrendChart` admite `curve="linear"`.
 
 ## Pendiente de producto (posterior a los dashboards del MVP)
 Hub de dashboards (una sola opción de menú que lleva a todos), administración en el CMP de qué dashboards están activos por tenant y permisos por opción de menú. Ver `BACKLOG.md`.

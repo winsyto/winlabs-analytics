@@ -31,12 +31,14 @@ interface Props<T extends TrendPoint> {
   rateName: string;
   /** Líneas extra del tooltip de un mes con datos (cantidades de la métrica) */
   tooltipDetail?: (point: T) => ReactNode;
+  /** Forma de la línea: curva suave (por defecto) o recta, mejor cuando hay meses aislados en cero */
+  curve?: "monotone" | "linear";
   /** Tabla equivalente del gráfico, para lectores de pantalla */
   table: { caption: string; columns: string[]; rows: (string | number | ReactNode)[][] };
 }
 
 /** Evolución mensual de una tasa con la meta como línea de referencia (la usan Ausentismos y Horas extras). */
-export function RateTrendChart<T extends TrendPoint>({ series, target, fmtRate, rateName, tooltipDetail, table }: Props<T>) {
+export function RateTrendChart<T extends TrendPoint>({ series, target, fmtRate, rateName, tooltipDetail, curve = "monotone", table }: Props<T>) {
   const data = series.map((s) => ({ ...s, label: monthShort(s.month) }));
   const known = series.filter((s) => s.rate !== null);
   const first = known[0];
@@ -85,7 +87,7 @@ export function RateTrendChart<T extends TrendPoint>({ series, target, fmtRate, 
             }}
           />
           <Line
-            type="monotone"
+            type={curve}
             dataKey="rate"
             stroke="#1e2530"
             strokeWidth={2}

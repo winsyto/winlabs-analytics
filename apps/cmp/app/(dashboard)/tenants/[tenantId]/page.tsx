@@ -23,6 +23,7 @@ const DASHBOARDS = [
   { code: "headcount", label: "Headcount" },
   { code: "absenteeism", label: "Ausentismos" },
   { code: "overtime", label: "Horas extras" },
+  { code: "turnover", label: "Rotación" },
 ] as const;
 
 export type DataModule = typeof MODULES[number];
