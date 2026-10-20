@@ -34,7 +34,7 @@ sequenceDiagram
 |---|---|---|
 | `file_people` | `file_people` | Personas y sus unidades actuales |
 | `file_org_history` | `file_org_history` | Historia de unidades por persona y tipo |
-| `file_time` | `file_time_attendance` | Asistencia diaria |
+| `file_time` | `file_time_attendance` | Horas por tipo de hora, por persona y día |
 | `file_absenteeism` | `file_absenteeism` | Eventos de ausentismo |
 | `file_payroll` | `file_payroll` | Liquidaciones |
 
@@ -91,6 +91,18 @@ Columnas: `employee_code`, `absenteeism_type_code`, `start_date`, `end_date` (ob
 
 **Turnos.** El horario de cada turno no viaja en el archivo: la unidad de tipo Turno llega con el archivo de Personas (`shift_code` y `shift_name`, opcionales) y los horarios se cargan en Configuración > Turnos. Sin horario propio se usa el de la empresa (CMP, tarjeta Asistencia).
 
+## Archivo de Asistencia (horas por tipo)
+
+Columnas, todas obligatorias: `employee_code`, `date`, `time_entry_type`, `hours`. **Una fila por persona, día y tipo de hora** (por ejemplo `EMP001, 2026-10-18, OT50, 2`). Los tipos y sus cantidades los calcula el sistema de origen (el de tiempo y asistencia del cliente); wlA no los deriva. Las horas programadas no viajan en el archivo: salen del turno de cada persona o del horario por defecto de la empresa.
+
+- La persona debe existir: se carga **después** del archivo de Personas. Las filas de personas inexistentes se omiten (el resto se procesa); el resultado trae un aviso con la cantidad y los códigos.
+- Validaciones por fila: fecha real, horas entre 0 y 24 (coma o punto decimal), tipo y persona no vacíos. Las filas con error se informan con su número de fila de Excel. Si faltan **columnas** obligatorias, el job entero falla con la lista (un archivo con el formato anterior, `worked_hours` y compañía, falla así).
+- Una hora se identifica por (persona, día, tipo): volver a cargar **reemplaza las horas de ese día y tipo** y no toca los demás tipos del día. Si el archivo repite la misma persona, día y tipo gana la última fila y se avisa.
+- **Tipos de hora.** Si el código no existe en el tenant se crea; uno existente **no se modifica** (manda lo que edite el admin en Configuración > Tipos de hora). Un tipo nuevo toma la categoría del catálogo base si el código coincide (`REGULAR`, `OT50`, `OT100`, `OT50NA`, etc.); si no, queda *sin clasificar* (categoría `other`: no cuenta como hora extra) y el resultado avisa.
+- **Categorías.** `regular`, `overtime` (hora extra: forma la tasa del dashboard), `overtime_na` (hora extra no autorizada: se muestra aparte), `training`, `holiday`, `absence` y `other`. Las nocturnas regulares (`NIGHT`) y las extras nocturnas (`OTNIGHT`) son tipos distintos.
+- **Cabecera diaria.** Por cada persona y día se mantiene una fila en `att_time_daily` con `worked_hours` (suma de los tipos que suman, es decir signo +1) y `has_absence` (hay un tipo de categoría ausencia con horas). Se recalculan en cada carga. Un día que suma más de 24 horas se carga igual y el resultado avisa.
+- **Volumen y rendimiento.** La carga es por lotes de 5.000 filas, cada uno en su transacción (5.400 filas en menos de 1 s). Los totales del día se calculan y se aplican por clave primaria a propósito: con una actualización con subconsulta, el planificador de Postgres con estadísticas viejas (tablas recién llenadas) tardaba 15 s en lugar de 0,1 s.
+
 ## Cierres mensuales (`hr_people_history`)
 
 - **Qué es:** el estado de cada persona al cierre de cada mes: quién estaba activo y con qué unidades vigentes. Cada fila se marca `source: "reconstructed"`.
@@ -122,10 +134,11 @@ Columnas: `employee_code`, `absenteeism_type_code`, `start_date`, `end_date` (ob
 - [ ] Mostrar en el CMP los cierres mensuales por tenant y permitir regenerarlos a mano.
 - [ ] Reintentos y notificación al usuario cuando un job falla.
 - [ ] Soporte de archivos grandes (hoy 20 MB).
-- [ ] Verificar las demás cargas (Asistencia, Liquidaciones) con archivos de volumen real. Ausentismo: probado con 24 meses y 453 eventos de ejemplo.
+- [ ] Verificar la carga de Liquidaciones con archivos de volumen real. Ausentismo: probado con 24 meses y 453 eventos de ejemplo. Asistencia: probada con 6 meses y 5.400 filas de ejemplo.
 
 ## Changelog
 | Fecha | Cambio |
 |---|---|
 | 2026-10-14 | Versión inicial |
 | 2026-10-16 | Archivo de Ausentismo: clasificación de tipos nuevos, validaciones, importes opcionales (horas por día), avisos de personas omitidas |
+| 2026-10-19 | Archivo de Asistencia: nuevo formato de horas por tipo (una fila por persona, día y tipo), tipos de hora por tenant, carga por lotes |

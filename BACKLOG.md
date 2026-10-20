@@ -289,7 +289,8 @@
   - [ ] Pendientes del módulo (ver su doc): feriados, modo de asistencia `detailed`, accesibilidad con lector de pantalla, comportamiento en tablet/móvil, cierre mensual en el worker si hay tenants grandes
 - [ ] Dashboard 3: **Horas extras** (por tiempo: cantidades de horas por tipo; tasa vs meta, distribución por tipo, horas extra no autorizadas aparte, por dimensión) — en curso
   - [x] E1 modelo y administración: tipos de hora por tenant (`cfg_tenant_time_entry_types`), catálogo base con OT50/OT100/OC/NA/OTNIGHT (categoría `overtime_na` para las no autorizadas), base de la tasa (`overtime_base`), dimensiones, pantalla de tipos de hora en el CMP y en el portal, meta `overtime_rate` editable (en local)
-  - [ ] E2 carga de archivo (una fila por persona, día y tipo; clasificación de tipos nuevos; horas programadas opcionales) · E3 dashboard, detalle y exportaciones · E4 anexos
+  - [x] E2 carga de archivo: una fila por persona, día y tipo; tipos nuevos sin clasificar; reemplazo por día y tipo; carga por lotes; ejemplo de 6 meses (en local)
+  - [ ] E3 dashboard, detalle y exportaciones · E4 anexos
 - [ ] Dashboard 4: **Turnover / Rotación** (tasa, por área, ingresos vs egresos)
 - [ ] Dashboard 5: **Payroll** (importes y conceptos de liquidación: sueldo básico, horas extras, bonos, descuentos por ausencias, bruto, neto, impuestos, utilidades). Datos ya preparados: `pay_concepts`, `pay_entries` y el archivo `file_payroll`. Sin diseñar
 - [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
@@ -299,14 +300,37 @@
 
 ---
 
-## Etapa posterior a los 4 dashboards — Hub de dashboards y gestión por tenant (a analizar)
+## M3.5 — Mejoras generales de UI/UX y herramientas (entre M3 y M4)
 
-> **Idea registrada (2026-10-14):** en lugar de una opción de menú lateral por dashboard, una **única opción "Dashboards"** que abra un **hub** con todos los dashboards disponibles y lleve a cada uno.
-> Se analiza **después** de terminar los dashboards del MVP, porque implica definir toda la gestión:
-> - [ ] Hub de dashboards en la app cliente (una sola entrada en el menú lateral).
-> - [ ] Administración en el CMP de **qué dashboards están activos en cada tenant** (similar a los módulos activos).
-> - [ ] Posible **matriz de permisos por opción de menú** (qué roles ven qué dashboards u opciones).
-> - [ ] Definir el modelo de datos (por ejemplo catálogo de dashboards + activación por tenant + permisos) y su impacto en `dsh_dimensions` y en la navegación.
+> **Registrada (2026-10-20).** Se hace al terminar los dashboards de M3 y antes de empezar M4. Es una lista de mejoras anotadas durante M3 que se **baja a detalle recién al iniciar la etapa** (un plan por bloque, con aprobación, como en los dashboards). Incluye el hub de dashboards que estaba registrado antes (Open-17).
+
+**Criterios generales de UI/UX (aplican a todas las pantallas de la etapa)**
+- [ ] Pensado para pantallas de **15,6"**: las opciones de configuración tienen que verse completas en una sola pantalla, preferentemente sin scroll.
+- [ ] **Grillas paginadas.**
+- [ ] **Formularios largos en fichas** (pestañas o secciones), no en una sola columna.
+- [ ] Revisar otras prácticas estándar de diseño e incorporar una skill si hace falta.
+
+**CMP**
+- UI/UX:
+  - [ ] Dashboard de inicio
+  - [ ] Edición de tenants
+  - [ ] Integraciones
+  - [ ] Templates de integración
+  - [ ] **Hub de dashboards** y su configuración por tenant (qué dashboards están activos en cada uno; posible matriz de permisos por opción de menú; modelo de datos: catálogo de dashboards + activación por tenant + permisos, y su impacto en `dsh_dimensions` y en la navegación)
+- Configuración (nueva opción de menú):
+  - [ ] Mover la configuración de **tipos de ausencia** (hoy `/absence-types`) y mejorar su UI
+  - [ ] Mover la configuración de **tipos de hora** (hoy `/time-entry-types`) y mejorar su UI
+- Herramientas (en el menú de configuración o una opción nueva):
+  - [ ] Hub de **limpieza de tablas por módulo**, para datos planos y/o snapshots (hoy solo existe el script `db:cleanup:tenant` por línea de comandos)
+- Documentación:
+  - [ ] Por cada módulo analítico, documentar **todas las tablas afectadas**: objetivo, formato y si son de datos, de configuración o de cálculo (snapshot)
+
+**Cliente**
+- UI/UX:
+  - [ ] Dashboard de inicio
+  - [ ] Integraciones por archivo
+  - [ ] **Hub de dashboards**, en lugar de una opción de menú por cada dashboard
+  - [ ] **Hub de configuración**: tipos de ausencia, turnos, tipos de hora, metas y usuarios
 
 ---
 

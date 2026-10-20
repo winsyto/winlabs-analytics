@@ -243,7 +243,7 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Open-14 | ~~**Mejora a SCD2** para campos críticos de people (D-040 fallback)~~ → resuelta para unidades organizativas con D-107 | ✅ Resuelta (alcance: unidades organizativas) |
 | Open-15 | **Programa de partners / implementadores** (v2.x+) | Al cerrar v1.x |
 | Open-16 | **T0 efectivo** (fecha real de arranque) | Cuando Winsy decida arrancar |
-| Open-17 | **Hub de dashboards y gestión por tenant**: una sola opción de menú que abre un hub; dashboards activos por tenant administrados desde el CMP; posible matriz de permisos por opción de menú | Después de terminar los 4 dashboards del MVP (M3) |
+| Open-17 | **Hub de dashboards y gestión por tenant**: una sola opción de menú que abre un hub; dashboards activos por tenant administrados desde el CMP; posible matriz de permisos por opción de menú | En la etapa M3.5 (mejoras generales de UI/UX y herramientas), después de los dashboards de M3 y antes de M4 |
 
 ---
 
@@ -255,3 +255,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-10-13 | D-106 a D-112 y Open-17: unidades organizativas con vigencia, catálogo ampliado, Contrato como unidad y dimensiones configurables. Cierra Open-14 para unidades organizativas. |
 | 2026-10-16 | D-113 a D-118: clasificación de tipos de ausencia, horario por turno, importes de ausencia, tasa de ausentismo, metas por tenant y privacidad. Avance en Open-7. |
 | 2026-10-18 | D-119 a D-123 (la autorización de D-121 es una categoría, `overtime_na`): Dashboard 3 de horas extras por tiempo, tipos de hora por tenant, autorización en el tipo, nocturnas y base de la tasa. Payroll queda como Dashboard 5. |
+| 2026-10-20 | Nueva etapa M3.5 (mejoras generales de UI/UX y herramientas) entre M3 y M4; absorbe el hub de dashboards (Open-17) |

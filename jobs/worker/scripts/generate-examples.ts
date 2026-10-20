@@ -10,6 +10,7 @@ import ExcelJS from "exceljs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { ABSENCE_HEADERS, SHIFT_WEEK, generateAbsences, type ShiftCode } from "./absenteeism-gen";
+import { TIME_HEADERS, generateTimeEntries } from "./time-entries-gen";
 
 const OUT_DIR = path.resolve(__dirname, "../../../apps/cliente/public/examples");
 
@@ -215,22 +216,19 @@ async function main() {
     history.map((h) => [h.emp, h.type, h.code, h.name, h.from, h.to])
   );
 
-  const active = people.filter((p) => !p.term);
-  const times: (string | number)[][] = [];
-  for (const emp of ["EMP001", "EMP002", ...active.slice(3, 8).map((p) => p.code)]) {
-    for (let d = 1; d <= 5; d++) {
-      const date = `2026-09-${String(d).padStart(2, "0")}`;
-      const absent = emp === "EMP001" && d === 3;
-      const overtime = d === 2 && emp !== "EMP001";
-      times.push([emp, date, 1, 8, absent ? 0 : overtime ? 9.5 : 8, absent ? 1 : 0]);
-    }
-  }
-  await write("file_time.xlsx", ["employee_code", "date", "is_working_day", "scheduled_hours", "worked_hours", "has_absence"], times);
 
   const { rows: abs, stats } = generateAbsences(
     people.map((p) => ({ code: p.code, gender: p.gender, hire: p.hire, term: p.term, shift: shiftOf(p) }))
   );
   await write("file_absenteeism.xlsx", ABSENCE_HEADERS, abs);
+
+  const active = people.filter((p) => !p.term);
+  const { rows: time, stats: timeStats } = generateTimeEntries(
+    people.map((p) => ({ code: p.code, gender: p.gender, hire: p.hire, term: p.term, shift: shiftOf(p) })),
+    abs
+  );
+  await write("file_time.xlsx", TIME_HEADERS, time, [14, 12, 18, 8]);
+  console.log("  horas por tipo:", JSON.stringify(timeStats));
   console.log("  eventos por tipo:", JSON.stringify(stats));
   console.log("  semana laboral de cada turno (cargar en Configuración > Turnos, 8 h por día; part-time 6 h):", JSON.stringify(SHIFT_WEEK));
 
@@ -255,6 +253,29 @@ async function main() {
   errRows.forEach((r) => wsErr.addRow(r));
   await wbErr.xlsx.writeFile(path.join(fixtures, "file_absenteeism_errors.xlsx"));
   console.log(`✓ fixtures/file_absenteeism_errors.xlsx: ${errRows.length} filas`);
+
+  // Asistencia con errores y avisos (NO es público: pruebas locales). Filas de Excel 2 a 14.
+  const timeErr: (string | number)[][] = [
+    ["EMP002", "2026-09-21", "REGULAR", 8],
+    ["EMP002", "2026-09-21", "OT50", 2],
+    ["EMP002", "2026-09-21", "OT50", 3],
+    ["EMP999", "2026-09-21", "REGULAR", 8],
+    ["EMP003", "2026-13-40", "REGULAR", 8],
+    ["EMP003", "2026-09-22", "REGULAR", 30],
+    ["EMP003", "2026-09-22", "OT50", -1],
+    ["EMP003", "2026-09-22", "OT100", "abc"],
+    ["EMP003", "2026-09-22", "", 2],
+    ["EMP003", "2026-09-23", "HORA_GUARDIA", 3],
+    ["EMP003", "2026-09-24", "REGULAR", 20],
+    ["EMP003", "2026-09-24", "OT50", 8],
+    ["EMP003", "2026-09-25", "OT50NA", "1,5"],
+  ];
+  const wbTime = new ExcelJS.Workbook();
+  const wsTime = wbTime.addWorksheet("Datos");
+  wsTime.addRow(TIME_HEADERS).font = { bold: true };
+  timeErr.forEach((r) => wsTime.addRow(r));
+  await wbTime.xlsx.writeFile(path.join(fixtures, "file_time_errors.xlsx"));
+  console.log(`✓ fixtures/file_time_errors.xlsx: ${timeErr.length} filas`);
 
   const pay: (string | number | null)[][] = [
     ["EMP001", "2026-09", "2026-09-01", "2026-09-30", "SUELDO_BASE", "Sueldo Básico", "basic_salary", 350000, null],

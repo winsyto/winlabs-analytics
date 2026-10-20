@@ -252,7 +252,7 @@ Ver `jobs/worker/.env.example`. La variable crítica es `DATABASE_URL` que debe 
 ## Lo que NO está implementado todavía
 
 - Dashboards 3 a 5 (Horas extras —en curso—, Turnover, Payroll) (M3)
-- Hub de dashboards, activación de dashboards por tenant y permisos por opción de menú (etapa posterior a los dashboards; ver `BACKLOG.md`)
+- Etapa M3.5 (entre M3 y M4): mejoras generales de UI/UX (pantallas de 15,6", grillas paginadas, fichas), hubs de dashboards y de configuración, menú de configuración en el CMP, herramientas de limpieza de tablas y documentación de tablas por módulo (ver `BACKLOG.md`)
 - Forgot password / reset password (stubs existen, falta implementar con Resend)
 - APIs Manú y Geovictoria (M4)
 - IA/insights (M5)

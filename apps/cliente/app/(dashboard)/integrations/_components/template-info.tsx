@@ -19,10 +19,8 @@ const TEMPLATE_SPECS: Record<string, TemplateSpec> = {
     columns: [
       { name: "employee_code",   required: true,  description: "Código único del empleado" },
       { name: "date",            required: true,  description: "Fecha del registro (YYYY-MM-DD)" },
-      { name: "worked_hours",    required: true,  description: "Horas trabajadas (decimal, ej: 7.5)" },
-      { name: "is_working_day",  required: false, description: "1 / true / si = día hábil (default: 1)" },
-      { name: "scheduled_hours", required: false, description: "Horas teóricas planificadas" },
-      { name: "has_absence",     required: false, description: "1 / true / si = tiene ausencia (default: 0)" },
+      { name: "time_entry_type", required: true,  description: "Código del tipo de hora (ej: REGULAR, OT50, OT100). Si no existe se crea sin clasificar; un tipo existente no se modifica" },
+      { name: "hours",           required: true,  description: "Horas de ese tipo en el día (0 a 24, decimal). Una fila por persona, día y tipo; volver a cargar reemplaza las horas de ese tipo" },
     ],
   },
   file_absenteeism: {

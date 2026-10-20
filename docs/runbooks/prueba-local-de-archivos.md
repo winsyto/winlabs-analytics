@@ -56,6 +56,8 @@
 - **Historial:** 18 filas aplicadas a 9 personas.
 - **Ausentismo:** 453 eventos de 24 meses (oct-2024 a sep-2026), 0 errores; ~4,8% de tasa aproximada. Crea un tipo nuevo sin clasificar (`TRAMITE`); aparece el aviso en Configuración > Tipos de ausencia. Hay eventos sin importes, con días y con ausencia parcial (horas por día), uno cancelado y una licencia por maternidad que sigue abierta.
 - **Archivo con errores** (`jobs/worker/scripts/fixtures/file_absenteeism_errors.xlsx`, no público): 5 filas válidas, 5 con error de validación, 2 personas inexistentes (aviso) y 2 tipos nuevos (uno clasificado desde el archivo y otro sin clasificar).
+- **Asistencia con errores** (`jobs/worker/scripts/fixtures/file_time_errors.xlsx`, no público): 8 filas válidas, 5 con error (fecha, horas fuera de rango, negativas, no numéricas y tipo vacío), 1 persona inexistente, 1 tipo nuevo sin clasificar, una fila repetida y un día de más de 24 horas.
+- **Verificación sin R2** de la carga de Asistencia: `npx tsx --env-file=.env scripts/verify-time-upload.ts` (desde `jobs/worker`) carga el ejemplo y el archivo con errores en un tenant temporal, compara contra un cálculo independiente y lo borra.
 - Los números exactos del dashboard dependen de la fecha en que se carguen (los cierres son de los últimos 24 meses cerrados).
 - Los archivos se regeneran con `npx tsx scripts/generate-examples.ts` desde `jobs/worker/` (escribe en `apps/cliente/public/examples/`).
 
