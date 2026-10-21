@@ -45,7 +45,7 @@ export function TenantOrgConfigCard({ tenantId, types, dashboards }: Props) {
   }
 
   const saveDimensions = (dashboardCode: string, codes: string[]) =>
-    run(() => setDashboardDimensionsAction({ tenantId, dashboardCode: dashboardCode as "headcount" | "absenteeism" | "overtime" | "turnover", typeCodes: codes }));
+    run(() => setDashboardDimensionsAction({ tenantId, dashboardCode: dashboardCode as "headcount" | "absenteeism" | "overtime" | "turnover" | "payroll", typeCodes: codes }));
 
   const move = (d: DashboardDimensionsRow, index: number, delta: -1 | 1) => {
     const next = [...d.dimensions];

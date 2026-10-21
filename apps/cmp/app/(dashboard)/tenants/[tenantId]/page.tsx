@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 const MODULES = [
   { key: "people",  label: "Personas",      description: "hr_people, hr_org_units, historial" },
   { key: "time",    label: "Asistencia",    description: "att_time_daily, att_absenteeism_events" },
-  { key: "payroll", label: "Liquidaciones", description: "pay_periods, pay_entries, pay_concepts" },
+  { key: "payroll", label: "Liquidaciones", description: "pay_periods, pay_processes, pay_entries, pay_concepts" },
 ] as const;
 
 const DASHBOARDS = [
@@ -24,6 +24,7 @@ const DASHBOARDS = [
   { code: "absenteeism", label: "Ausentismos" },
   { code: "overtime", label: "Horas extras" },
   { code: "turnover", label: "Rotación" },
+  { code: "payroll", label: "Payroll" },
 ] as const;
 
 export type DataModule = typeof MODULES[number];
@@ -60,6 +61,7 @@ async function getAttendanceSettings(tenantId: string): Promise<AttendanceSettin
     defaultDailyHours: Number(row.defaultDailyHours),
     absenceDisplay: row.absenceDisplay as AttendanceSettings["absenceDisplay"],
     overtimeBase: row.overtimeBase as AttendanceSettings["overtimeBase"],
+    currency: row.currency,
   };
 }
 

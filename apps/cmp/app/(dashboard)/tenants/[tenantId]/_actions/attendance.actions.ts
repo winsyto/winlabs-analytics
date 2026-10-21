@@ -18,6 +18,7 @@ const schema = z.object({
   defaultDailyHours: z.number().gt(0, "Las horas diarias deben ser mayores a 0").max(24, "Máximo 24 horas por día"),
   absenceDisplay: z.enum(ABSENCE_DISPLAYS),
   overtimeBase: z.enum(OVERTIME_BASES),
+  currency: z.string().regex(/^[A-Z]{3}$/, "La moneda debe ser un código de 3 letras (ej: ARS, USD)"),
 });
 
 export async function updateAttendanceSettingsAction(

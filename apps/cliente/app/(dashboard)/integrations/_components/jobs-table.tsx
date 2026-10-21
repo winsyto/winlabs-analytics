@@ -116,25 +116,25 @@ function JobErrors({ result, jobFailed, lastError }: { result: unknown; jobFaile
     <div className="mt-1">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 hover:underline"
+        className="flex items-center gap-1 text-xs font-medium text-amber-800 dark:text-amber-300 hover:underline"
       >
         {open ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         {hasRowErrors ? `Ver errores (${totalErrors})` : hasJobError ? "Ver detalle del error" : "Ver avisos"}
       </button>
 
       {open && (
-        <div className="mt-2 rounded border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/30 p-3 space-y-1">
+        <div className="mt-2 rounded border border-amber-200 dark:border-amber-900 bg-amber-50 dark:bg-amber-950 p-3 space-y-1 text-amber-950 dark:text-amber-50">
           {hasJobError && (
-            <p className="text-xs text-destructive font-mono">{lastError}</p>
+            <p className="text-xs font-mono font-medium text-red-800 dark:text-red-200">{lastError}</p>
           )}
           {warnings.map((w, i) => (
-            <p key={i} className="text-xs text-amber-700 dark:text-amber-300">{w}</p>
+            <p key={i} className="text-xs text-amber-950 dark:text-amber-50">{w}</p>
           ))}
           {hasRowErrors && (
             <>
               <table className="w-full text-xs">
                 <thead>
-                  <tr className="text-muted-foreground border-b border-amber-200 dark:border-amber-900">
+                  <tr className="text-amber-900 dark:text-amber-200 border-b border-amber-200 dark:border-amber-900">
                     <th className="text-left py-1 pr-3 font-medium w-12">Fila</th>
                     <th className="text-left py-1 pr-3 font-medium w-28">Empleado</th>
                     <th className="text-left py-1 font-medium">Mensaje</th>
@@ -143,10 +143,10 @@ function JobErrors({ result, jobFailed, lastError }: { result: unknown; jobFaile
                 <tbody>
                   {rowErrors.map((e, i) => (
                     <tr key={i} className="border-b border-amber-100 dark:border-amber-900/50 last:border-0">
-                      <td className="py-1 pr-3 text-muted-foreground">{e.row ?? "—"}</td>
-                      <td className="py-1 pr-3 font-mono text-muted-foreground">{e.employee_code ?? "—"}</td>
-                      <td className="py-1 text-foreground">
-                        {e.field && <span className="font-mono text-muted-foreground">{e.field}: </span>}
+                      <td className="py-1 pr-3 text-amber-900 dark:text-amber-200">{e.row ?? "—"}</td>
+                      <td className="py-1 pr-3 font-mono text-amber-900 dark:text-amber-200">{e.employee_code ?? "—"}</td>
+                      <td className="py-1 text-amber-950 dark:text-amber-50">
+                        {e.field && <span className="font-mono text-amber-900 dark:text-amber-200">{e.field}: </span>}
                         {e.message}
                       </td>
                     </tr>
@@ -154,7 +154,7 @@ function JobErrors({ result, jobFailed, lastError }: { result: unknown; jobFaile
                 </tbody>
               </table>
               {totalErrors > 20 && (
-                <p className="text-xs text-muted-foreground pt-1">… y {totalErrors - 20} errores más</p>
+                <p className="text-xs text-amber-900 dark:text-amber-200 pt-1">… y {totalErrors - 20} errores más</p>
               )}
             </>
           )}

@@ -39,9 +39,12 @@ Tablas M1 implementadas:
 - `att_time_daily` — RLS por tenant_id
 - `att_time_daily_entries` — RLS por tenant_id
 - `att_absenteeism_events` — RLS por tenant_id
-- `pay_periods` — RLS por tenant_id
-- `pay_concepts` — RLS por tenant_id
-- `pay_entries` — RLS por tenant_id
+- `pay_periods` — RLS por tenant_id (mes de liquidación `AAAA-MM`)
+- `pay_processes` — RLS por tenant_id (procesos de un período: mensual, quincenal, SAC, ajustes...)
+- `pay_concepts` — RLS por tenant_id (`concept_type` de 13 tipos, `reference_total` gross/net, `is_classified`)
+- `pay_concept_classes` — RLS por tenant_id (clases del dashboard de Payroll, seed base de 6 con `applyDefaultPayrollClasses`)
+- `pay_class_rules` — RLS por tenant_id (qué entra en cada clase: por tipo o por concepto; el concepto gana)
+- `pay_entries` — RLS por tenant_id (proceso × persona × concepto; `amount` con el signo de origen, `quantity` opcional)
 
 Tablas pendientes (M1-B):
 - `int_templates`, `int_tenant_integrations`, `int_runs`, `int_run_errors`

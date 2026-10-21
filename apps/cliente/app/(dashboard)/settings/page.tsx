@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarOff, Clock, Target, Timer, Users } from "lucide-react";
+import { CalendarOff, Clock, Receipt, Target, Timer, Users } from "lucide-react";
 
 const SECTIONS = [
   {
@@ -19,6 +19,12 @@ const SECTIONS = [
     title: "Tipos de hora",
     description: "Categoría de cada tipo de hora y cuáles son horas extra o no autorizadas.",
     icon: Timer,
+  },
+  {
+    href: "/settings/payroll-concepts",
+    title: "Conceptos de liquidación",
+    description: "Tipo y clase de cada concepto, y las clases que agrupa el dashboard de Payroll.",
+    icon: Receipt,
   },
   {
     href: "/settings/targets",

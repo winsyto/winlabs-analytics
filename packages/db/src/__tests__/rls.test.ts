@@ -749,3 +749,131 @@ describe("RLS — tipos de hora por tenant (cfg_tenant_time_entry_types)", () =>
     ).rejects.toThrow();
   });
 });
+
+describe("RLS — liquidaciones (procesos, conceptos, clases y reglas)", () => {
+  const ids = { alpha: { period: 0, process: 0, concept: 0, cls: 0 }, beta: { period: 0, process: 0, concept: 0, cls: 0 } };
+
+  beforeAll(async () => {
+    for (const [key, tenantId] of [["alpha", tenantAlphaId], ["beta", tenantBetaId]] as const) {
+      await withTenantContext(tenantId, async (tx) => {
+        const period = await tx.payPeriod.create({
+          data: { tenantId, periodCode: "2026-10", startDate: new Date("2026-10-01"), endDate: new Date("2026-10-31") },
+        });
+        const process = await tx.payProcess.create({
+          data: { tenantId, periodId: period.id, code: "MENSUAL", startDate: new Date("2026-10-01"), endDate: new Date("2026-10-31") },
+        });
+        const concept = await tx.payConcept.create({
+          data: { tenantId, code: "0001", name: "Sueldo básico", conceptType: "salary" },
+        });
+        const cls = await tx.payConceptClass.create({
+          data: { tenantId, code: "sueldo", name: "Sueldo", side: "earning" },
+        });
+        await tx.payClassRule.create({ data: { tenantId, classId: cls.id, conceptType: "salary" } });
+        ids[key] = { period: period.id, process: process.id, concept: concept.id, cls: cls.id };
+      });
+    }
+  });
+
+  afterAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, async (tx) => {
+        await tx.payEntry.deleteMany({ where: { tenantId } });
+        await tx.payClassRule.deleteMany({ where: { tenantId } });
+        await tx.payConceptClass.deleteMany({ where: { tenantId } });
+        await tx.payConcept.deleteMany({ where: { tenantId } });
+        await tx.payProcess.deleteMany({ where: { tenantId } });
+        await tx.payPeriod.deleteMany({ where: { tenantId } });
+        await tx.hrPerson.deleteMany({ where: { tenantId } });
+      });
+    }
+  });
+
+  it("cada tenant ve solo sus procesos, conceptos, clases y reglas", async () => {
+    const [processes, concepts, classes, rules] = await withTenantContext(tenantAlphaId, (tx) =>
+      Promise.all([tx.payProcess.findMany(), tx.payConcept.findMany(), tx.payConceptClass.findMany(), tx.payClassRule.findMany()])
+    );
+    for (const rows of [processes, concepts, classes, rules]) {
+      expect(rows).toHaveLength(1);
+      expect(rows[0]?.tenantId).toBe(tenantAlphaId);
+    }
+  });
+
+  it("un tenant no puede escribir en las tablas de otro", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.payConceptClass.create({ data: { tenantId: tenantBetaId, code: "otra", name: "Otra", side: "earning" } })
+      )
+    ).rejects.toThrow();
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.payProcess.create({
+          data: { tenantId: tenantBetaId, periodId: ids.beta.period, code: "X", startDate: new Date("2026-10-01"), endDate: new Date("2026-10-31") },
+        })
+      )
+    ).rejects.toThrow();
+    const updated = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.payConcept.updateMany({ where: { tenantId: tenantBetaId }, data: { name: "Hackeado" } })
+    );
+    expect(updated.count).toBe(0);
+  });
+
+  it("rechaza tipos, lados y tipos de proceso desconocidos", async () => {
+    const run = (sql: string) => withTenantContext(tenantAlphaId, (tx) => tx.$executeRawUnsafe(sql));
+    await expect(run("UPDATE pay_concepts SET concept_type = 'otro'")).rejects.toThrow();
+    await expect(run("UPDATE pay_concept_classes SET side = 'otro'")).rejects.toThrow();
+    await expect(run("UPDATE pay_processes SET process_type = 'otro'")).rejects.toThrow();
+    await expect(run("UPDATE pay_concepts SET reference_total = 'otro'")).rejects.toThrow();
+  });
+
+  it("una regla apunta a un tipo o a un concepto, no a ambos ni a ninguno", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.payClassRule.create({ data: { tenantId: tenantAlphaId, classId: ids.alpha.cls, conceptType: "sac", conceptId: ids.alpha.concept } })
+      )
+    ).rejects.toThrow();
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) => tx.payClassRule.create({ data: { tenantId: tenantAlphaId, classId: ids.alpha.cls } }))
+    ).rejects.toThrow();
+    // un tipo pertenece a una sola clase por tenant
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.payClassRule.create({ data: { tenantId: tenantAlphaId, classId: ids.alpha.cls, conceptType: "salary" } })
+      )
+    ).rejects.toThrow();
+  });
+
+  it("solo un concepto es el total bruto de referencia por tenant", async () => {
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.payConcept.update({ where: { id: ids.alpha.concept }, data: { referenceTotal: "gross" } })
+    );
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.payConcept.create({ data: { tenantId: tenantAlphaId, code: "0002", name: "Otro bruto", conceptType: "accumulators", referenceTotal: "gross" } })
+      )
+    ).rejects.toThrow();
+    // el mismo valor en otro tenant sí se permite
+    await expect(
+      withTenantContext(tenantBetaId, (tx) =>
+        tx.payConcept.update({ where: { id: ids.beta.concept }, data: { referenceTotal: "gross" } })
+      )
+    ).resolves.toBeDefined();
+  });
+
+  it("las entradas quedan aisladas por tenant y son únicas por proceso, persona y concepto", async () => {
+    const person = await createTestPerson(tenantAlphaId, "PAY-1", "Persona Sueldo");
+    await withTenantContext(tenantAlphaId, (tx) =>
+      tx.payEntry.create({
+        data: { tenantId: tenantAlphaId, processId: ids.alpha.process, personId: person.id, conceptId: ids.alpha.concept, amount: 1000.5 },
+      })
+    );
+    const betaEntries = await withTenantContext(tenantBetaId, (tx) => tx.payEntry.findMany());
+    expect(betaEntries).toHaveLength(0);
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.payEntry.create({
+          data: { tenantId: tenantAlphaId, processId: ids.alpha.process, personId: person.id, conceptId: ids.alpha.concept, amount: 1 },
+        })
+      )
+    ).rejects.toThrow();
+  });
+});

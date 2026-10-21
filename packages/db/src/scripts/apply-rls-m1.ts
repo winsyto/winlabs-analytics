@@ -13,7 +13,10 @@ const tables = [
   "att_time_daily_entries",
   "att_absenteeism_events",
   "pay_periods",
+  "pay_processes",
   "pay_concepts",
+  "pay_concept_classes",
+  "pay_class_rules",
   "pay_entries",
 ];
 

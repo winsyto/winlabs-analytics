@@ -21,3 +21,8 @@
 | 2026-10-18 | Tipos de hora: la autorización pasa de columna is_authorized a la categoría overtime_na (hora extra no autorizada) | time_entry_unauthorized_category |
 | 2026-10-19 | Índice sobre att_time_daily_entries.time_daily_id (clave foránea sin índice propio: borrar días recorría toda la tabla de horas) | add_time_daily_entries_fk_index |
 | 2026-10-20 | Dimensiones del dashboard de rotación (turnover) copiadas de Headcount | add_turnover_dimensions |
+| 2026-10-21 | pay_processes (proceso de liquidación por período, RLS); pay_entries pasa a colgar del proceso (se elimina period_id; hours -> quantity) con índices en las claves foráneas | add_pay_processes |
+| 2026-10-21 | pay_concepts: concept_type (13 tipos), reference_total (gross/net, único por tenant) e is_classified | add_pay_concept_classification |
+| 2026-10-21 | pay_concept_classes y pay_class_rules (clases del dashboard de Payroll y sus reglas por tipo o concepto; RLS) con seed base de 6 clases para los tenants existentes | add_pay_concept_classes |
+| 2026-10-21 | Elimina pay_concepts.category y sign (reemplazados por tipo y clase; los importes se usan con su signo de origen) | drop_pay_concept_legacy_columns |
+| 2026-10-21 | cfg_tenant_settings.currency (moneda del tenant, ISO de 3 letras) y dimensiones del dashboard de Payroll copiadas de Headcount | add_tenant_currency_and_payroll_dimensions |

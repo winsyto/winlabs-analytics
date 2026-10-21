@@ -37,8 +37,9 @@ const TABLES = [
   "att_time_daily",
   "att_absenteeism_events",
   "pay_entries",
+  "pay_processes",
   "pay_periods",
-  "pay_concepts",
+  "pay_concepts", // sus reglas de clase por concepto se borran en cascada; las clases y las reglas por tipo se conservan
   "cfg_absenteeism_types",
   "cfg_tenant_time_entry_types",
   "hr_people_history",

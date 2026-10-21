@@ -23,6 +23,15 @@ export {
 } from "./time-entry-config";
 export type { TimeEntryCategory } from "./time-entry-config";
 export {
+  PAY_CONCEPT_TYPES,
+  PAY_PROCESS_TYPES,
+  PAY_REFERENCE_TOTALS,
+  PAY_CLASS_SIDES,
+  PAY_CLASS_DEFAULTS,
+  applyDefaultPayrollClasses,
+} from "./payroll-config";
+export type { PayConceptType, PayProcessType, PayReferenceTotal, PayClassSide } from "./payroll-config";
+export {
   METRIC_TARGET_DEFAULTS,
   METRIC_CODES,
   ATTENDANCE_MODES,
@@ -63,7 +72,10 @@ export type {
   AttAbsenteeismEvent,
   // M1 — Payroll
   PayPeriod,
+  PayProcess,
   PayConcept,
+  PayConceptClass,
+  PayClassRule,
   PayEntry,
   // M1-B — Integraciones
   IntTemplate,

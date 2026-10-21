@@ -9,7 +9,7 @@
 **WinLabs Analytics (wlA)** es una plataforma SaaS de People Analytics multi-tenant para LATAM.
 Dos apps: `cmp` (console interna de WinLabs para gestionar tenants) y `cliente` (app que usa cada empresa).
 
-**Estado actual:** M0, M1 y M2 cerrados. M3 (dashboards) en curso: el Dashboard 1 (Headcount) está en producción el Dashboard 2 (Ausentismos) está completo (con sus dos reportes anexos: resumen por fecha y unidad y cuadro por tipo y unidad) el Dashboard 3 (Horas extras, por tiempo) está en producción y el Dashboard 4 (Rotación) está completo en local; sigue Payroll (5).
+**Estado actual:** M0, M1 y M2 cerrados. M3 (dashboards) en curso: el Dashboard 1 (Headcount) está en producción el Dashboard 2 (Ausentismos) está completo (con sus dos reportes anexos: resumen por fecha y unidad y cuadro por tipo y unidad) el Dashboard 3 (Horas extras, por tiempo) está en producción y el Dashboard 4 (Rotación) está en producción; el Dashboard 5 (Payroll) está en curso: modelo, administración y carga de archivo hechos en local (E1 y E2), falta el dashboard (E3).
 **Roadmap detallado:** ver `BACKLOG.md` en la raíz.
 **Docs de producto:** ver `proyecto/` — especialmente `07-roadmap.md` y `05-modelo-datos.md`.
 **Docs técnicas:** `docs/modules/` (un doc por módulo), `docs/runbooks/` (procedimientos: deploy, pruebas locales, limpieza de datos) y `docs/database/` (DBML y changelog).
@@ -251,7 +251,7 @@ Ver `jobs/worker/.env.example`. La variable crítica es `DATABASE_URL` que debe 
 
 ## Lo que NO está implementado todavía
 
-- Dashboard 5 (Payroll) (M3)
+- Dashboard 5 (Payroll): falta el dashboard en sí (E3) y el detalle por concepto (E4) (M3)
 - Etapa M3.5 (entre M3 y M4): mejoras generales de UI/UX (pantallas de 15,6", grillas paginadas, fichas), hubs de dashboards y de configuración, menú de configuración en el CMP, herramientas de limpieza de tablas y documentación de tablas por módulo (ver `BACKLOG.md`)
 - Forgot password / reset password (stubs existen, falta implementar con Resend)
 - APIs Manú y Geovictoria (M4)
@@ -293,7 +293,7 @@ Las tablas de auth/plataforma de M0 conservan sus nombres actuales (sin prefijo)
 |---|---|---|
 | `hr_` | People / RRHH | `hr_people`, `hr_areas`, `hr_positions`, `hr_locations`, `hr_people_history` |
 | `att_` | Time & Attendance | `att_time_daily`, `att_absenteeism_events`, `att_absenteeism_types` |
-| `pay_` | Payroll | `pay_periods`, `pay_entries`, `pay_concepts` |
+| `pay_` | Payroll | `pay_periods`, `pay_processes`, `pay_entries`, `pay_concepts`, `pay_concept_classes`, `pay_class_rules` |
 | `int_` | Integraciones | `int_templates`, `int_tenant_integrations`, `int_runs`, `int_run_errors` |
 | `dsh_` | Dashboards | `dsh_configs`, `dsh_templates` |
 | `ai_` | IA / LLM | `ai_usage`, `ai_prompt_templates`, `ai_tenant_config` |

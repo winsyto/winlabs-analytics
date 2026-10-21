@@ -47,6 +47,7 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa
 /settings/absence-types         → Clase de cada tipo de ausencia y si cuenta como ausentismo; avisa los tipos sin clasificar
 /settings/time-entry-types      → Categoría de cada tipo de hora (regular, hora extra, hora extra no autorizada, etc.); avisa los tipos sin clasificar
+/settings/payroll-concepts      → Conceptos de liquidación: pestaña Conceptos (tipo, clase puntual, cuál acumulador es el sueldo bruto y el neto; avisa los sin clasificar) y pestaña Clases (agregar, renombrar, lado haber o retención y los tipos que agrupa)
 /settings/targets               → Metas por tenant (ausentismo 4% y horas extras 10% mensual; rotación 18% anual, prorrateada al período)
 /settings/users                 → Gestión de usuarios del tenant (cambiar rol, activar/desactivar)
 ```
@@ -55,7 +56,7 @@ Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/mod
 
 ## Permisos en settings
 
-- `settings/shifts`, `settings/absence-types`, `settings/time-entry-types` y `settings/targets`: solo `admin` edita (`assertCan(role, "edit", "settings")`); analyst y viewer los ven en solo lectura
+- `settings/shifts`, `settings/absence-types`, `settings/time-entry-types`, `settings/payroll-concepts` y `settings/targets`: solo `admin` edita (`assertCan(role, "edit", "settings")`); analyst y viewer los ven en solo lectura
 - Helper del rol actual: `settings/_lib/role.ts`
 
 ## Permisos en settings/users

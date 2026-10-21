@@ -447,6 +447,8 @@ model CfgTenantSetting {
   absenceDisplay    String   @default("both") @map("absence_display") @db.VarChar(10)
   /// scheduled = horas extra / horas programadas; worked = / horas trabajadas
   overtimeBase      String   @default("scheduled") @map("overtime_base") @db.VarChar(10)
+  /// Moneda del tenant (ISO 4217, 3 letras). Una por tenant
+  currency          String   @default("ARS") @db.Char(3)
   createdAt         DateTime @default(now()) @map("created_at")
   updatedAt         DateTime @updatedAt @map("updated_at")
 
@@ -593,28 +595,55 @@ model PayPeriod {
   createdAt  DateTime @default(now()) @map("created_at")
   updatedAt  DateTime @updatedAt @map("updated_at")
 
-  entries PayEntry[]
+  processes PayProcess[]
 
   @@unique([tenantId, periodCode], name: "uq_pay_periods_tenant_code")
   @@map("pay_periods")
 }
 
+/// Proceso de liquidación dentro de un período (mensual, quincenal, SAC, ajustes...)
+model PayProcess {
+  id          Int      @id @default(autoincrement())
+  /// RLS
+  tenantId    String   @map("tenant_id") @db.Uuid
+  periodId    Int      @map("period_id")
+  /// Código del proceso en el sistema origen (único dentro del período)
+  code        String   @db.VarChar(50)
+  description String?  @db.VarChar(200)
+  /// monthly | biweekly | weekly | sac | adjustments | provisions | final_settlement | vacation
+  processType String   @default("monthly") @map("process_type") @db.VarChar(30)
+  startDate   DateTime @map("start_date") @db.Date
+  endDate     DateTime @map("end_date") @db.Date
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  period  PayPeriod  @relation(fields: [periodId], references: [id])
+  entries PayEntry[]
+
+  @@unique([tenantId, periodId, code], map: "uq_pay_processes_period_code")
+  @@index([periodId])
+  @@map("pay_processes")
+}
+
 model PayConcept {
   /// PK autoincrement
-  id           Int     @id @default(autoincrement())
+  id             Int     @id @default(autoincrement())
   /// RLS
-  tenantId     String  @map("tenant_id") @db.Uuid
+  tenantId       String  @map("tenant_id") @db.Uuid
   /// Código del concepto en el sistema origen
-  code         String  @db.VarChar(50)
-  name         String  @db.VarChar(100)
-  /// basic_salary | bonus | overtime | absence_deduction | other
-  category     String  @db.VarChar(40)
-  /// +1 = ingreso, -1 = deducción
-  sign         Int     @default(1) @db.SmallInt
-  isActive     Boolean @default(true) @map("is_active")
-  customFields Json?   @map("custom_fields")
+  code           String  @db.VarChar(50)
+  name           String  @db.VarChar(100)
+  /// Tipo estándar (PAY_CONCEPT_TYPES). null = todavía sin clasificar
+  conceptType    String? @map("concept_type") @db.VarChar(40)
+  /// gross | net: el acumulador que es el sueldo bruto / neto (uno de cada uno por tenant)
+  referenceTotal String? @map("reference_total") @db.VarChar(10)
+  /// false = llegó de un archivo y falta clasificarlo
+  isClassified   Boolean @default(true) @map("is_classified")
+  isActive       Boolean @default(true) @map("is_active")
+  customFields   Json?   @map("custom_fields")
 
   entries PayEntry[]
+  rules   PayClassRule[]
 
   @@unique([tenantId, code], name: "uq_pay_concepts_tenant_code")
   @@map("pay_concepts")
@@ -625,24 +654,64 @@ model PayEntry {
   id                  Int      @id @default(autoincrement())
   /// RLS
   tenantId            String   @map("tenant_id") @db.Uuid
-  periodId            Int      @map("period_id")
+  processId           Int      @map("process_id")
   personId            Int      @map("person_id")
   conceptId           Int      @map("concept_id")
-  /// Monto del concepto en el período
+  /// Importe del concepto, con el signo con el que viene del sistema origen
   amount              Decimal  @db.Decimal(14, 2)
-  /// Horas asociadas (HHEE, ausentismo). null si no aplica
-  hours               Decimal? @db.Decimal(6, 2)
+  /// Cantidad asociada (horas, días, unidades). null si no aplica
+  quantity            Decimal? @db.Decimal(6, 2)
   sourceIntegrationId Int?     @map("source_integration_id")
   customFields        Json?    @map("custom_fields")
   createdAt           DateTime @default(now()) @map("created_at")
 
-  period  PayPeriod  @relation(fields: [periodId], references: [id])
+  process PayProcess @relation(fields: [processId], references: [id])
   person  HrPerson   @relation(fields: [personId], references: [id])
   concept PayConcept @relation(fields: [conceptId], references: [id])
 
-  @@unique([tenantId, periodId, personId, conceptId], name: "uq_pay_entries_period_person_concept")
-  @@index([tenantId, periodId, personId])
+  @@unique([tenantId, processId, personId, conceptId], map: "uq_pay_entries_process_person_concept")
+  @@index([processId])
+  @@index([personId])
+  @@index([conceptId])
   @@map("pay_entries")
+}
+
+/// Clase de concepto: la agrupación que muestra el dashboard de Payroll (editable por tenant)
+model PayConceptClass {
+  id        Int      @id @default(autoincrement())
+  /// RLS
+  tenantId  String   @map("tenant_id") @db.Uuid
+  code      String   @db.VarChar(50)
+  name      String   @db.VarChar(100)
+  /// earning = suma a la masa bruta | deduction = retención
+  side      String   @db.VarChar(10)
+  sortOrder Int      @default(0) @map("sort_order")
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  rules PayClassRule[]
+
+  @@unique([tenantId, code], map: "uq_pay_concept_classes_tenant_code")
+  @@map("pay_concept_classes")
+}
+
+/// Qué entra en cada clase: un tipo de concepto completo o un concepto puntual (el concepto gana)
+model PayClassRule {
+  id          Int      @id @default(autoincrement())
+  /// RLS
+  tenantId    String   @map("tenant_id") @db.Uuid
+  classId     Int      @map("class_id")
+  conceptType String?  @map("concept_type") @db.VarChar(40)
+  conceptId   Int?     @map("concept_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  class   PayConceptClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  concept PayConcept?     @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@index([classId])
+  @@index([conceptId])
+  @@map("pay_class_rules")
 }
 
 // =============================================================================

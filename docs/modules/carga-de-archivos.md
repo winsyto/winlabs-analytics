@@ -36,7 +36,7 @@ sequenceDiagram
 | `file_org_history` | `file_org_history` | Historia de unidades por persona y tipo |
 | `file_time` | `file_time_attendance` | Horas por tipo de hora, por persona y día |
 | `file_absenteeism` | `file_absenteeism` | Eventos de ausentismo |
-| `file_payroll` | `file_payroll` | Liquidaciones |
+| `file_payroll` | `file_payroll` | Liquidaciones por persona, proceso y concepto |
 
 Los templates se registran con `db:seed:prod-catalog` y se asignan a cada tenant en el CMP (Integraciones). La pantalla de la integración muestra las columnas del archivo y descarga un ejemplo (`apps/cliente/public/examples/`).
 
@@ -101,7 +101,21 @@ Columnas, todas obligatorias: `employee_code`, `date`, `time_entry_type`, `hours
 - **Tipos de hora.** Si el código no existe en el tenant se crea; uno existente **no se modifica** (manda lo que edite el admin en Configuración > Tipos de hora). Un tipo nuevo toma la categoría del catálogo base si el código coincide (`REGULAR`, `OT50`, `OT100`, `OT50NA`, etc.); si no, queda *sin clasificar* (categoría `other`: no cuenta como hora extra) y el resultado avisa.
 - **Categorías.** `regular`, `overtime` (hora extra: forma la tasa del dashboard), `overtime_na` (hora extra no autorizada: se muestra aparte), `training`, `holiday`, `absence` y `other`. Las nocturnas regulares (`NIGHT`) y las extras nocturnas (`OTNIGHT`) son tipos distintos.
 - **Cabecera diaria.** Por cada persona y día se mantiene una fila en `att_time_daily` con `worked_hours` (suma de los tipos que suman, es decir signo +1) y `has_absence` (hay un tipo de categoría ausencia con horas). Se recalculan en cada carga. Un día que suma más de 24 horas se carga igual y el resultado avisa.
-- **Volumen y rendimiento.** La carga es por lotes de 5.000 filas, cada uno en su transacción (5.400 filas en menos de 1 s). Los totales del día se calculan y se aplican por clave primaria a propósito: con una actualización con subconsulta, el planificador de Postgres con estadísticas viejas (tablas recién llenadas) tardaba 15 s en lugar de 0,1 s. Al terminar, el worker ejecuta `ANALYZE` de `att_time_daily` y `att_time_daily_entries` para que los dashboards no dependan de estadísticas viejas tras una carga grande.
+- **Volumen y rendimiento.** La carga es por lotes de 5.000 filas, cada uno en su transacción (5.400 filas en menos de 1 s). Los totales del día se calculan y se aplican por clave primaria a propósito: con una actualización con subconsulta, el planificador de Postgres con estadísticas viejas (tablas recién llenadas) tardaba 15 s en lugar de 0,1 s.
+ Al terminar, el worker ejecuta `ANALYZE` de `att_time_daily` y `att_time_daily_entries` para que los dashboards no dependan de estadísticas viejas tras una carga grande.
+
+## Archivo de Liquidaciones
+
+**Una fila por persona, proceso y concepto.** Obligatorias: `employee_code`, `period_code`, `process_code`, `process_start`, `process_end`, `concept_code`, `concept_name`, `amount`. Opcionales: `process_description`, `process_type`, `quantity`. wlA **no calcula nada de la liquidación**: toma los importes exactamente con el signo con el que vienen del sistema de origen (las retenciones, negativas) y los acumuladores (total bruto, total neto) llegan como conceptos más.
+
+- **Jerarquía.** Período (el mes de liquidación, `AAAA-MM`) → proceso (mensual, quincenal, semanal, SAC, ajustes, provisiones, liquidación final, vacaciones) → persona → concepto. Un período tiene uno o varios procesos; el período y el proceso se crean con el archivo si no existen. `process_type` acepta el código en inglés o el nombre en español (default `monthly`). Si un proceso aparece con fechas o tipo distintos entre filas se toman los de la primera fila y se avisa.
+- **Persona.** Debe existir: se carga después del archivo de Personas. Las filas de personas inexistentes se omiten (aviso con cantidad y códigos).
+- **Conceptos.** Si el código no existe se crea **sin clasificar** (`is_classified = false`, sin tipo) y el resultado avisa; uno existente **no se modifica** (manda lo que edite el admin en Configuración > Conceptos de liquidación). El tipo (13 tipos estándar), la clase y cuál acumulador es el sueldo bruto y cuál el neto se definen ahí, no en el archivo.
+- **Repetidas.** Varias filas de la misma persona, proceso y concepto **se suman** (importe y cantidad) y se avisa. Volver a cargar el mismo archivo deja los mismos totales (reemplaza el valor de cada persona, proceso y concepto, no suma de nuevo ni borra nada).
+- **Validaciones por fila:** período `AAAA-MM`, fechas reales con `process_end` no anterior a `process_start`, tipo de proceso válido, importe numérico (hasta 12 dígitos enteros, coma o punto decimal) y cantidad numérica menor a 10.000. Las filas con error se informan con su número de fila de Excel; si faltan **columnas** obligatorias el job entero falla con la lista (un archivo con el formato anterior, `concept_category` y `period_start`, falla así).
+- **Avisos:** personas inexistentes, conceptos nuevos sin clasificar, filas sumadas, procesos con fechas distintas y, mientras no haya un acumulador marcado como bruto y otro como neto, un recordatorio para definirlos.
+- **Volumen.** Carga por lotes de 5.000 filas, cada uno en su transacción (4.400 filas de ejemplo en menos de 0,5 s); al terminar se ejecuta `ANALYZE pay_entries`.
+- **Ejemplo:** 12 meses (oct-2025 a sep-2026) de las 48 personas: 4.416 filas, 17 procesos (12 mensuales, SAC de junio y diciembre, 3 de ajustes) y 16 conceptos. Al cargarlo por primera vez todos los conceptos quedan sin clasificar: clasificarlos en el portal es parte de la prueba.
 
 ## Cierres mensuales (`hr_people_history`)
 
@@ -134,7 +148,7 @@ Columnas, todas obligatorias: `employee_code`, `date`, `time_entry_type`, `hours
 - [ ] Mostrar en el CMP los cierres mensuales por tenant y permitir regenerarlos a mano.
 - [ ] Reintentos y notificación al usuario cuando un job falla.
 - [ ] Soporte de archivos grandes (hoy 20 MB).
-- [ ] Verificar la carga de Liquidaciones con archivos de volumen real. Ausentismo: probado con 24 meses y 453 eventos de ejemplo. Asistencia: probada con 6 meses y 5.400 filas de ejemplo.
+- [ ] Verificar la carga de Liquidaciones con archivos de volumen real (probada con 4.400 filas de ejemplo). Ausentismo: probado con 24 meses y 453 eventos de ejemplo. Asistencia: probada con 6 meses y 5.400 filas de ejemplo.
 
 ## Changelog
 | Fecha | Cambio |
@@ -142,3 +156,4 @@ Columnas, todas obligatorias: `employee_code`, `date`, `time_entry_type`, `hours
 | 2026-10-14 | Versión inicial |
 | 2026-10-16 | Archivo de Ausentismo: clasificación de tipos nuevos, validaciones, importes opcionales (horas por día), avisos de personas omitidas |
 | 2026-10-19 | Archivo de Asistencia: nuevo formato de horas por tipo (una fila por persona, día y tipo), tipos de hora por tenant, carga por lotes |
+| 2026-10-21 | Archivo de Liquidaciones: nuevo formato por proceso y concepto (período → proceso → persona → concepto), conceptos nuevos sin clasificar, repetidas sumadas, carga por lotes |

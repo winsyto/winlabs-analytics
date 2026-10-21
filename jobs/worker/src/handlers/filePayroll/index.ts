@@ -58,6 +58,12 @@ export async function handleFilePayroll(job: JobRow, pool: Pool): Promise<void> 
 
     await markIntegrationSuccess(pool, job.tenant_id, job.integration_id);
 
+    // Tras una carga grande las estadísticas quedan viejas y los dashboards pueden elegir malos planes hasta que
+    // el autovacuum las actualice: se actualizan acá (no es crítico, un fallo solo se registra).
+    await client
+      .query("ANALYZE pay_entries")
+      .catch((err: unknown) => logger.warn("file_payroll: ANALYZE falló", { error: String(err) }));
+
     (job as JobRow & { _result?: unknown })._result = {
       ...stats,
       rows_read: rows.length + errors.length,

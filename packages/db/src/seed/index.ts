@@ -32,6 +32,7 @@ import { ORG_UNIT_TYPES, applyDefaultOrgConfig } from "../org-config";
 import { applyDefaultTenantSettings } from "../tenant-settings";
 import { applyDefaultAbsenteeismTypes, upsertAbsenteeismTypeDefaults } from "../absenteeism-config";
 import { applyDefaultTimeEntryTypes, upsertTimeEntryTypeDefaults } from "../time-entry-config";
+import { applyDefaultPayrollClasses } from "../payroll-config";
 import { TERMINATION_REASONS } from "./termination-reasons";
 
 const prisma = new PrismaClient();
@@ -219,6 +220,7 @@ async function main() {
       await applyDefaultOrgConfig(tx, tenant.id);
       await applyDefaultAbsenteeismTypes(tx, tenant.id);
       await applyDefaultTimeEntryTypes(tx, tenant.id);
+      await applyDefaultPayrollClasses(tx, tenant.id);
       await applyDefaultTenantSettings(tx, tenant.id);
     });
   }

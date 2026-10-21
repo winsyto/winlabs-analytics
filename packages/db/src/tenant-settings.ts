@@ -27,6 +27,7 @@ export const TENANT_SETTINGS_DEFAULTS = {
   defaultDailyHours: 8,
   absenceDisplay: "both" as AbsenceDisplay,
   overtimeBase: "scheduled" as OvertimeBase,
+  currency: "ARS",
 };
 
 /**

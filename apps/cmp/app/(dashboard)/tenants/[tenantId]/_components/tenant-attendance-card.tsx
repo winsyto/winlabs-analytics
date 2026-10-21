@@ -10,6 +10,7 @@ export interface AttendanceSettings {
   defaultDailyHours: number;
   absenceDisplay: "hours" | "days" | "both";
   overtimeBase: "scheduled" | "worked";
+  currency: string;
 }
 
 const DAYS = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"] as const;
@@ -153,6 +154,20 @@ export function TenantAttendanceCard({ tenantId, settings }: { tenantId: string;
                 <option value="scheduled">Horas programadas</option>
                 <option value="worked">Horas trabajadas</option>
               </select>
+            </div>
+            <div>
+              <label htmlFor="currency" className="mb-1 block text-sm font-medium text-foreground">
+                Moneda (liquidaciones)
+              </label>
+              <input
+                id="currency"
+                type="text"
+                maxLength={3}
+                value={form.currency}
+                onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })}
+                className="w-20 rounded-md border bg-background px-2 py-1.5 text-sm uppercase"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">Código ISO: ARS, USD, BRL…</p>
             </div>
           </div>
         </div>

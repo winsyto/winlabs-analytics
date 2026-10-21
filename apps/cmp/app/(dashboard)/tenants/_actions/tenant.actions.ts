@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@wla/db/client";
-import { applyDefaultAbsenteeismTypes, applyDefaultOrgConfig, applyDefaultTenantSettings, applyDefaultTimeEntryTypes } from "@wla/db";
+import { applyDefaultAbsenteeismTypes, applyDefaultOrgConfig, applyDefaultPayrollClasses, applyDefaultTenantSettings, applyDefaultTimeEntryTypes } from "@wla/db";
 import { withTenantContext } from "@wla/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -120,6 +120,7 @@ export async function createTenantAction(
       await applyDefaultOrgConfig(tx, tenant.id);
       await applyDefaultAbsenteeismTypes(tx, tenant.id);
       await applyDefaultTimeEntryTypes(tx, tenant.id);
+      await applyDefaultPayrollClasses(tx, tenant.id);
       await applyDefaultTenantSettings(tx, tenant.id);
     });
 
@@ -220,7 +221,10 @@ export async function deleteTenantAction(
       await tx.$executeRaw`DELETE FROM cfg_tenant_org_unit_types WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM cfg_absenteeism_types WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM cfg_tenant_time_entry_types WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM pay_processes WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM pay_periods WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM pay_class_rules WHERE tenant_id = ${tenantId}::uuid`;
+      await tx.$executeRaw`DELETE FROM pay_concept_classes WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM pay_concepts WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM int_runs WHERE tenant_id = ${tenantId}::uuid`;
       await tx.$executeRaw`DELETE FROM int_tenant_integrations WHERE tenant_id = ${tenantId}::uuid`;

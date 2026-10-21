@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 const MODULES = [
   { key: "people",  label: "Personas",           description: "hr_people, hr_org_units, historial" },
   { key: "time",    label: "Asistencia",          description: "att_time_daily, att_absenteeism_events" },
-  { key: "payroll", label: "Liquidaciones",       description: "pay_periods, pay_entries, pay_concepts" },
+  { key: "payroll", label: "Liquidaciones",       description: "pay_periods, pay_processes, pay_entries, pay_concepts, pay_concept_classes" },
 ] as const;
 
 export type DataModule = typeof MODULES[number];

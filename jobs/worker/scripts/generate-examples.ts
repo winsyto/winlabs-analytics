@@ -11,6 +11,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { ABSENCE_HEADERS, SHIFT_WEEK, generateAbsences, type ShiftCode } from "./absenteeism-gen";
 import { TIME_HEADERS, generateTimeEntries } from "./time-entries-gen";
+import { PAYROLL_HEADERS, generatePayroll } from "./payroll-gen";
 
 const OUT_DIR = path.resolve(__dirname, "../../../apps/cliente/public/examples");
 
@@ -277,18 +278,34 @@ async function main() {
   await wbTime.xlsx.writeFile(path.join(fixtures, "file_time_errors.xlsx"));
   console.log(`✓ fixtures/file_time_errors.xlsx: ${timeErr.length} filas`);
 
-  const pay: (string | number | null)[][] = [
-    ["EMP001", "2026-09", "2026-09-01", "2026-09-30", "SUELDO_BASE", "Sueldo Básico", "basic_salary", 350000, null],
-    ["EMP001", "2026-09", "2026-09-01", "2026-09-30", "HHEE", "Horas Extra", "overtime", 15000, 10],
-    ["EMP002", "2026-09", "2026-09-01", "2026-09-30", "SUELDO_BASE", "Sueldo Básico", "basic_salary", 280000, null],
-    ["EMP003", "2026-09", "2026-09-01", "2026-09-30", "SUELDO_BASE", "Sueldo Básico", "basic_salary", 260000, null],
-    ["EMP003", "2026-09", "2026-09-01", "2026-09-30", "DESC_AUSENCIA", "Descuento por Ausencia", "absence_deduction", -5250, null],
+  const { rows: pay, stats: payStats } = generatePayroll(
+    people.map((p) => ({ code: p.code, hire: p.hire, term: p.term, positionCode: p.position.code }))
+  );
+  await write("file_payroll.xlsx", PAYROLL_HEADERS, pay, [14, 12, 16, 30, 14, 14, 14, 18, 28, 14, 10]);
+  console.log("  importes por proceso y concepto:", JSON.stringify(payStats));
+
+  // Liquidaciones con errores y avisos (NO es público: pruebas locales). Filas de Excel 2 a 13.
+  const P = ["2026-09", "MENS-2026-09", "Liquidación mensual 2026-09", "monthly", "2026-09-01", "2026-09-30"] as const;
+  const payErr: (string | number | null)[][] = [
+    ["EMP002", ...P, "SUELDO_BASE", "Sueldo básico", 1000000, null],
+    ["EMP002", ...P, "HHEE50", "Horas extra 50%", 30000, 10],
+    ["EMP002", ...P, "HHEE50", "Horas extra 50%", 15000, 5],
+    ["EMP999", ...P, "SUELDO_BASE", "Sueldo básico", 500000, null],
+    ["EMP003", "2026-13", P[1], P[2], P[3], P[4], P[5], "SUELDO_BASE", "Sueldo básico", 500000, null],
+    ["EMP003", P[0], P[1], P[2], "quincenal-x", P[4], P[5], "SUELDO_BASE", "Sueldo básico", 500000, null],
+    ["EMP003", P[0], P[1], P[2], P[3], "2026-09-30", "2026-09-01", "SUELDO_BASE", "Sueldo básico", 500000, null],
+    ["EMP003", ...P, "SUELDO_BASE", "Sueldo básico", "abc", null],
+    ["EMP003", ...P, "", "Sin código", 100, null],
+    ["EMP003", ...P, "CONCEPTO_NUEVO", "Concepto nuevo sin clasificar", -2500.5, null],
+    ["EMP003", P[0], "AJUS-2026-09", "Ajuste de septiembre", "Ajustes", "2026-09-15", "2026-09-30", "AJUSTE_RETRO", "Ajuste retroactivo", "1.234,5", null],
+    ["EMP003", P[0], "AJUS-2026-09", "Ajuste de septiembre", "Ajustes", "2026-09-15", "2026-09-30", "SUELDO_BASE", "Sueldo básico", 50000, 20000],
   ];
-  active.slice(3, 11).forEach((p, i) => {
-    pay.push([p.code, "2026-09", "2026-09-01", "2026-09-30", "SUELDO_BASE", "Sueldo Básico", "basic_salary", 230000 + i * 15000, null]);
-    if (i % 3 === 0) pay.push([p.code, "2026-09", "2026-09-01", "2026-09-30", "HHEE", "Horas Extra", "overtime", 9000 + i * 500, 6]);
-  });
-  await write("file_payroll.xlsx", ["employee_code", "period_code", "period_start", "period_end", "concept_code", "concept_name", "concept_category", "amount", "hours"], pay);
+  const wbPay = new ExcelJS.Workbook();
+  const wsPay = wbPay.addWorksheet("Datos");
+  wsPay.addRow(PAYROLL_HEADERS).font = { bold: true };
+  payErr.forEach((r) => wsPay.addRow(r));
+  await wbPay.xlsx.writeFile(path.join(fixtures, "file_payroll_errors.xlsx"));
+  console.log(`✓ fixtures/file_payroll_errors.xlsx: ${payErr.length} filas`);
 
   console.log(`\nPersonas: ${people.length} (${people.filter((p) => p.term).length} con baja) · historial: ${history.length} filas`);
 }
