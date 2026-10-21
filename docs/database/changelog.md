@@ -26,3 +26,4 @@
 | 2026-10-21 | pay_concept_classes y pay_class_rules (clases del dashboard de Payroll y sus reglas por tipo o concepto; RLS) con seed base de 6 clases para los tenants existentes | add_pay_concept_classes |
 | 2026-10-21 | Elimina pay_concepts.category y sign (reemplazados por tipo y clase; los importes se usan con su signo de origen) | drop_pay_concept_legacy_columns |
 | 2026-10-21 | cfg_tenant_settings.currency (moneda del tenant, ISO de 3 letras) y dimensiones del dashboard de Payroll copiadas de Headcount | add_tenant_currency_and_payroll_dimensions |
+| 2026-10-22 | Índice pay_entries (concept_id, process_id) para leer solo las filas del total bruto o neto de cada proceso (reemplaza al de concept_id solo) | add_pay_entries_concept_process_index |

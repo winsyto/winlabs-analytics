@@ -231,6 +231,10 @@
 | D-134 | Un concepto nuevo que llega en un archivo se crea **sin clasificar** (sin tipo, fuera de toda clase) y se avisa; uno existente no se modifica por el archivo (manda lo editado en Configuración > Conceptos de liquidación). Los conceptos viejos migrados conservan su clasificación: sueldo/horas extra/bonos pasan a tipo sueldo con regla por concepto, descuentos por ausencia a descuentos | ✅ Cerrada |
 | D-135 | Una moneda por tenant (`cfg_tenant_settings.currency`, ISO de 3 letras; default ARS), definida en el CMP. El dashboard de Payroll es visible para todos los roles y solo muestra agregados: las celdas de menos de 3 personas se ocultan | ✅ Cerrada |
 | D-136 | Archivo de Liquidaciones: una fila por persona, proceso y concepto; el período (`AAAA-MM`), el proceso y el concepto se crean con el archivo; volver a cargar reemplaza el valor de cada persona, proceso y concepto y nunca borra (igual que D-127). El tipo, la clase y los totales de referencia no viajan en el archivo | ✅ Cerrada |
+| D-137 | Payroll muestra solo agregados: las celdas (unidad, mes o proceso) con menos de 3 personas no muestran importes y, si los filtros dejan menos de 3 personas por mes, el resumen entero se reserva. El listado de importes por persona lo ve solo un admin y no se exporta | ✅ Cerrada |
+| D-138 | Costo medio por persona = masa bruta ÷ personas-mes con importe en la masa bruta (el costo mensual promedio de quien cobró). La masa bruta es el total bruto marcado o, si no hay, la suma de las clases de haber; sin total neto marcado el neto figura como "—" con aviso | ✅ Cerrada |
+| D-139 | En Payroll un mes sin liquidación figura como "sin datos", no como cero; las retenciones se muestran en valor absoluto y aparte; el período suma todos los procesos (mensual, SAC, ajustes...) y el detalle por proceso permite separarlos | ✅ Cerrada |
+| D-140 | La unidad de una persona en Payroll es la vigente al fin del mes liquidado (no la actual ni la del cierre de personas). Los importes son lo pagado en cada mes: el desfasaje con lo ocurrido (horas extra y ausencias pagadas a mes vencido) queda registrado como Open-18 | ✅ Cerrada |
 
 ---
 
@@ -257,6 +261,7 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | Open-15 | **Programa de partners / implementadores** (v2.x+) | Al cerrar v1.x |
 | Open-16 | **T0 efectivo** (fecha real de arranque) | Cuando Winsy decida arrancar |
 | Open-17 | **Hub de dashboards y gestión por tenant**: una sola opción de menú que abre un hub; dashboards activos por tenant administrados desde el CMP; posible matriz de permisos por opción de menú | En la etapa M3.5 (mejoras generales de UI/UX y herramientas), después de los dashboards de M3 y antes de M4 |
+| Open-18 | **Desfasaje entre lo pagado y lo ocurrido**: muchos clientes pagan horas extra y algunas ausencias a mes vencido, así que los importes de Payroll de un período corresponden a horas o ausencias del período anterior. Definir si se configura por tenant (qué tipos se pagan diferidos y con cuántos meses), cómo se avisa en los dashboards y cómo se alinea en un reporte que cruce datos | Antes de cruzar dashboards (reporte cubo) y antes de los insights de M5 |
 
 ---
 
@@ -272,3 +277,5 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-10-20 | D-124 a D-127: tasa de horas extra (no autorizadas fuera de la tasa, denominador por cobertura persona y mes), orden por horas en el detalle de personas y reemplazo por día y tipo en la carga de Asistencia |
 | 2026-10-21 | D-128 a D-130: Dashboard 4 de rotación (todas las bajas en la tasa, fórmula con headcount promedio, meta anual prorrateada y orden del detalle) |
 | 2026-10-21 | D-131 a D-136: Dashboard 5 de Payroll (período → proceso → persona → concepto, importes tal como vienen, tipos y clases de concepto, conceptos nuevos sin clasificar, moneda única y agregados, formato del archivo) |
+| 2026-10-21 | Open-18: desfasaje entre lo pagado y lo ocurrido (pago a mes vencido de horas extra y ausencias) |
+| 2026-10-22 | D-137 a D-140: dashboard de Payroll (privacidad por celdas y listado de personas solo admin, costo medio por persona-mes, meses sin datos y retenciones aparte, unidad al fin del mes liquidado) |

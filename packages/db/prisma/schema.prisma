@@ -672,7 +672,7 @@ model PayEntry {
   @@unique([tenantId, processId, personId, conceptId], map: "uq_pay_entries_process_person_concept")
   @@index([processId])
   @@index([personId])
-  @@index([conceptId])
+  @@index([conceptId, processId])
   @@map("pay_entries")
 }
 

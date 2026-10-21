@@ -42,6 +42,9 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /turnover                       → Dashboard 4 (Rotación): rotación vs meta anual prorrateada, voluntaria, bajas por categoría y motivo, bajas tempranas, evolución e ingresos/egresos, tasa por dimensión
 /turnover/[scope]/[[...id]]     → Drill-down: bajas, tempranas, categoria/<código>, motivo/<código>, dim/<tipo>/<id>
 /turnover/export                → Descarga Excel/PDF (?format=xlsx|pdf)
+/payroll                        → Dashboard 5 (Payroll): masa salarial bruta, costo medio por persona, neto pagado, costo de horas extra, evolución de 12 meses, composición por clase, costo medio por dimensión (celdas de menos de 3 personas reservadas)
+/payroll/[scope]/[[...id]]      → Drill-down: procesos, clase/<id o uncl>, dim/<tipo>/<id>, personas (solo admin)
+/payroll/export                 → Descarga Excel/PDF (?format=xlsx|pdf)
 /reports, /team                 → Stubs
 /settings                       → Índice de configuración
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa
@@ -52,7 +55,7 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /settings/users                 → Gestión de usuarios del tenant (cambiar rol, activar/desactivar)
 ```
 
-Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/dashboard-ausentismo.md`, `docs/modules/dashboard-horas-extras.md`, `docs/modules/dashboard-rotacion.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
+Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/modules/dashboard-ausentismo.md`, `docs/modules/dashboard-horas-extras.md`, `docs/modules/dashboard-rotacion.md`, `docs/modules/dashboard-payroll.md`, `docs/modules/carga-de-archivos.md`. Para agregar un dashboard: skill `ADD_DASHBOARD`.
 
 ## Permisos en settings
 

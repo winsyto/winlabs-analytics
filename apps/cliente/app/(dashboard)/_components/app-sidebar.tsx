@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { SidebarNav } from "@wla/ui";
-import { BarChart3, CalendarOff, FileSpreadsheet, Timer, UserMinus, LayoutDashboard, Settings, Users, UsersRound } from "lucide-react";
+import { BarChart3, CalendarOff, FileSpreadsheet, Timer, UserMinus, Wallet, LayoutDashboard, Settings, Users, UsersRound } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/absenteeism", label: "Ausentismos", icon: CalendarOff },
   { href: "/overtime", label: "Horas extras", icon: Timer },
   { href: "/turnover", label: "Rotación", icon: UserMinus },
+  { href: "/payroll", label: "Payroll", icon: Wallet },
   { href: "/integrations", label: "Integraciones", icon: FileSpreadsheet },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
   { href: "/team", label: "Equipo", icon: Users },
