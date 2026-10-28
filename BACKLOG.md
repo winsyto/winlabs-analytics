@@ -300,7 +300,7 @@
   - [x] E2 carga de archivo: una fila por persona, proceso y concepto; período, proceso y concepto creados con el archivo; conceptos nuevos sin clasificar; repetidas sumadas; carga por lotes; ejemplo de 12 meses (4.416 filas) y verificación `verify-payroll-upload.ts` — en producción (2026-10-21); se desplegaron juntas porque el handler anterior no funciona con el esquema nuevo
   - [x] E3 dashboard: 4 tarjetas (masa bruta, costo medio por persona, neto pagado, costo de horas extra), evolución de 12 meses, composición por clase, costo medio por dimensión, drill-down (procesos, clase, unidad y personas solo admin) y exportaciones Excel/PDF; privacidad de menos de 3 personas; índice `pay_entries (concept_id, process_id)`; verificación contra un cálculo independiente y benchmark — en producción (2026-10-22); `docs/modules/dashboard-payroll.md`
   - [ ] **Desfasaje entre lo pagado y lo ocurrido (a revisar, no analizado todavía):** en Payroll los importes son lo pagado en el período, pero muchos clientes pagan horas extra y algunas ausencias **a mes vencido** (lo que se paga en junio son las horas de mayo; es el caso del cliente ancla). Comparar horas de un mes con importes del mismo mes en Payroll, Horas extras y Ausentismos puede confundir. Ver Open-18: configuración por tenant (tipos con pago diferido), aviso en los dashboards y, si hay reporte que cruce datos, alinear períodos. Revisar antes de cualquier cruce entre dashboards o insight de IA (M5)
-  - [x] E4 detalle por concepto (botón en el resumen y pantalla `/payroll/conceptos` con cuadro de conceptos, evolución, por proceso, por unidad, cantidad pagada y exportación Excel/PDF; incluye conceptos sin clasificar y acumuladores) — completo en local (2026-10-27)
+  - [x] E4 detalle por concepto (botón en el resumen y pantalla `/payroll/conceptos` con cuadro de conceptos, evolución, por proceso, por unidad, cantidad pagada y exportación Excel/PDF; incluye conceptos sin clasificar y acumuladores) — en producción (2026-10-28)
 - [x] Filtros por dashboard (período, área, sede, cargo, contrato) — estado independiente por dashboard, persistido en la URL
 - [x] Exportación Excel y PDF paginado (Dashboard 1; reutilizable en los siguientes)
 - [x] Benchmarks configurables por tenant (`cfg_tenant_metric_targets`; defaults Argentina: ausentismo 4% mensual, horas extra 10%, rotación 18% anual): ausentismo en uso; horas extra y rotación quedan listas para sus dashboards
@@ -325,7 +325,8 @@
   - [ ] Edición de tenants
   - [ ] Integraciones
   - [ ] Templates de integración
-  - [ ] **Hub de dashboards** y su configuración por tenant (qué dashboards están activos en cada uno; posible matriz de permisos por opción de menú; modelo de datos: catálogo de dashboards + activación por tenant + permisos, y su impacto en `dsh_dimensions` y en la navegación)
+  - [x] **Hub de dashboards, modelo y CMP** (catálogo, activación por tenant, guardia de acceso, matriz con búsqueda y paginación, tarjeta en el tenant, auditoría) — completo en local (2026-10-28); `docs/modules/hub-de-dashboards.md`. Falta el hub visual del cliente (bloque 3) y los permisos por rol
+  - [ ] (original) **Hub de dashboards** y su configuración por tenant (qué dashboards están activos en cada uno; posible matriz de permisos por opción de menú; modelo de datos: catálogo de dashboards + activación por tenant + permisos, y su impacto en `dsh_dimensions` y en la navegación)
 - Configuración (nueva opción de menú):
   - [ ] Mover la configuración de **tipos de ausencia** (hoy `/absence-types`) y mejorar su UI
   - [ ] Mover la configuración de **tipos de hora** (hoy `/time-entry-types`) y mejorar su UI

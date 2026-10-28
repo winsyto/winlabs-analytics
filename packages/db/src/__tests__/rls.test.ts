@@ -877,3 +877,56 @@ describe("RLS — liquidaciones (procesos, conceptos, clases y reglas)", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("RLS — dashboards por tenant (dsh_tenant_dashboards)", () => {
+  beforeAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, (tx) =>
+        tx.dshTenantDashboard.create({ data: { tenantId, dashboardCode: "headcount", isEnabled: true } })
+      );
+    }
+  });
+
+  afterAll(async () => {
+    for (const tenantId of [tenantAlphaId, tenantBetaId]) {
+      await withTenantContext(tenantId, (tx) => tx.dshTenantDashboard.deleteMany({ where: { tenantId } }));
+    }
+  });
+
+  it("cada tenant ve solo sus dashboards", async () => {
+    const rows = await withTenantContext(tenantAlphaId, (tx) => tx.dshTenantDashboard.findMany());
+    expect(rows).toHaveLength(1);
+    expect(rows[0]?.tenantId).toBe(tenantAlphaId);
+  });
+
+  it("un tenant no puede escribir ni modificar los dashboards de otro", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.dshTenantDashboard.create({ data: { tenantId: tenantBetaId, dashboardCode: "payroll", isEnabled: true } })
+      )
+    ).rejects.toThrow();
+    const updated = await withTenantContext(tenantAlphaId, (tx) =>
+      tx.dshTenantDashboard.updateMany({ where: { tenantId: tenantBetaId }, data: { isEnabled: false } })
+    );
+    expect(updated.count).toBe(0);
+  });
+
+  it("no admite un dashboard fuera del catálogo ni repetido", async () => {
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.dshTenantDashboard.create({ data: { tenantId: tenantAlphaId, dashboardCode: "inventado", isEnabled: true } })
+      )
+    ).rejects.toThrow();
+    await expect(
+      withTenantContext(tenantAlphaId, (tx) =>
+        tx.dshTenantDashboard.create({ data: { tenantId: tenantAlphaId, dashboardCode: "headcount", isEnabled: true } })
+      )
+    ).rejects.toThrow();
+  });
+
+  it("el catálogo trae los cinco dashboards con sus módulos requeridos", async () => {
+    const rows = await withTenantContext(tenantAlphaId, (tx) => tx.cfgDashboard.findMany({ orderBy: { sortOrder: "asc" } }));
+    expect(rows.map((r) => r.code)).toEqual(["headcount", "absenteeism", "overtime", "turnover", "payroll"]);
+    expect(rows.find((r) => r.code === "payroll")?.requiredModules).toEqual(["people", "payroll"]);
+  });
+});

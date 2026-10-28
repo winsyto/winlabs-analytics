@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@wla/db/client";
 import { Topbar } from "@wla/ui";
 import { AppSidebar } from "./_components/app-sidebar";
+import { enabledDashboards } from "./_dashboard-kit/dashboard-access";
 import { colors } from "@wla/ui/tokens";
 
 export default async function DashboardLayout({
@@ -25,6 +26,7 @@ export default async function DashboardLayout({
   });
 
   const tenantName = tenant?.name ?? session.user.tenantSlug;
+  const enabled = await enabledDashboards(session.user.tenantId);
 
   async function logout() {
     "use server";
@@ -33,7 +35,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <AppSidebar tenantName={tenantName} />
+      <AppSidebar tenantName={tenantName} enabledDashboards={enabled} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <Topbar
           user={{ name: session.user.name, email: session.user.email }}

@@ -7,9 +7,10 @@ import { ChevronRight, Users } from "lucide-react";
 import { TenantModulesCard } from "./_components/tenant-modules-card";
 import { TenantActionsHeader } from "./_components/tenant-actions-header";
 import { TenantInfoCard } from "./_components/tenant-info-card";
+import { TenantDashboardsCard } from "./_components/tenant-dashboards-card";
 import { TenantOrgConfigCard } from "./_components/tenant-org-config-card";
 import { TenantAttendanceCard, type AttendanceSettings } from "./_components/tenant-attendance-card";
-import { TENANT_SETTINGS_DEFAULTS } from "@wla/db";
+import { DASHBOARD_CATALOG, DASHBOARD_CODES, TENANT_SETTINGS_DEFAULTS } from "@wla/db";
 
 export const dynamic = "force-dynamic";
 
@@ -19,17 +20,21 @@ const MODULES = [
   { key: "payroll", label: "Liquidaciones", description: "pay_periods, pay_processes, pay_entries, pay_concepts" },
 ] as const;
 
-const DASHBOARDS = [
-  { code: "headcount", label: "Headcount" },
-  { code: "absenteeism", label: "Ausentismos" },
-  { code: "overtime", label: "Horas extras" },
-  { code: "turnover", label: "Rotación" },
-  { code: "payroll", label: "Payroll" },
-] as const;
+/** Dashboards del catálogo en orden (nombre para las tarjetas de dimensiones). */
+const DASHBOARDS = [...DASHBOARD_CODES]
+  .sort((x, y) => DASHBOARD_CATALOG[x].sortOrder - DASHBOARD_CATALOG[y].sortOrder)
+  .map((code) => ({ code, label: DASHBOARD_CATALOG[code].name }));
 
 export type DataModule = typeof MODULES[number];
 
-async function getOrgConfig(tenantId: string) {
+async function getEnabledDashboards(tenantId: string): Promise<string[]> {
+  const rows = await withTenantContext(tenantId, (tx) =>
+    tx.dshTenantDashboard.findMany({ where: { tenantId, isEnabled: true }, select: { dashboardCode: true } })
+  );
+  return rows.map((r) => r.dashboardCode);
+}
+
+async function getOrgConfig(tenantId: string, enabledDashboards: string[]) {
   const [allTypes, tenantTypes, dims] = await withTenantContext(tenantId, (tx) =>
     Promise.all([
       tx.cfgOrgUnitType.findMany({ orderBy: { sortOrder: "asc" } }),
@@ -45,7 +50,7 @@ async function getOrgConfig(tenantId: string) {
       description: t.description,
       enabled: enabled.get(t.code) ?? false,
     })),
-    dashboards: DASHBOARDS.map((d) => ({
+    dashboards: DASHBOARDS.filter((d) => enabledDashboards.includes(d.code)).map((d) => ({
       ...d,
       dimensions: dims.filter((x) => x.dashboardCode === d.code).map((x) => x.orgUnitTypeCode),
     })),
@@ -91,9 +96,10 @@ export default async function TenantDetailPage({
   params: Promise<{ tenantId: string }>;
 }) {
   const { tenantId } = await params;
+  const enabledDashboards = await getEnabledDashboards(tenantId);
   const [tenant, orgConfig, attendance] = await Promise.all([
     getTenant(tenantId),
-    getOrgConfig(tenantId),
+    getOrgConfig(tenantId, enabledDashboards),
     getAttendanceSettings(tenantId),
   ]);
   if (!tenant) notFound();
@@ -136,6 +142,13 @@ export default async function TenantDetailPage({
           modules={MODULES}
         />
       </div>
+
+      <TenantDashboardsCard
+        tenantId={tenant.id}
+        tenantName={tenant.name}
+        activeModules={tenant.activeModules}
+        enabled={enabledDashboards}
+      />
 
       <TenantOrgConfigCard
         tenantId={tenant.id}

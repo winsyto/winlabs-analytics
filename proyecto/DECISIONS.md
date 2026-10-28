@@ -236,6 +236,8 @@
 | D-139 | En Payroll un mes sin liquidación figura como "sin datos", no como cero; las retenciones se muestran en valor absoluto y aparte; el período suma todos los procesos (mensual, SAC, ajustes...) y el detalle por proceso permite separarlos | ✅ Cerrada |
 | D-140 | La unidad de una persona en Payroll es la vigente al fin del mes liquidado (no la actual ni la del cierre de personas). Los importes son lo pagado en cada mes: el desfasaje con lo ocurrido (horas extra y ausencias pagadas a mes vencido) queda registrado como Open-18 | ✅ Cerrada |
 | D-141 | El detalle por concepto de Payroll es una pantalla propia (`/payroll/conceptos`) a la que se entra solo desde el resumen con un botón (como los anexos de Ausentismos) y desde la tabla de conceptos de una clase; tiene su selector de concepto y su exportación. Incluye todos los conceptos, también los sin clasificar y los totales bruto y neto, para poder auditar la masa. El desfasaje entre lo pagado y lo ocurrido (Open-18) no se resuelve acá | ✅ Cerrada |
+| D-142 | Hub de dashboards: un catálogo global (`cfg_dashboards`) con los módulos de datos que requiere cada dashboard y una activación por tenant (`dsh_tenant_dashboards`) administrada desde el CMP. Un dashboard solo se activa si el tenant tiene sus módulos (el interruptor se bloquea y lo explica); un tenant nuevo recibe los dashboards cuyos módulos están activos; los existentes los conservan todos; desactivar un módulo apaga los dashboards que lo requieren. Cada cambio queda en `audit_log`. Los permisos por rol quedan preparados (`allowed_roles`) sin interfaz | ✅ Cerrada |
+| D-143 | Estándar de grillas paginadas de la etapa M3.5: 12 filas por página (entran de un vistazo en una pantalla de 15,6" sin scroll), con búsqueda cuando la lista puede crecer | ✅ Cerrada |
 
 ---
 
@@ -281,3 +283,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-10-21 | Open-18: desfasaje entre lo pagado y lo ocurrido (pago a mes vencido de horas extra y ausencias) |
 | 2026-10-22 | D-137 a D-140: dashboard de Payroll (privacidad por celdas y listado de personas solo admin, costo medio por persona-mes, meses sin datos y retenciones aparte, unidad al fin del mes liquidado) |
 | 2026-10-27 | D-141: detalle por concepto de Payroll (pantalla propia, todos los conceptos, exportación) |
+| 2026-10-28 | D-142 y D-143: hub de dashboards (catálogo, activación por tenant, guardia y auditoría) y estándar de 12 filas por página |

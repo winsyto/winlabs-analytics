@@ -27,3 +27,4 @@
 | 2026-10-21 | Elimina pay_concepts.category y sign (reemplazados por tipo y clase; los importes se usan con su signo de origen) | drop_pay_concept_legacy_columns |
 | 2026-10-21 | cfg_tenant_settings.currency (moneda del tenant, ISO de 3 letras) y dimensiones del dashboard de Payroll copiadas de Headcount | add_tenant_currency_and_payroll_dimensions |
 | 2026-10-22 | Índice pay_entries (concept_id, process_id) para leer solo las filas del total bruto o neto de cada proceso (reemplaza al de concept_id solo) | add_pay_entries_concept_process_index |
+| 2026-10-23 | Hub de dashboards: cfg_dashboards (catálogo global con los 5 dashboards y sus módulos requeridos) y dsh_tenant_dashboards (activos por tenant, RLS); los tenants existentes conservan todos | add_dashboards_hub |

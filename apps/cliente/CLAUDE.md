@@ -72,6 +72,7 @@ Documentación de los módulos: `docs/modules/dashboard-headcount.md`, `docs/mod
 
 ## Notas
 
-- Layout dashboard: `app/(dashboard)/layout.tsx` — fetchea nombre del tenant para el sidebar
+- Layout dashboard: `app/(dashboard)/layout.tsx` — fetchea nombre del tenant y los dashboards activos (hub de dashboards) para el sidebar
+- Cada dashboard tiene un `layout.tsx` con `DashboardGuard` y sus rutas `export/route.ts` comprueban `isDashboardEnabled`: un dashboard apagado desde el CMP muestra "no habilitado" (ver `docs/modules/hub-de-dashboards.md`)
 - `proxy.ts` protege todas las rutas salvo `/login`
 - Server actions siempre verifican `session.user.id` antes de operar

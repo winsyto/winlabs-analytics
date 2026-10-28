@@ -7,11 +7,11 @@ import { BarChart3, CalendarOff, FileSpreadsheet, Timer, UserMinus, Wallet, Layo
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/headcount", label: "Headcount", icon: UsersRound },
-  { href: "/absenteeism", label: "Ausentismos", icon: CalendarOff },
-  { href: "/overtime", label: "Horas extras", icon: Timer },
-  { href: "/turnover", label: "Rotación", icon: UserMinus },
-  { href: "/payroll", label: "Payroll", icon: Wallet },
+  { href: "/headcount", label: "Headcount", icon: UsersRound, dashboard: "headcount" },
+  { href: "/absenteeism", label: "Ausentismos", icon: CalendarOff, dashboard: "absenteeism" },
+  { href: "/overtime", label: "Horas extras", icon: Timer, dashboard: "overtime" },
+  { href: "/turnover", label: "Rotación", icon: UserMinus, dashboard: "turnover" },
+  { href: "/payroll", label: "Payroll", icon: Wallet, dashboard: "payroll" },
   { href: "/integrations", label: "Integraciones", icon: FileSpreadsheet },
   { href: "/reports", label: "Reportes", icon: BarChart3 },
   { href: "/team", label: "Equipo", icon: Users },
@@ -21,13 +21,15 @@ const navItems = [
 
 interface AppSidebarProps {
   tenantName: string;
+  /** Dashboards activos del tenant (hub de dashboards): los demás no aparecen en el menú */
+  enabledDashboards: string[];
 }
 
-export function AppSidebar({ tenantName }: AppSidebarProps) {
+export function AppSidebar({ tenantName, enabledDashboards }: AppSidebarProps) {
   const pathname = usePathname();
   return (
     <SidebarNav
-      navItems={navItems}
+      navItems={navItems.filter((i) => !i.dashboard || enabledDashboards.includes(i.dashboard))}
       pathname={pathname}
       LinkComponent={Link}
       logoContent={

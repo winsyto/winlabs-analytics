@@ -33,6 +33,7 @@ import { applyDefaultTenantSettings } from "../tenant-settings";
 import { applyDefaultAbsenteeismTypes, upsertAbsenteeismTypeDefaults } from "../absenteeism-config";
 import { applyDefaultTimeEntryTypes, upsertTimeEntryTypeDefaults } from "../time-entry-config";
 import { applyDefaultPayrollClasses } from "../payroll-config";
+import { applyDefaultDashboards, upsertDashboardCatalog } from "../dashboards-config";
 import { TERMINATION_REASONS } from "./termination-reasons";
 
 const prisma = new PrismaClient();
@@ -204,6 +205,7 @@ async function main() {
   }
 
   await upsertTimeEntryTypeDefaults(prisma);
+  await upsertDashboardCatalog(prisma);
 
   for (const t of TERMINATION_REASONS) {
     await prisma.cfgTerminationReason.upsert({
@@ -222,6 +224,7 @@ async function main() {
       await applyDefaultTimeEntryTypes(tx, tenant.id);
       await applyDefaultPayrollClasses(tx, tenant.id);
       await applyDefaultTenantSettings(tx, tenant.id);
+      await applyDefaultDashboards(tx, tenant.id, ["people", "time", "payroll"]);
     });
   }
 

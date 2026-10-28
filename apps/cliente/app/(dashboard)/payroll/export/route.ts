@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { auth } from "@/auth";
+import { isDashboardEnabled } from "../../_dashboard-kit/dashboard-access";
 import { getDashboardDimensions } from "../../_dashboard-kit/dimensions";
 import { parseFilters } from "../_data/filters";
 import { PayrollPdf } from "../_export/pdf-document";
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.tenantId) return new Response("No autorizado", { status: 401 });
+  if (!(await isDashboardEnabled(session.user.tenantId, "payroll"))) return new Response("Dashboard no habilitado", { status: 403 });
 
   const url = new URL(req.url);
   const format = url.searchParams.get("format");

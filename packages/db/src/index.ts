@@ -23,6 +23,14 @@ export {
 } from "./time-entry-config";
 export type { TimeEntryCategory } from "./time-entry-config";
 export {
+  DATA_MODULES,
+  DASHBOARD_CATALOG,
+  missingModules,
+  upsertDashboardCatalog,
+  applyDefaultDashboards,
+} from "./dashboards-config";
+export type { DataModuleCode } from "./dashboards-config";
+export {
   PAY_CONCEPT_TYPES,
   PAY_PROCESS_TYPES,
   PAY_REFERENCE_TOTALS,
@@ -66,6 +74,8 @@ export type {
   CfgTenantTimeEntryType,
   CfgTenantOrgUnitType,
   DshDimension,
+  CfgDashboard,
+  DshTenantDashboard,
   // M1 — Time & Attendance
   AttTimeDaily,
   AttTimeDailyEntry,

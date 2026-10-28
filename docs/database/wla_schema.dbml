@@ -227,6 +227,37 @@ Table cfg_tenant_org_unit_types {
   Note: 'Tipos de unidad organizacional que usa cada tenant. Se administra desde el CMP. RLS por tenant_id.'
 }
 
+Table cfg_dashboards {
+  code             varchar(50)  [pk]
+  name             varchar(100) [not null]
+  description      varchar(300)
+  route            varchar(100) [not null, note: 'Ruta base en la app del cliente']
+  required_modules text[]       [not null, note: 'people | time | payroll']
+  sort_order       int          [not null, default: 0]
+  is_active        bool         [not null, default: true]
+  created_at       timestamp    [not null]
+  updated_at       timestamp    [not null]
+
+  Note: 'Catálogo global de dashboards (hub). Sin RLS.'
+}
+
+Table dsh_tenant_dashboards {
+  id             int          [pk, increment]
+  tenant_id      uuid         [not null, ref: > tenants.id, note: 'RLS']
+  dashboard_code varchar(50)  [not null, ref: > cfg_dashboards.code]
+  is_enabled     bool         [not null, default: true]
+  allowed_roles  text[]       [not null, default: '{admin,analyst,viewer}', note: 'Preparado para permisos por opción de menú; hoy no se usa']
+  created_at     timestamp    [not null]
+  updated_at     timestamp    [not null]
+
+  indexes {
+    (tenant_id, dashboard_code) [unique, name: 'uq_dsh_tenant_dashboards']
+    dashboard_code
+  }
+
+  Note: 'Dashboards activos de cada tenant. RLS por tenant_id.'
+}
+
 Table dsh_dimensions {
   id                 int         [pk, increment]
   tenant_id          uuid        [not null, ref: > tenants.id, note: 'RLS — tenant owner. ON DELETE CASCADE']

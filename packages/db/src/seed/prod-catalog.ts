@@ -10,6 +10,7 @@ import { TERMINATION_REASONS } from "./termination-reasons";
 import { ORG_UNIT_TYPES } from "../org-config";
 import { ABSENTEEISM_TYPE_DEFAULTS, upsertAbsenteeismTypeDefaults } from "../absenteeism-config";
 import { TIME_ENTRY_TYPE_DEFAULTS, upsertTimeEntryTypeDefaults } from "../time-entry-config";
+import { upsertDashboardCatalog } from "../dashboards-config";
 
 const prisma = new PrismaClient();
 
@@ -30,6 +31,7 @@ async function main() {
 
   // ── cfg_time_entry_types ─────────────────────────────────────────────────
   await upsertTimeEntryTypeDefaults(prisma);
+  await upsertDashboardCatalog(prisma);
   console.log(`✓ cfg_time_entry_types: ${TIME_ENTRY_TYPE_DEFAULTS.length} registros`);
 
   // ── cfg_termination_reasons ──────────────────────────────────────────────

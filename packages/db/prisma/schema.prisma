@@ -30,6 +30,7 @@ model Tenant {
   settings           CfgTenantSetting?
   metricTargets      CfgTenantMetricTarget[]
   timeEntryTypes     CfgTenantTimeEntryType[]
+  dashboards         DshTenantDashboard[]
 
   @@map("tenants")
 }
@@ -361,6 +362,45 @@ model CfgTenantOrgUnitType {
 
   @@unique([tenantId, orgUnitTypeCode], name: "uq_cfg_tenant_org_unit_types", map: "uq_cfg_tenant_org_unit_types")
   @@map("cfg_tenant_org_unit_types")
+}
+
+/// Catálogo global de dashboards (hub de dashboards)
+model CfgDashboard {
+  code            String   @id @db.VarChar(50)
+  name            String   @db.VarChar(100)
+  description     String?  @db.VarChar(300)
+  /// Ruta base en la app del cliente
+  route           String   @db.VarChar(100)
+  /// Módulos de datos que requiere: people | time | payroll
+  requiredModules String[] @default([]) @map("required_modules")
+  sortOrder       Int      @default(0) @map("sort_order")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  tenantDashboards DshTenantDashboard[]
+
+  @@map("cfg_dashboards")
+}
+
+/// Dashboards activos de cada tenant
+model DshTenantDashboard {
+  id            Int      @id @default(autoincrement())
+  /// RLS
+  tenantId      String   @map("tenant_id") @db.Uuid
+  dashboardCode String   @map("dashboard_code") @db.VarChar(50)
+  isEnabled     Boolean  @default(true) @map("is_enabled")
+  /// Roles que lo ven. Preparado para permisos por opción de menú; hoy no se usa (lo ven todos)
+  allowedRoles  String[] @default(["admin", "analyst", "viewer"]) @map("allowed_roles")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  dashboard CfgDashboard @relation(fields: [dashboardCode], references: [code])
+
+  @@unique([tenantId, dashboardCode], name: "uq_dsh_tenant_dashboards", map: "uq_dsh_tenant_dashboards")
+  @@index([dashboardCode])
+  @@map("dsh_tenant_dashboards")
 }
 
 model DshDimension {

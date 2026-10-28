@@ -2,7 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { prisma } from "@wla/db/client";
-import { applyDefaultAbsenteeismTypes, applyDefaultOrgConfig, applyDefaultPayrollClasses, applyDefaultTenantSettings, applyDefaultTimeEntryTypes } from "@wla/db";
+import { applyDefaultAbsenteeismTypes, applyDefaultDashboards, applyDefaultOrgConfig, applyDefaultPayrollClasses, applyDefaultTenantSettings, applyDefaultTimeEntryTypes } from "@wla/db";
 import { withTenantContext } from "@wla/auth";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -122,6 +122,7 @@ export async function createTenantAction(
       await applyDefaultTimeEntryTypes(tx, tenant.id);
       await applyDefaultPayrollClasses(tx, tenant.id);
       await applyDefaultTenantSettings(tx, tenant.id);
+      await applyDefaultDashboards(tx, tenant.id, tenant.activeModules);
     });
 
     revalidatePath("/tenants");

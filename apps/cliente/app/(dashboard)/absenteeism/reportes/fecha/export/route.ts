@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { auth } from "@/auth";
+import { isDashboardEnabled } from "../../../../_dashboard-kit/dashboard-access";
 import { prisma } from "@wla/db/client";
 import { filterTokens, NONE_TOKEN } from "../../../../_dashboard-kit/dimension-filters";
 import { getDashboardDimensions } from "../../../../_dashboard-kit/dimensions";
@@ -13,6 +14,7 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const session = await auth();
   if (!session?.user?.tenantId) return new Response("No autorizado", { status: 401 });
+  if (!(await isDashboardEnabled(session.user.tenantId, "absenteeism"))) return new Response("Dashboard no habilitado", { status: 403 });
   const tenantId = session.user.tenantId;
 
   const url = new URL(req.url);

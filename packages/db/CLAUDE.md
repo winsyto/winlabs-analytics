@@ -30,6 +30,8 @@ Tablas M1 implementadas:
 - `hr_people_org_assignments` — RLS por tenant_id. Asignaciones con vigencia (`valid_from`/`valid_to`), una por persona y tipo en cada momento. Fuente de verdad de la historia de unidades organizativas
 - `cfg_tenant_org_unit_types` — RLS por tenant_id (tipos de unidad que usa cada tenant)
 - `dsh_dimensions` — RLS por tenant_id (dimensiones por dashboard y tenant)
+- `cfg_dashboards` — sin RLS (catálogo global de dashboards y los módulos de datos que requiere cada uno)
+- `dsh_tenant_dashboards` — RLS por tenant_id (dashboards activos de cada tenant; `applyDefaultDashboards` activa los que cumplen los módulos)
 - `hr_people_history` — RLS por tenant_id (caché mensual derivado de las asignaciones con vigencia)
 - `cfg_absenteeism_types` — RLS por tenant_id. `class` (10 clases) e `is_classified`
 - `cfg_absenteeism_type_defaults` — sin RLS (catálogo global de tipos de ausencia por defecto)
