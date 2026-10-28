@@ -60,7 +60,7 @@ export async function updateTenantModulesAction(
     revalidatePath("/dashboards");
     revalidatePath(`/tenants/${tenantId}`);
 
-    revalidatePath("/tenants");
+    revalidatePath("/tenants/list");
     return { success: true };
   } catch (err) {
     console.error("[updateTenantModulesAction]", err);

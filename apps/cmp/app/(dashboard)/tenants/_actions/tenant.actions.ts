@@ -125,7 +125,8 @@ export async function createTenantAction(
       await applyDefaultDashboards(tx, tenant.id, tenant.activeModules);
     });
 
-    revalidatePath("/tenants");
+    revalidatePath("/tenants/list");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
     console.error("[createTenantAction]", err);
@@ -169,7 +170,8 @@ export async function updateTenantInfoAction(
 
   try {
     await prisma.tenant.update({ where: { id: tenantId }, data: { name, slug } });
-    revalidatePath("/tenants");
+    revalidatePath("/tenants/list");
+    revalidatePath("/dashboard");
     revalidatePath(`/tenants/${tenantId}`);
     return { success: true };
   } catch (err) {
@@ -233,7 +235,8 @@ export async function deleteTenantAction(
       await tx.tenant.delete({ where: { id: tenantId } });
     });
 
-    revalidatePath("/tenants");
+    revalidatePath("/tenants/list");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
     console.error("[deleteTenantAction]", err);
@@ -269,7 +272,8 @@ export async function toggleTenantStatusAction(
       where: { id: tenantId },
       data: { isActive },
     });
-    revalidatePath("/tenants");
+    revalidatePath("/tenants/list");
+    revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
     console.error("[toggleTenantStatusAction]", err);

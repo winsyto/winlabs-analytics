@@ -1,76 +1,16 @@
-import { prisma } from "@wla/db/client";
-import { withTenantContext } from "@wla/auth";
+import { Plug } from "lucide-react";
 import { PageHeader } from "@wla/ui";
-import { IntegrationsTable } from "./_components/integrations-table";
-import { NewIntegrationDialog } from "./_components/new-integration-dialog";
+import { HubCard, HubGroup } from "../_components/hub-card";
 
-export const dynamic = "force-dynamic";
+export const metadata = { title: "Integraciones" };
 
-async function getData() {
-  const [tenants, templates] = await Promise.all([
-    prisma.tenant.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, slug: true },
-    }),
-    prisma.intTemplate.findMany({
-      where: { isActive: true },
-      orderBy: { name: "asc" },
-      select: { code: true, name: true, category: true, targetModel: true },
-    }),
-  ]);
-
-  const integrationsByTenant = await Promise.all(
-    tenants.map((tenant) =>
-      withTenantContext(tenant.id, (tx) =>
-        tx.intTenantIntegration.findMany({
-          where: { tenantId: tenant.id, isActive: true },
-          orderBy: { createdAt: "desc" },
-          select: {
-            id: true,
-            tenantId: true,
-            name: true,
-            status: true,
-            lastRunAt: true,
-            lastSuccessAt: true,
-            template: { select: { name: true, category: true } },
-          },
-        })
-      ).then((rows) =>
-        rows.map((r) => ({
-          id: r.id,
-          tenantId: r.tenantId,
-          tenantName: tenant.name,
-          tenantSlug: tenant.slug,
-          name: r.name,
-          templateName: r.template.name,
-          templateCategory: r.template.category,
-          status: r.status,
-          lastRunAt: r.lastRunAt,
-          lastSuccessAt: r.lastSuccessAt,
-        }))
-      )
-    )
-  );
-
-  const integrations = integrationsByTenant.flat();
-
-  return { tenants, templates, integrations };
-}
-
-export default async function IntegrationsPage() {
-  const { tenants, templates, integrations } = await getData();
-
+export default function IntegrationsHubPage() {
   return (
-    <div className="p-8 space-y-6">
-      <div className="flex items-start justify-between">
-        <PageHeader
-          title="Integraciones"
-          description="Integraciones activas por tenant"
-        />
-        <NewIntegrationDialog tenants={tenants} templates={templates} />
-      </div>
-      <IntegrationsTable integrations={integrations} tenants={tenants} />
+    <div className="space-y-6 p-8">
+      <PageHeader title="Integraciones" description="Integraciones de los tenants con sus fuentes de datos." />
+      <HubGroup title="General">
+        <HubCard href="/integrations/active" icon={Plug} title="Integraciones activas" description="Crear, pausar y activar las integraciones de cada tenant y ver sus ejecuciones." />
+      </HubGroup>
     </div>
   );
 }

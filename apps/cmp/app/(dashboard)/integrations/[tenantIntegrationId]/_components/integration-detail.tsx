@@ -151,7 +151,7 @@ export function IntegrationDetail({ integration, runs, jobs }: IntegrationDetail
 
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" asChild>
-            <Link href="/integrations">← Volver</Link>
+            <Link href="/integrations/active">← Volver</Link>
           </Button>
 
           <form action={formAction}>

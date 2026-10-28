@@ -1,29 +1,16 @@
-import { prisma } from "@wla/db/client";
+import { Building2 } from "lucide-react";
 import { PageHeader } from "@wla/ui";
-import { TenantsTable } from "./_components/tenants-table";
-import { CreateTenantDialog } from "./_components/create-tenant-dialog";
+import { HubCard, HubGroup } from "../_components/hub-card";
 
-export const dynamic = "force-dynamic";
+export const metadata = { title: "Tenants" };
 
-async function getTenants() {
-  return prisma.tenant.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-}
-
-export default async function TenantsPage() {
-  const tenants = await getTenants();
-
+export default function TenantsHubPage() {
   return (
-    <div className="p-8 space-y-6">
-      <PageHeader
-        title="Tenants"
-        description={`${tenants.length} tenant${tenants.length !== 1 ? "s" : ""} registrado${tenants.length !== 1 ? "s" : ""}`}
-        actions={<CreateTenantDialog />}
-      />
-
-      {/* Tabla */}
-      <TenantsTable tenants={tenants} />
+    <div className="space-y-6 p-8">
+      <PageHeader title="Tenants" description="Alta y administración de las empresas que usan la plataforma." />
+      <HubGroup title="General">
+        <HubCard href="/tenants/list" icon={Building2} title="Tenants" description="Crear, editar y configurar cada empresa: módulos, dashboards, unidades, asistencia y usuarios." />
+      </HubGroup>
     </div>
   );
 }

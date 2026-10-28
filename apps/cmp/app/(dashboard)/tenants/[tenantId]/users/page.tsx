@@ -64,7 +64,7 @@ export default async function TenantUsersPage({
   return (
     <div className="p-8 space-y-6">
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/tenants" className="hover:text-foreground transition-colors">Tenants</Link>
+        <Link href="/tenants/list" className="hover:text-foreground transition-colors">Tenants</Link>
         <ChevronRight className="h-3.5 w-3.5" />
         <Link href={`/tenants/${tenantId}`} className="hover:text-foreground transition-colors">{tenant.name}</Link>
         <ChevronRight className="h-3.5 w-3.5" />

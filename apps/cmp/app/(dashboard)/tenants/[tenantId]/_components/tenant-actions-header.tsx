@@ -36,7 +36,7 @@ function DeleteTenantModal({
       if (result.error) {
         setError(result.error);
       } else {
-        router.push("/tenants");
+        router.push("/tenants/list");
       }
     });
   }

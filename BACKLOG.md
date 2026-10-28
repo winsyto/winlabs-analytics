@@ -321,7 +321,7 @@
 
 **CMP**
 - UI/UX:
-  - [ ] Dashboard de inicio
+  - [x] Dashboard de inicio (tenants activos, usuarios de tenants e integraciones activas por tipo) y **menú reorganizado en hubs** (Inicio, Tenants, Integraciones, Configuración) — completo en local (2026-10-30); `docs/modules/navegacion-cmp.md`
   - [ ] Edición de tenants
   - [ ] Integraciones
   - [ ] Templates de integración
@@ -339,7 +339,7 @@
 - UI/UX:
   - [ ] Dashboard de inicio
   - [ ] Integraciones por archivo
-  - [x] **Hub de dashboards**, en lugar de una opción de menú por cada dashboard — completo en local (2026-10-29): menú Inicio / Analítica / Data / Reportes / Configuración, hubs agrupados, Inicio con estado de datos y breadcrumb desde Analítica
+  - [x] **Hub de dashboards**, en lugar de una opción de menú por cada dashboard — en producción (2026-10-30): menú Inicio / Analítica / Data / Reportes / Configuración, hubs agrupados, Inicio con estado de datos y breadcrumb desde Analítica
   - [ ] **Hub de configuración**: tipos de ausencia, turnos, tipos de hora, metas y usuarios
 
 ---
