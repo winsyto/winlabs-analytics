@@ -37,6 +37,10 @@ Si el cambio es solo de las apps (sin migraciones ni worker), alcanza con el pus
 - El CMP lista los templates nuevos en Templates.
 - Excel y PDF se descargan.
 
+## Sesiones (autenticación)
+- El CMP y el portal usan cookies de sesión propias (`wla-cmp.session-token` y `wla-cliente.session-token`) y cada proyecto de Vercel debe tener un `AUTH_SECRET` **distinto**. Si se cambia el nombre de la cookie o el secreto, todas las sesiones abiertas se cierran y cada persona tiene que volver a iniciar sesión (se avisa a los usuarios antes del deploy si hace falta).
+- Verificación después de un deploy que toque la autenticación: entrar al CMP con un usuario interno y al portal con un usuario de un tenant; con una sesión abierta en el portal, abrir la URL del CMP en el mismo navegador debe pedir login (y al revés).
+
 ## Si algo sale mal
 - **Falla la migración en el build de Vercel:** Prisma deja la migración marcada como fallida y los deploys siguientes quedan trabados. La app anterior sigue sirviendo. Corregir el problema y resolverlo con `prisma migrate resolve --rolled-back <nombre>` (con la URL de producción) antes de reintentar; si dejó la base a medias, restaurar el backup.
 - **El CI falla por una extensión (`btree_gist`):** es una extensión "de confianza" en PostgreSQL 13 o superior; verificar que el rol de CI tenga `CREATE` sobre la base.

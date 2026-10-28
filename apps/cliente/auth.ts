@@ -4,6 +4,15 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@wla/db/client";
 import { withTenantContext } from "@wla/auth/tenant-context";
 
+
+/**
+ * Cookie de sesión propia de esta aplicación. Auth.js usa el nombre de la cookie como "sal" al cifrar el JWT: con un
+ * nombre distinto en cada app, una sesión de la otra no se puede descifrar aunque compartan AUTH_SECRET. En
+ * producción lleva el prefijo __Secure-.
+ */
+const useSecureCookies = process.env.NODE_ENV === "production";
+const SESSION_COOKIE = `${useSecureCookies ? "__Secure-" : ""}wla-cliente.session-token`;
+
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
@@ -68,9 +77,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   session: { strategy: "jwt" },
+  cookies: {
+    sessionToken: {
+      name: SESSION_COOKIE,
+      options: { httpOnly: true, sameSite: "lax", path: "/", secure: useSecureCookies },
+    },
+  },
   callbacks: {
     jwt({ token, user }) {
       if (user) {
+        // Marca de aplicación: solo las sesiones creadas por el login del portal valen en el portal
+        token.app = "cliente";
         // user sólo está presente en el primer login
         const u = user as typeof user & {
           tenantId: string;
@@ -81,7 +98,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.tenantSlug = u.tenantSlug;
         token.mustChangePassword = u.mustChangePassword;
       }
-      return token;
+      // Un token sin la marca (por ejemplo, de otra aplicación) no es una sesión válida
+      return token.app === "cliente" ? token : null;
     },
     session({ session, token }) {
       // token.sub = user.id (NextAuth lo setea automáticamente desde authorize)

@@ -17,6 +17,7 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 - Sesión JWT con: `user.id`, `user.tenantId`, `user.tenantSlug`, `user.email`, `user.name`
 - **IMPORTANTE:** `session.user.id` viene de `token.sub` — está mapeado explícitamente en el session callback
 - Archivo: `apps/cliente/auth.ts`
+- **Aislamiento frente al CMP (D-146):** cookie de sesión propia (`wla-cliente.session-token`, con `__Secure-` en producción) y marca `app: "cliente"` en el token; una sesión sin la marca no vale. Cada app debe tener su propio `AUTH_SECRET`
 
 ## Rutas actuales
 
