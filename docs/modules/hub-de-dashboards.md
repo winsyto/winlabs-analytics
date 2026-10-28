@@ -1,7 +1,7 @@
 # Hub de dashboards (M3.5, bloque 2)
 
 **Fecha:** 2026-10-28
-**Estado:** MVP (catálogo, activación por tenant, guardia de acceso y administración en el CMP; el hub visual del cliente va en el bloque 3)
+**Estado:** MVP (catálogo, activación por tenant, guardia de acceso, administración en el CMP y hub visual en el portal del cliente)
 
 ## Resumen
 
@@ -43,8 +43,27 @@ Define **qué dashboards ve cada empresa**. Un catálogo global lista los dashbo
 - **CMP > detalle del tenant:** tarjeta "Dashboards" con los mismos interruptores.
 - **Cliente:** el menú muestra solo los dashboards activos; un dashboard apagado muestra "Dashboard no habilitado" y su exportación responde 403.
 
+## Portal del cliente: navegación y hubs (M3.5, bloque 3)
+
+El menú del portal quedó así: **Inicio · Analítica · Data · Reportes · Configuración** (cada uno es un ítem; Data es un hub con Integraciones manuales y Status de integraciones). El menú compartido (`SidebarNav` de `@wla/ui`) ahora admite **secciones** con título (`section`) y rutas asociadas a un ítem (`match`, para que Analítica quede marcada dentro de cualquier dashboard); el CMP lo reutilizará.
+
+| Pantalla | Ruta | Contenido |
+|---|---|---|
+| Inicio | `/dashboard` | Solo estado de los datos: por cada fuente de archivo, último archivo (fecha, filas y errores), meses con datos y si está al día, desactualizada, con errores, fallida o procesando, con acceso a cargar un archivo |
+| Analítica | `/analytics` | Hub de dashboards activos del tenant, agrupados por categoría (RRHH, Finanzas, Otras; los grupos vacíos no se muestran) con tarjetas de ícono, nombre y descripción. Si no hay ninguno habilitado, lo explica |
+| Data | `/data` | Hub con Integraciones manuales y Status de integraciones |
+| Integraciones manuales | `/integrations` | La carga de archivos de siempre (breadcrumb Data › Integraciones manuales) |
+| Status de integraciones | `/integration-status` | Próximamente (integraciones automáticas por API o SFTP) |
+| Reportes | `/reports` | Hub de reportes: Próximamente |
+| Configuración | `/settings` | Hub agrupado en **Seguridad** (Usuarios) y **Básicas** (Unidades organizativas —próximamente—, Turnos, Tipos de ausencia, Tipos de hora, Conceptos de liquidación y Metas). Solo aparecen las opciones que aplican a los dashboards activos y cada una avisa sus pendientes ("3 sin clasificar", "turnos sin horario", "falta el total bruto") |
+
+Relevancia de las opciones de Configuración: Turnos (Ausentismos u Horas extras), Tipos de ausencia (Ausentismos), Tipos de hora (Horas extras), Conceptos de liquidación (Payroll), Metas (Ausentismos, Horas extras o Rotación); Unidades organizativas y Usuarios, siempre.
+
+Cada dashboard y sus detalles muestran un breadcrumb que empieza en **Analítica** y vuelve al hub. Se quitaron del menú Usuarios (queda en Configuración) y Equipo; Reportes y Status son pantallas "Próximamente". Las URL de los dashboards y de la configuración no cambiaron.
+
+El catálogo (`cfg_dashboards`) tiene ahora `category` e `icon`; Payroll está en RRHH y se puede mover de categoría cambiando una línea de `DASHBOARD_CATALOG`.
+
 ## Pendientes
-- [ ] Hub visual de dashboards en el cliente (bloque 3) en lugar de un ítem de menú por dashboard.
 - [ ] Permisos por rol por dashboard (la columna `allowed_roles` ya existe) y su interfaz.
 - [ ] Orden personalizado de los dashboards por tenant, si se pide.
 
@@ -52,3 +71,4 @@ Define **qué dashboards ve cada empresa**. Un catálogo global lista los dashbo
 | Fecha | Cambio |
 |---|---|
 | 2026-10-28 | Versión inicial: catálogo, activación por tenant, guardia, matriz en el CMP y menú filtrado |
+| 2026-10-29 | Portal del cliente: menú reorganizado con secciones, hubs de Analítica, Configuración y Reportes, Inicio con el estado de los datos y breadcrumb "Analítica" en los dashboards |

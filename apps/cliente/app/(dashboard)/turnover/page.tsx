@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { ChartCard } from "../_dashboard-kit/chart-card";
+import { Breadcrumb } from "../_dashboard-kit/breadcrumb";
 import { DashboardShell, PendingRegion } from "../_dashboard-kit/dashboard-shell";
 import { DashboardEmpty, DashboardNoResults } from "../_dashboard-kit/dashboard-states";
 import { filterTokens, NONE_TOKEN } from "../_dashboard-kit/dimension-filters";
@@ -46,7 +47,8 @@ export default async function TurnoverPage({
   if (data.status === "empty") {
     return (
       <DashboardShell>
-        <h1 className="text-lg font-bold text-foreground">Rotación de personal</h1>
+        <Breadcrumb items={[{ label: "Analítica", href: "/analytics" }, { label: "Rotación" }]} />
+        <h1 className="mt-1 text-lg font-bold text-foreground">Rotación de personal</h1>
         <DashboardEmpty
           title={data.needsHistory ? "Falta historia para calcular la rotación" : "Todavía no hay datos de personas"}
           text={
@@ -88,7 +90,8 @@ export default async function TurnoverPage({
     <DashboardShell>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h1 className="text-lg font-bold leading-tight text-foreground">Rotación de personal</h1>
+          <Breadcrumb items={[{ label: "Analítica", href: "/analytics" }, { label: "Rotación" }]} />
+          <h1 className="mt-1 text-lg font-bold leading-tight text-foreground">Rotación de personal</h1>
           <p className="text-xs text-muted-foreground">
             {period.label} · comparado {period.compareLabel}
             {!freshness.comparisonAvailable && " (sin comparación: no hay datos del período anterior)"}

@@ -5,6 +5,7 @@ import { PageHeader } from "@wla/ui";
 import Link from "next/link";
 import { FileSpreadsheet, ChevronRight } from "lucide-react";
 import { Badge } from "@wla/ui";
+import { Breadcrumb } from "../_dashboard-kit/breadcrumb";
 
 export default async function IntegrationsPage() {
   const session = await auth();
@@ -33,9 +34,10 @@ export default async function IntegrationsPage() {
 
   return (
     <div className="p-6 space-y-6">
+      <Breadcrumb items={[{ label: "Data", href: "/data" }, { label: "Integraciones manuales" }]} />
       <PageHeader
-        eyebrow="Integraciones"
-        title="Carga de archivos"
+        eyebrow="Data"
+        title="Integraciones manuales"
         description="Subí archivos de tu sistema de RRHH para actualizar los datos analíticos."
       />
 

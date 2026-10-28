@@ -238,6 +238,7 @@
 | D-141 | El detalle por concepto de Payroll es una pantalla propia (`/payroll/conceptos`) a la que se entra solo desde el resumen con un botón (como los anexos de Ausentismos) y desde la tabla de conceptos de una clase; tiene su selector de concepto y su exportación. Incluye todos los conceptos, también los sin clasificar y los totales bruto y neto, para poder auditar la masa. El desfasaje entre lo pagado y lo ocurrido (Open-18) no se resuelve acá | ✅ Cerrada |
 | D-142 | Hub de dashboards: un catálogo global (`cfg_dashboards`) con los módulos de datos que requiere cada dashboard y una activación por tenant (`dsh_tenant_dashboards`) administrada desde el CMP. Un dashboard solo se activa si el tenant tiene sus módulos (el interruptor se bloquea y lo explica); un tenant nuevo recibe los dashboards cuyos módulos están activos; los existentes los conservan todos; desactivar un módulo apaga los dashboards que lo requieren. Cada cambio queda en `audit_log`. Los permisos por rol quedan preparados (`allowed_roles`) sin interfaz | ✅ Cerrada |
 | D-143 | Estándar de grillas paginadas de la etapa M3.5: 12 filas por página (entran de un vistazo en una pantalla de 15,6" sin scroll), con búsqueda cuando la lista puede crecer | ✅ Cerrada |
+| D-144 | Navegación del portal del cliente: menú Inicio, Analítica, Data, Reportes y Configuración (cada uno es un ítem; Data es un hub con Integraciones manuales y Status de integraciones). Los dashboards se eligen desde el hub de Analítica, agrupados por categoría (RRHH, Finanzas, Otras; Payroll en RRHH), con breadcrumb que vuelve al hub. Configuración es un hub agrupado (Seguridad, Básicas) que oculta lo que no aplica a los dashboards activos y avisa los pendientes. Inicio muestra solo el estado de los datos | ✅ Cerrada |
 
 ---
 
@@ -284,3 +285,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-10-22 | D-137 a D-140: dashboard de Payroll (privacidad por celdas y listado de personas solo admin, costo medio por persona-mes, meses sin datos y retenciones aparte, unidad al fin del mes liquidado) |
 | 2026-10-27 | D-141: detalle por concepto de Payroll (pantalla propia, todos los conceptos, exportación) |
 | 2026-10-28 | D-142 y D-143: hub de dashboards (catálogo, activación por tenant, guardia y auditoría) y estándar de 12 filas por página |
+| 2026-10-29 | D-144: navegación del portal del cliente (menú, hubs y Inicio) |

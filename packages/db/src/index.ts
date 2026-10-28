@@ -25,11 +25,12 @@ export type { TimeEntryCategory } from "./time-entry-config";
 export {
   DATA_MODULES,
   DASHBOARD_CATALOG,
+  DASHBOARD_CATEGORIES,
   missingModules,
   upsertDashboardCatalog,
   applyDefaultDashboards,
 } from "./dashboards-config";
-export type { DataModuleCode } from "./dashboards-config";
+export type { DataModuleCode, DashboardCategory } from "./dashboards-config";
 export {
   PAY_CONCEPT_TYPES,
   PAY_PROCESS_TYPES,

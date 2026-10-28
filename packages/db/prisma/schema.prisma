@@ -373,6 +373,10 @@ model CfgDashboard {
   route           String   @db.VarChar(100)
   /// Módulos de datos que requiere: people | time | payroll
   requiredModules String[] @default([]) @map("required_modules")
+  /// Agrupación del hub de dashboards: hr | finance | other
+  category        String   @default("other") @db.VarChar(30)
+  /// Nombre del ícono de la tarjeta del hub (lucide, en kebab-case)
+  icon            String?  @db.VarChar(40)
   sortOrder       Int      @default(0) @map("sort_order")
   isActive        Boolean  @default(true) @map("is_active")
   createdAt       DateTime @default(now()) @map("created_at")

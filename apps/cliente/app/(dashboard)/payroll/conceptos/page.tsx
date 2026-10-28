@@ -45,7 +45,7 @@ export default async function PayrollConceptsPage({
   const data = await loadConceptDetail(tenantId, filters, dimensions, conceptId, { admin: role === "admin" });
   if (data.status === "notfound") notFound();
 
-  const crumbs = [{ label: "Payroll", href: overviewHref(filters) }, { label: "Detalle por concepto" }];
+  const crumbs = [{ label: "Analítica", href: "/analytics" }, { label: "Payroll", href: overviewHref(filters) }, { label: "Detalle por concepto" }];
   if (data.status === "empty") {
     return (
       <DashboardShell>

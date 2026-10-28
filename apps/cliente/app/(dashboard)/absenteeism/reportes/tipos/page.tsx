@@ -28,7 +28,7 @@ export default async function TypeReportPage({
   const dimensions = await getDashboardDimensions(tenantId, "absenteeism");
   const params = parseTypeReportParams(await searchParams, dimensions);
   const data = await loadTypeReport(tenantId, dimensions, params);
-  const crumbs = [{ label: "Ausentismos", href: "/absenteeism" }, { label: "Cuadro por tipo y unidad" }];
+  const crumbs = [{ label: "Analítica", href: "/analytics" }, { label: "Ausentismos", href: "/absenteeism" }, { label: "Cuadro por tipo y unidad" }];
 
   if (data.status === "empty") {
     return (

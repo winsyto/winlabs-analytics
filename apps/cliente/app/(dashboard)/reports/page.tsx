@@ -1,10 +1,15 @@
-export default function ReportsPage() {
+import { FileText } from "lucide-react";
+import { ComingSoon } from "../_components/coming-soon";
+
+export const metadata = { title: "Reportes" };
+
+export default function ReportsHubPage() {
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-foreground mb-1">Reportes</h1>
-      <p className="text-muted-foreground text-sm">
-        Esta sección estará disponible próximamente.
-      </p>
-    </div>
+    <ComingSoon
+      eyebrow="Reportes"
+      title="Reportes"
+      description="Acá vas a encontrar los reportes de tu empresa, agrupados por tema."
+      icon={FileText}
+    />
   );
 }

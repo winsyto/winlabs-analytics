@@ -23,11 +23,14 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 ```
 /login                          → LoginForm (tenantSlug + email + password)
 /change-password                → Cambio obligatorio de contraseña (usuarios creados o reseteados desde el CMP)
-/dashboard                      → Inicio con stats del tenant
+/dashboard                      → Inicio: estado de los datos de cada fuente de archivo (último archivo, cobertura, al día o con errores)
+/analytics                      → Hub de dashboards activos del tenant, agrupados por categoría (RRHH, Finanzas, Otras)
+/data                           → Hub de Data: Integraciones manuales y Status de integraciones
+/integration-status             → Status de integraciones automáticas (próximamente)
 /headcount                      → Dashboard 1 (Headcount): KPIs, gráficos por dimensión, filtros
 /headcount/[scope]/[[...id]]    → Drill-down: activos, altas, bajas, dim/<tipo>/<id>
 /headcount/export               → Descarga Excel/PDF (?format=xlsx|pdf)
-/integrations                   → Carga de archivos: lista de integraciones del tenant
+/integrations                   → Integraciones manuales (carga de archivos): lista de integraciones del tenant
 /integrations/[id]              → Subida de archivo, columnas del template y resultados de cada job
 /absenteeism                    → Dashboard 2 (Ausentismos): tasa vs meta, evolución, clase y tipo, tasa por dimensión
 /absenteeism/[scope]/[[...id]]  → Drill-down: eventos, personas, clase/<código>, tipo/<código>, dim/<tipo>/<id>
@@ -47,8 +50,9 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /payroll/export                 → Descarga Excel/PDF (?format=xlsx|pdf)
 /payroll/conceptos              → Detalle por concepto (botón del resumen): cuadro de conceptos o, con ?c=<id>, tarjetas, evolución, por proceso y por unidad de un concepto; personas solo admin
 /payroll/conceptos/export       → Excel/PDF del cuadro o del concepto (?c=<id>&format=xlsx|pdf)
-/reports, /team                 → Stubs
-/settings                       → Índice de configuración
+/reports                        → Hub de reportes (próximamente)
+/settings                       → Hub de configuración agrupado (Seguridad y Básicas); solo muestra las opciones que aplican a los dashboards activos y avisa los pendientes
+/settings/org-units             → Unidades organizativas (próximamente)
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa
 /settings/absence-types         → Clase de cada tipo de ausencia y si cuenta como ausentismo; avisa los tipos sin clasificar
 /settings/time-entry-types      → Categoría de cada tipo de hora (regular, hora extra, hora extra no autorizada, etc.); avisa los tipos sin clasificar

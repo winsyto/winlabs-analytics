@@ -32,7 +32,7 @@ export default async function DateReportPage({
   const params = parseDateReportParams(await searchParams, dimensions);
   const data = await loadDateReport(tenantId, dimensions, params);
 
-  const crumbs = [{ label: "Ausentismos", href: "/absenteeism" }, { label: "Resumen por fecha y unidad" }];
+  const crumbs = [{ label: "Analítica", href: "/analytics" }, { label: "Ausentismos", href: "/absenteeism" }, { label: "Resumen por fecha y unidad" }];
 
   if (data.status === "empty") {
     return (

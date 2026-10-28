@@ -39,7 +39,7 @@ export default async function HeadcountDetailPage({
   if (data.status === "notfound") notFound();
 
   const crumbs = (title: string) => [
-    { label: "Headcount", href: overviewHref(filters) },
+    { label: "Analítica", href: "/analytics" }, { label: "Headcount", href: overviewHref(filters) },
     { label: title },
   ];
 

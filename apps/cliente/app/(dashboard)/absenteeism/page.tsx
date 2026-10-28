@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AlertTriangle, CalendarDays, Info, Table2 } from "lucide-react";
 import { auth } from "@/auth";
 import { ChartCard } from "../_dashboard-kit/chart-card";
+import { Breadcrumb } from "../_dashboard-kit/breadcrumb";
 import { DashboardShell, PendingRegion } from "../_dashboard-kit/dashboard-shell";
 import { DashboardEmpty, DashboardNoResults } from "../_dashboard-kit/dashboard-states";
 import { filterTokens, NONE_TOKEN } from "../_dashboard-kit/dimension-filters";
@@ -49,7 +50,8 @@ export default async function AbsenteeismPage({
   if (data.status === "empty") {
     return (
       <DashboardShell>
-        <h1 className="text-lg font-bold text-foreground">Ausentismos</h1>
+        <Breadcrumb items={[{ label: "Analítica", href: "/analytics" }, { label: "Ausentismos" }]} />
+        <h1 className="mt-1 text-lg font-bold text-foreground">Ausentismos</h1>
         <DashboardEmpty
           title="Todavía no hay datos de ausentismo"
           text={
@@ -94,7 +96,8 @@ export default async function AbsenteeismPage({
     <DashboardShell>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h1 className="text-lg font-bold leading-tight text-foreground">Ausentismos</h1>
+          <Breadcrumb items={[{ label: "Analítica", href: "/analytics" }, { label: "Ausentismos" }]} />
+          <h1 className="mt-1 text-lg font-bold leading-tight text-foreground">Ausentismos</h1>
           <p className="text-xs text-muted-foreground">
             {period.label} · comparado {period.compareLabel}
             {!freshness.comparisonAvailable && " (sin comparación: no hay datos del período anterior)"}

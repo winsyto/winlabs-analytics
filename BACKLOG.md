@@ -325,7 +325,7 @@
   - [ ] Edición de tenants
   - [ ] Integraciones
   - [ ] Templates de integración
-  - [x] **Hub de dashboards, modelo y CMP** (catálogo, activación por tenant, guardia de acceso, matriz con búsqueda y paginación, tarjeta en el tenant, auditoría) — completo en local (2026-10-28); `docs/modules/hub-de-dashboards.md`. Falta el hub visual del cliente (bloque 3) y los permisos por rol
+  - [x] **Hub de dashboards, modelo y CMP** (catálogo, activación por tenant, guardia de acceso, matriz con búsqueda y paginación, tarjeta en el tenant, auditoría) — en producción (2026-10-29); `docs/modules/hub-de-dashboards.md`. Falta el hub visual del cliente (bloque 3) y los permisos por rol
   - [ ] (original) **Hub de dashboards** y su configuración por tenant (qué dashboards están activos en cada uno; posible matriz de permisos por opción de menú; modelo de datos: catálogo de dashboards + activación por tenant + permisos, y su impacto en `dsh_dimensions` y en la navegación)
 - Configuración (nueva opción de menú):
   - [ ] Mover la configuración de **tipos de ausencia** (hoy `/absence-types`) y mejorar su UI
@@ -339,7 +339,7 @@
 - UI/UX:
   - [ ] Dashboard de inicio
   - [ ] Integraciones por archivo
-  - [ ] **Hub de dashboards**, en lugar de una opción de menú por cada dashboard
+  - [x] **Hub de dashboards**, en lugar de una opción de menú por cada dashboard — completo en local (2026-10-29): menú Inicio / Analítica / Data / Reportes / Configuración, hubs agrupados, Inicio con estado de datos y breadcrumb desde Analítica
   - [ ] **Hub de configuración**: tipos de ausencia, turnos, tipos de hora, metas y usuarios
 
 ---

@@ -46,7 +46,7 @@ export default async function AbsenteeismDetailPage({
   const data = await loadDetail(tenantId, filters, dimensions, scope as DetailScope, segments, dp);
   if (data.status === "notfound") notFound();
 
-  const crumbs = (title: string) => [{ label: "Ausentismos", href: overviewHref(filters) }, { label: title }];
+  const crumbs = (title: string) => [{ label: "Analítica", href: "/analytics" }, { label: "Ausentismos", href: overviewHref(filters) }, { label: title }];
 
   if (data.status === "empty") {
     return (

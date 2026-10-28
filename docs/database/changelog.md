@@ -28,3 +28,4 @@
 | 2026-10-21 | cfg_tenant_settings.currency (moneda del tenant, ISO de 3 letras) y dimensiones del dashboard de Payroll copiadas de Headcount | add_tenant_currency_and_payroll_dimensions |
 | 2026-10-22 | Índice pay_entries (concept_id, process_id) para leer solo las filas del total bruto o neto de cada proceso (reemplaza al de concept_id solo) | add_pay_entries_concept_process_index |
 | 2026-10-23 | Hub de dashboards: cfg_dashboards (catálogo global con los 5 dashboards y sus módulos requeridos) y dsh_tenant_dashboards (activos por tenant, RLS); los tenants existentes conservan todos | add_dashboards_hub |
+| 2026-10-24 | cfg_dashboards: category (hr, finance, other; agrupa el hub de dashboards) e icon (ícono de la tarjeta) | add_dashboards_category_icon |

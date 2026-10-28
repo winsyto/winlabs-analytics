@@ -39,7 +39,7 @@ export default async function OvertimeDetailPage({
   const data = await loadDetail(tenantId, filters, dimensions, scope as DetailScope, segments, dp);
   if (data.status === "notfound") notFound();
 
-  const crumbs = (title: string) => [{ label: "Horas extras", href: overviewHref(filters) }, { label: title }];
+  const crumbs = (title: string) => [{ label: "Analítica", href: "/analytics" }, { label: "Horas extras", href: overviewHref(filters) }, { label: title }];
 
   if (data.status === "empty") {
     return (

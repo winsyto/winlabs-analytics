@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { ChartCard } from "../_dashboard-kit/chart-card";
+import { Breadcrumb } from "../_dashboard-kit/breadcrumb";
 import { DashboardShell, PendingRegion } from "../_dashboard-kit/dashboard-shell";
 import { DashboardEmpty, DashboardNoResults } from "../_dashboard-kit/dashboard-states";
 import { ExportMenu } from "../_dashboard-kit/export-menu";
@@ -40,7 +41,8 @@ export default async function HeadcountPage({
   if (data.status === "empty") {
     return (
       <DashboardShell>
-        <h1 className="text-lg font-bold text-foreground">Headcount</h1>
+        <Breadcrumb items={[{ label: "Analítica", href: "/analytics" }, { label: "Headcount" }]} />
+        <h1 className="mt-1 text-lg font-bold text-foreground">Headcount</h1>
         <DashboardEmpty
           title="Todavía no hay datos de personas"
           text="Cuando se cargue el archivo de personas (o se conecte una integración de RRHH) y se genere el primer cierre mensual, vas a ver acá la dotación, las altas, las bajas y su distribución."
@@ -80,7 +82,8 @@ export default async function HeadcountPage({
     <DashboardShell>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h1 className="text-lg font-bold leading-tight text-foreground">Headcount</h1>
+          <Breadcrumb items={[{ label: "Analítica", href: "/analytics" }, { label: "Headcount" }]} />
+          <h1 className="mt-1 text-lg font-bold leading-tight text-foreground">Headcount</h1>
           <p className="text-xs text-muted-foreground">
             {period.label} · comparado {period.compareLabel}
             {!freshness.comparisonAvailable && " (sin comparación: el historial no cubre el período anterior)"}

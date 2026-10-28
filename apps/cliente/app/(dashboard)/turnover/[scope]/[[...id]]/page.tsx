@@ -38,7 +38,7 @@ export default async function TurnoverDetailPage({
   const data = await loadDetail(tenantId, filters, dimensions, scope as DetailScope, segments, dp);
   if (data.status === "notfound") notFound();
 
-  const crumbs = (title: string) => [{ label: "Rotación", href: overviewHref(filters) }, { label: title }];
+  const crumbs = (title: string) => [{ label: "Analítica", href: "/analytics" }, { label: "Rotación", href: overviewHref(filters) }, { label: title }];
 
   if (data.status === "empty") {
     return (

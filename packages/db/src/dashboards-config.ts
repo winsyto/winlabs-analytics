@@ -10,16 +10,34 @@ export const DATA_MODULES = [
 
 export type DataModuleCode = (typeof DATA_MODULES)[number]["code"];
 
+/** Agrupaciones del hub de dashboards (cfg_dashboards.category). */
+export const DASHBOARD_CATEGORIES = [
+  { code: "hr", name: "RRHH" },
+  { code: "finance", name: "Finanzas" },
+  { code: "other", name: "Otras" },
+] as const;
+
+export type DashboardCategory = (typeof DASHBOARD_CATEGORIES)[number]["code"];
+
 /** Catálogo de dashboards (cfg_dashboards) y los módulos de datos que requiere cada uno. */
 export const DASHBOARD_CATALOG: Record<
   DashboardCode,
-  { name: string; description: string; route: string; requiredModules: readonly DataModuleCode[]; sortOrder: number }
+  {
+    name: string;
+    description: string;
+    route: string;
+    requiredModules: readonly DataModuleCode[];
+    sortOrder: number;
+    category: DashboardCategory;
+    /** Ícono lucide en kebab-case (lo traduce la app del cliente) */
+    icon: string;
+  }
 > = {
-  headcount: { name: "Headcount", description: "Dotación, altas, bajas y distribución por unidad", route: "/headcount", requiredModules: ["people"], sortOrder: 1 },
-  absenteeism: { name: "Ausentismos", description: "Tasa de ausentismo contra la meta, por clase, tipo y unidad", route: "/absenteeism", requiredModules: ["people", "time"], sortOrder: 2 },
-  overtime: { name: "Horas extras", description: "Tasa de horas extra contra la meta, por tipo y unidad", route: "/overtime", requiredModules: ["people", "time"], sortOrder: 3 },
-  turnover: { name: "Rotación", description: "Rotación contra la meta anual, por motivo, antigüedad y unidad", route: "/turnover", requiredModules: ["people"], sortOrder: 4 },
-  payroll: { name: "Payroll", description: "Masa salarial, costo por persona, composición por clase y por concepto", route: "/payroll", requiredModules: ["people", "payroll"], sortOrder: 5 },
+  headcount: { name: "Headcount", description: "Dotación, altas, bajas y distribución por unidad", route: "/headcount", requiredModules: ["people"], sortOrder: 1, category: "hr", icon: "users-round" },
+  absenteeism: { name: "Ausentismos", description: "Tasa de ausentismo contra la meta, por clase, tipo y unidad", route: "/absenteeism", requiredModules: ["people", "time"], sortOrder: 2, category: "hr", icon: "calendar-off" },
+  overtime: { name: "Horas extras", description: "Tasa de horas extra contra la meta, por tipo y unidad", route: "/overtime", requiredModules: ["people", "time"], sortOrder: 3, category: "hr", icon: "timer" },
+  turnover: { name: "Rotación", description: "Rotación contra la meta anual, por motivo, antigüedad y unidad", route: "/turnover", requiredModules: ["people"], sortOrder: 4, category: "hr", icon: "user-minus" },
+  payroll: { name: "Payroll", description: "Masa salarial, costo por persona, composición por clase y por concepto", route: "/payroll", requiredModules: ["people", "payroll"], sortOrder: 5, category: "hr", icon: "wallet" },
 };
 
 /** Módulos que requiere un dashboard y el tenant no tiene activos. */
@@ -30,7 +48,7 @@ export function missingModules(code: DashboardCode, activeModules: readonly stri
 /** Inserta o actualiza (idempotente) el catálogo global. Lo usan el seed de catálogo y el de desarrollo. */
 export async function upsertDashboardCatalog(client: { cfgDashboard: Prisma.TransactionClient["cfgDashboard"] }): Promise<void> {
   for (const [code, d] of Object.entries(DASHBOARD_CATALOG)) {
-    const data = { name: d.name, description: d.description, route: d.route, requiredModules: [...d.requiredModules], sortOrder: d.sortOrder, isActive: true };
+    const data = { name: d.name, description: d.description, route: d.route, requiredModules: [...d.requiredModules], sortOrder: d.sortOrder, category: d.category, icon: d.icon, isActive: true };
     await client.cfgDashboard.upsert({ where: { code }, update: data, create: { code, ...data } });
   }
 }
