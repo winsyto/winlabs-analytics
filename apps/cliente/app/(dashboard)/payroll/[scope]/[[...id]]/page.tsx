@@ -8,6 +8,7 @@ import { getDashboardDimensions } from "../../../_dashboard-kit/dimensions";
 import { fmtDate, fmtInt, fmtDec } from "../../../_dashboard-kit/format";
 import { getCurrentUserRole } from "../../../settings/_lib/role";
 import { fmtMoney, fmtShare } from "../../_components/format";
+import { conceptsHref } from "../../_data/hrefs";
 import { detailParamsSchema, loadDetail, PAGE_SIZE, PROCESS_TYPE_LABELS } from "../../_data/detail-queries";
 import { parseFilters } from "../../_data/filters";
 import { detailHref, filtersQuery, overviewHref, type DetailScope } from "../../_data/hrefs";
@@ -142,7 +143,11 @@ export default async function PayrollDetailPage({
                 {data.rows.map((r) => (
                   <tr key={r.id} className="hover:bg-muted/40">
                     <td className="px-3 py-1.5 font-mono text-muted-foreground">{r.code}</td>
-                    <th scope="row" className="px-3 py-1.5 font-medium text-foreground">{r.name}</th>
+                    <th scope="row" className="px-3 py-1.5 font-medium text-foreground">
+                      <Link href={conceptsHref(filters, r.id)} className="hover:underline">
+                        {r.name}
+                      </Link>
+                    </th>
                     <td className="px-3 py-1.5 text-right tabular-nums">{fmtInt(r.persons)}</td>
                     <td className="px-3 py-1.5 text-right tabular-nums">{money(r.amount)}</td>
                     <td className="px-3 py-1.5 text-right tabular-nums">{r.share === null ? "—" : fmtShare(r.share)}</td>

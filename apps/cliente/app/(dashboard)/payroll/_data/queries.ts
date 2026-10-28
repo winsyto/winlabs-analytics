@@ -119,8 +119,12 @@ export const idList = (ids: number[]) => Prisma.join(ids.length ? ids : [-1]);
 /** Proceso de liquidación con el código (AAAA-MM) y el fin de su período. */
 export interface ProcRef {
   id: number;
+  /** Período (AAAA-MM) */
   code: string;
   end: string;
+  /** Código y tipo del proceso */
+  pcode: string;
+  ptype: string;
 }
 
 /**
@@ -130,7 +134,7 @@ export interface ProcRef {
  */
 export async function loadProcRefs(tx: Prisma.TransactionClient, tenantId: string, fromCode: string, toCode: string): Promise<ProcRef[]> {
   return tx.$queryRaw<ProcRef[]>`
-    SELECT pr.id, pe.period_code AS code, to_char(pe.end_date, 'YYYY-MM-DD') AS "end"
+    SELECT pr.id, pe.period_code AS code, to_char(pe.end_date, 'YYYY-MM-DD') AS "end", pr.code AS pcode, pr.process_type AS ptype
     FROM pay_processes pr JOIN pay_periods pe ON pe.id = pr.period_id
     WHERE pr.tenant_id = ${tenantId}::uuid AND pe.period_code ~ '^[0-9]{4}-[0-9]{2}$'
       AND pe.period_code BETWEEN ${fromCode} AND ${toCode}`;
@@ -149,7 +153,7 @@ const procValues = (procs: ProcRef[]) =>
 export const entriesFrom = (tenantId: string, procs: ProcRef[], joins: Prisma.Sql = Prisma.empty, concepts: number[] | null = null) => Prisma.sql`
   FROM ${procValues(procs)}
   CROSS JOIN LATERAL (
-    SELECT x.process_id, x.person_id, x.concept_id, x.amount
+    SELECT x.process_id, x.person_id, x.concept_id, x.amount, x.quantity
     FROM pay_entries x
     WHERE x.process_id = pc.process_id AND x.tenant_id = ${tenantId}::uuid
       ${concepts ? Prisma.sql`AND x.concept_id IN (${idList(concepts)})` : Prisma.empty}) e

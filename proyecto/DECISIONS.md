@@ -235,6 +235,7 @@
 | D-138 | Costo medio por persona = masa bruta ÷ personas-mes con importe en la masa bruta (el costo mensual promedio de quien cobró). La masa bruta es el total bruto marcado o, si no hay, la suma de las clases de haber; sin total neto marcado el neto figura como "—" con aviso | ✅ Cerrada |
 | D-139 | En Payroll un mes sin liquidación figura como "sin datos", no como cero; las retenciones se muestran en valor absoluto y aparte; el período suma todos los procesos (mensual, SAC, ajustes...) y el detalle por proceso permite separarlos | ✅ Cerrada |
 | D-140 | La unidad de una persona en Payroll es la vigente al fin del mes liquidado (no la actual ni la del cierre de personas). Los importes son lo pagado en cada mes: el desfasaje con lo ocurrido (horas extra y ausencias pagadas a mes vencido) queda registrado como Open-18 | ✅ Cerrada |
+| D-141 | El detalle por concepto de Payroll es una pantalla propia (`/payroll/conceptos`) a la que se entra solo desde el resumen con un botón (como los anexos de Ausentismos) y desde la tabla de conceptos de una clase; tiene su selector de concepto y su exportación. Incluye todos los conceptos, también los sin clasificar y los totales bruto y neto, para poder auditar la masa. El desfasaje entre lo pagado y lo ocurrido (Open-18) no se resuelve acá | ✅ Cerrada |
 
 ---
 
@@ -279,3 +280,4 @@ Las siguientes decisiones están abiertas o tentativas. Bloquean / condicionan t
 | 2026-10-21 | D-131 a D-136: Dashboard 5 de Payroll (período → proceso → persona → concepto, importes tal como vienen, tipos y clases de concepto, conceptos nuevos sin clasificar, moneda única y agregados, formato del archivo) |
 | 2026-10-21 | Open-18: desfasaje entre lo pagado y lo ocurrido (pago a mes vencido de horas extra y ausencias) |
 | 2026-10-22 | D-137 a D-140: dashboard de Payroll (privacidad por celdas y listado de personas solo admin, costo medio por persona-mes, meses sin datos y retenciones aparte, unidad al fin del mes liquidado) |
+| 2026-10-27 | D-141: detalle por concepto de Payroll (pantalla propia, todos los conceptos, exportación) |

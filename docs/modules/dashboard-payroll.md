@@ -1,7 +1,7 @@
 # Dashboard Payroll (Dashboard 5 de M3)
 
 **Fecha:** 2026-10-21
-**Estado:** MVP (resumen, detalle y exportaciones completos; pendiente el detalle por concepto, E4)
+**Estado:** MVP (resumen, detalle, detalle por concepto y exportaciones completos)
 
 ## Resumen
 
@@ -25,12 +25,14 @@ Todo bajo `apps/cliente/app/(dashboard)/payroll/`:
 |---|---|
 | `page.tsx` | Resumen (Server Component): tarjetas, gráficos, filtros y estados |
 | `[scope]/[[...id]]/page.tsx` | Drill-down: `procesos`, `clase/<id o uncl>`, `dim/<tipo>/<id>`, `personas` (solo admin) |
+| `conceptos/page.tsx`, `conceptos/export/route.ts` | Detalle por concepto (E4) y su exportación; el concepto va en `?c=<id>` |
 | `export/route.ts` | Descarga Excel y PDF (`?format=xlsx|pdf` + filtros) |
 | `_data/queries.ts` | `loadPayroll`, `loadConfig` (clase de cada concepto), `loadMonthly`, `resolveRange` y los armadores de SQL |
 | `_data/detail-queries.ts` | Listados del drill-down |
+| `_data/concept-queries.ts` | `loadConceptDetail`: cuadro de conceptos y detalle de uno |
 | `_data/filters.ts`, `hrefs.ts`, `types.ts` | Parámetros de URL, enlaces y tipos (incluye `MIN_PERSONS = 3`) |
 | `_components/` | Evolución, composición por clase, barras de costo por dimensión, filtros, frescura y formato de moneda |
-| `_export/` | `report.ts`, `xlsx.ts`, `pdf-document.tsx` |
+| `_export/` | `report.ts`, `xlsx.ts`, `pdf-document.tsx` y, para el detalle por concepto, `concept-report.ts`, `concept-xlsx.ts`, `concept-pdf.tsx` |
 
 Del kit compartido (`_dashboard-kit/`) se reutilizan el shell, las tarjetas, el selector de período, los filtros por dimensión, el menú de exportación y las pestañas de dimensiones.
 
@@ -63,6 +65,20 @@ flowchart LR
 - **Privacidad (D-135):** solo agregados. Las celdas (unidad, mes o proceso) con **menos de 3 personas** no muestran importes: figuran como "reservado". Si los filtros dejan menos de 3 personas por mes, el resumen entero se reserva. El listado de **personas** (importe por persona) lo ve solo un **admin**.
 - **Importes pagados, no devengados:** si el cliente paga horas extra o ausencias a mes vencido, los importes de un mes corresponden a horas del mes anterior. La pantalla lo aclara en "Cómo se calcula". Está registrado para resolverlo (Open-18).
 
+## Detalle por concepto (E4)
+
+Se abre con el botón **Detalle por concepto** del encabezado del resumen (igual que los anexos de Ausentismos) y conserva el período y los filtros por unidad. La pantalla `/payroll/conceptos` tiene su propia barra de filtros y un **selector de concepto** (agrupado por clase):
+
+- **Sin concepto elegido** muestra el cuadro de todos los conceptos con importes en el período (clase, personas e importe); cada fila lleva al detalle. También se llega desde la tabla de conceptos de una clase.
+- **Con un concepto** (cualquiera: de una clase, sin clasificar, total bruto o neto, contribuciones patronales...):
+  - **Tarjetas** con variación contra el período anterior: importe del período (con el signo de origen), personas por mes, importe medio por persona (mensual) y, según el concepto, **cantidad pagada** (horas, días o unidades, con el importe por unidad: por ejemplo, el valor medio de la hora extra) o el **peso** en su clase y sobre la masa bruta.
+  - **Evolución** del importe en 12 meses (mes sin liquidación = sin datos; mes con menos de 3 personas = reservado).
+  - **Por proceso** del período (mensual, SAC, ajustes...).
+  - **Importe medio por unidad** de cada dimensión (unidad vigente al fin del mes liquidado; menos de 3 personas = reservado).
+  - **Personas con el concepto** (importe y cantidad): solo para un admin, no se exporta.
+- **Exportación** Excel y PDF del cuadro o del concepto elegido (resumen con indicadores, evolución, por proceso y por dimensión).
+- El peso en la clase usa los importes de la clase del período; los acumuladores y conceptos sin clase muestran solo su peso sobre la masa bruta.
+
 ## Pantallas y navegación
 
 - **Resumen:** 4 tarjetas (cada una con variación contra el período anterior), evolución de 12 meses (bruto y neto), composición por clase (pestañas Haberes y Retenciones) y un panel de costo medio por cada dimensión (si hay más de 4 dimensiones, la última agrupa el resto en pestañas). Filtros: período (último mes, 12 meses, año) y unidades por dimensión; el estado vive en la URL.
@@ -80,7 +96,7 @@ Medido con 3.000 personas, 24 meses y 864 mil entradas (script `apps/cliente/scr
 
 ## Verificación
 
-`apps/cliente/scripts/verify-payroll-engine.ts` compara el motor con una implementación independiente que parte de las entradas: dos procesos en el mismo mes, un mes sin liquidación, cambio de área, concepto sin clasificar, concepto que no entra, regla por concepto sobre tipo, unidades y filtros de menos de 3 personas, y con o sin totales de bruto y neto marcados (8 casos de período y filtro × 2 configuraciones, más los detalles de procesos, clase, unidad y personas).
+`apps/cliente/scripts/verify-payroll-engine.ts` compara el motor con una implementación independiente que parte de las entradas: dos procesos en el mismo mes, un mes sin liquidación, cambio de área, concepto sin clasificar, concepto que no entra, regla por concepto sobre tipo, unidades y filtros de menos de 3 personas, y con o sin totales de bruto y neto marcados (8 casos de período y filtro × 2 configuraciones, más los detalles de procesos, clase, unidad y personas) y, para el detalle por concepto, 6 conceptos (con y sin cantidad, total bruto, sin clasificar, que no entra en una clase y de un proceso de SAC) × 3 casos de período y filtro, el cuadro general y un concepto inexistente.
 
 ```bash
 cd apps/cliente
@@ -88,7 +104,7 @@ cd apps/cliente
 ```
 
 ## Pendientes
-- [ ] **E4:** detalle por concepto (histórico de un concepto y sus tarjetas) y anexos, solo si el uso los pide.
+- [x] **E4:** detalle por concepto, con cuadro de conceptos, evolución, por proceso, por unidad y exportación.
 - [ ] Desfasaje entre lo pagado y lo ocurrido (Open-18): configuración por tenant de los tipos que se pagan a mes vencido y aviso en los dashboards.
 - [ ] Meta o referencia de costo por tenant, si el cliente la pide.
 - [ ] Accesibilidad con lector de pantalla probada, tablet y móvil (igual que los otros dashboards).
@@ -97,3 +113,4 @@ cd apps/cliente
 | Fecha | Cambio |
 |---|---|
 | 2026-10-21 | Versión inicial: resumen, detalle (procesos, clase, unidad y personas) y exportaciones |
+| 2026-10-27 | Detalle por concepto (E4): cuadro de conceptos, tarjetas, evolución, por proceso, por unidad y exportación |

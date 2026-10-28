@@ -13,6 +13,7 @@ import { prisma, applyDefaultOrgConfig, applyDefaultPayrollClasses } from "@wla/
 import { withTenantContext } from "@wla/auth";
 import { loadDetail } from "../app/(dashboard)/payroll/_data/detail-queries";
 import { loadPayroll } from "../app/(dashboard)/payroll/_data/queries";
+import { loadConceptDetail } from "../app/(dashboard)/payroll/_data/concept-queries";
 import type { PayrollFilters } from "../app/(dashboard)/payroll/_data/filters";
 import { addMonths, buildPeriod, monthEnd } from "../app/(dashboard)/_dashboard-kit/period";
 import type { Dimension } from "../app/(dashboard)/_dashboard-kit/dimensions";
@@ -440,6 +441,143 @@ async function main() {
         failures++;
         console.log("✗ detalle de unidad");
         for (const f of fails) console.log(`    ${f}`);
+      }
+    }
+
+
+    // Detalle por concepto (E4): importes, histórico, cantidad, procesos, unidades y cuadro general
+    {
+      const conceptRows = await withTenantContext(tenantId, (tx) => tx.payConcept.findMany({ where: { tenantId }, select: { id: true, code: true } }));
+      const cid = new Map(conceptRows.map((c) => [c.code, c.id]));
+      const cCases: { name: string; p: PayrollFilters["p"]; dimsF: PayrollFilters["dims"]; q: Q }[] = [
+        { name: "mes", p: "month", dimsF: {}, q: {} },
+        { name: "12 meses", p: "12m", dimsF: {}, q: {} },
+        { name: "año, Área X", p: "year", dimsF: { AREA: { ids: [uid("AREA", "X")], none: false } }, q: { area: { ids: ["X"], none: false } } },
+      ];
+      for (const code of ["SUELDO", "HE50", "BRUTO", "NUEVO", "CONTRIB", "SAC"]) {
+        for (const c of cCases) {
+          const label = `[concepto ${code}] ${c.name}`;
+          const fails: string[] = [];
+          const filters: PayrollFilters = { p: c.p, dims: c.dimsF };
+          const data = await loadConceptDetail(tenantId, filters, dims, cid.get(code)!, { admin: true });
+          if (data.status !== "ok" || !data.detail) { console.log(`✗ ${label}: estado ${data.status}`); failures++; continue; }
+          const det = data.detail;
+          const per = buildPeriod(c.p, REF);
+          const curMonths = monthsOf(per.start, REF);
+          const prevMonths = monthsOf(per.prevStart, per.prevEnd);
+          const mine = entries.filter((e) => e.concept === code && passUnits(c.q, byCode.get(e.person)!, monthEnd(e.month)));
+          const inMonths = (ms: string[]) => mine.filter((e) => ms.includes(e.month));
+          const stat = (ms: string[]) => {
+            const rows = inMonths(ms);
+            const pmCount = ms.reduce((n, m) => n + new Set(rows.filter((e) => e.month === m).map((e) => e.person)).size, 0);
+            return {
+              amount: rows.reduce((x, e) => x + e.amount, 0),
+              qty: rows.reduce((x, e) => x + (e.qty ?? 0), 0),
+              pm: pmCount,
+            };
+          };
+          const cur = stat(curMonths);
+          const maxPersons = Math.max(0, ...curMonths.map((m) => new Set(inMonths([m]).map((e) => e.person)).size));
+          const restricted = maxPersons > 0 && maxPersons < 3;
+          if (det.restricted !== restricted) fails.push(`restringido: motor ${det.restricted} vs ${restricted}`);
+          if (!restricted) {
+            near(det.kpis.amount.value, cur.amount, "importe", fails);
+            near(det.kpis.persons.value, curMonths.length ? cur.pm / curMonths.length : null, "personas por mes", fails);
+            near(det.kpis.perPerson.value, cur.pm > 0 ? cur.amount / cur.pm : null, "importe medio por persona", fails);
+            if (prevMonths.length) {
+              const pv = stat(prevMonths);
+              near(det.kpis.amount.prev, pv.amount, "importe previo", fails);
+              near(det.kpis.perPerson.prev, pv.pm > 0 ? pv.amount / pv.pm : null, "importe medio previo", fails);
+            } else near(det.kpis.amount.prev, null, "importe previo (sin período)", fails);
+            if (code === "HE50") near(det.kpis.quantity.value, cur.qty, "cantidad", fails);
+            if (det.hasQuantity !== (mine.some((e) => (e.qty ?? 0) !== 0))) fails.push("hasQuantity distinto");
+
+            // Procesos del período
+            const expProc = new Map<string, { amount: number; persons: Set<string> }>();
+            for (const e of inMonths(curMonths)) {
+              const k = `${e.month.slice(0, 7)}|${e.process}`;
+              const r = expProc.get(k) ?? { amount: 0, persons: new Set<string>() };
+              r.amount += e.amount;
+              r.persons.add(e.person);
+              expProc.set(k, r);
+            }
+            near(det.processes.length, expProc.size, "procesos: cantidad", fails);
+            for (const r of det.processes) {
+              const exp = expProc.get(`${r.month.slice(0, 7)}|${r.code}`);
+              const hidden = (exp?.persons.size ?? 0) < 3;
+              near(r.amount, hidden ? null : (exp?.amount ?? null), `proceso ${r.code}`, fails);
+            }
+
+            // Por unidad
+            for (const dim of det.dimensions) {
+              const g = new Map<string, { total: number; pm: number; persons: Set<string> }>();
+              for (const m of curMonths) {
+                const perPerson = new Map<string, number>();
+                for (const e of inMonths([m])) perPerson.set(e.person, (perPerson.get(e.person) ?? 0) + e.amount);
+                for (const [pcode, amt] of perPerson) {
+                  const unit = unitAt(byCode.get(pcode)!, dim.code, monthEnd(m)) ?? "none";
+                  const r = g.get(unit) ?? { total: 0, pm: 0, persons: new Set<string>() };
+                  r.total += amt;
+                  r.pm += 1;
+                  r.persons.add(pcode);
+                  g.set(unit, r);
+                }
+              }
+              const seen = new Set<string>();
+              for (const it of dim.items) {
+                const ucode = it.key === "none" ? "none" : [...ids].find(([, v]) => String(v) === it.key)![0].split(":")[1]!;
+                seen.add(ucode);
+                const r = g.get(ucode);
+                const hidden = (r?.persons.size ?? 0) < 3;
+                if (it.hidden !== hidden) fails.push(`${dim.code}/${ucode}: reservado motor ${it.hidden} vs ${hidden}`);
+                near(it.cost, !hidden && r ? r.total / r.pm : null, `${dim.code}/${ucode}: importe medio`, fails);
+              }
+              for (const [ucode, r] of g) if (r.pm > 0 && !seen.has(ucode)) fails.push(`${dim.code}/${ucode}: falta en el motor`);
+            }
+
+            // Personas (admin): suma = importe del período
+            if (det.persons) near(det.persons.reduce((x, r) => x + r.amount, 0), cur.amount, "personas: suma", fails);
+          }
+
+          // Histórico
+          for (const pt of det.series) {
+            const rows = mine.filter((e) => e.month === pt.month);
+            const n = new Set(rows.map((e) => e.person)).size;
+            const exp = !COVERED.has(pt.month) ? "nodata" : n > 0 && n < 3 ? "hidden" : "ok";
+            if (pt.state !== exp) fails.push(`serie ${pt.month}: estado ${pt.state} vs ${exp}`);
+            else if (exp === "ok") near(pt.amount, rows.reduce((x, e) => x + e.amount, 0), `serie ${pt.month}`, fails);
+          }
+          if (fails.length === 0) console.log(`✓ ${label}`);
+          else {
+            failures++;
+            console.log(`✗ ${label}`);
+            for (const f of fails) console.log(`    ${f}`);
+          }
+        }
+      }
+
+      // Cuadro general de conceptos del período
+      const ov = await loadConceptDetail(tenantId, { p: "12m", dims: {} }, dims, null, { admin: false });
+      const oFails: string[] = [];
+      if (ov.status !== "ok" || !ov.overview) oFails.push("cuadro: sin datos");
+      else {
+        const per = buildPeriod("12m", REF);
+        const ms = monthsOf(per.start, REF);
+        for (const r of ov.overview) {
+          const rows = entries.filter((e) => e.concept === r.code && ms.includes(e.month));
+          const persons = new Set(rows.map((e) => e.person)).size;
+          near(r.persons, persons, `cuadro ${r.code}: personas`, oFails);
+          near(r.amount, persons < 3 ? null : rows.reduce((x, e) => x + e.amount, 0), `cuadro ${r.code}: importe`, oFails);
+        }
+        near(ov.overview.length, CONCEPTS.filter((c) => entries.some((e) => e.concept === c.code && ms.includes(e.month))).length, "cuadro: cantidad de conceptos", oFails);
+      }
+      const nf = await loadConceptDetail(tenantId, { p: "month", dims: {} }, dims, 999999999, { admin: false });
+      if (nf.status !== "notfound") oFails.push("concepto inexistente: debería ser notfound");
+      if (oFails.length === 0) console.log("✓ cuadro de conceptos y concepto inexistente");
+      else {
+        failures++;
+        console.log("✗ cuadro de conceptos");
+        for (const f of oFails) console.log(`    ${f}`);
       }
     }
 

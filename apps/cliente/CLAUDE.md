@@ -45,6 +45,8 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /payroll                        → Dashboard 5 (Payroll): masa salarial bruta, costo medio por persona, neto pagado, costo de horas extra, evolución de 12 meses, composición por clase, costo medio por dimensión (celdas de menos de 3 personas reservadas)
 /payroll/[scope]/[[...id]]      → Drill-down: procesos, clase/<id o uncl>, dim/<tipo>/<id>, personas (solo admin)
 /payroll/export                 → Descarga Excel/PDF (?format=xlsx|pdf)
+/payroll/conceptos              → Detalle por concepto (botón del resumen): cuadro de conceptos o, con ?c=<id>, tarjetas, evolución, por proceso y por unidad de un concepto; personas solo admin
+/payroll/conceptos/export       → Excel/PDF del cuadro o del concepto (?c=<id>&format=xlsx|pdf)
 /reports, /team                 → Stubs
 /settings                       → Índice de configuración
 /settings/shifts                → Horario de cada unidad de tipo Turno (horas por día, semana laboral); sin horario propio usa el de la empresa

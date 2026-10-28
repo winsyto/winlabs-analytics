@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ListTree } from "lucide-react";
 import { auth } from "@/auth";
 import { ChartCard } from "../_dashboard-kit/chart-card";
 import { DashboardShell, PendingRegion } from "../_dashboard-kit/dashboard-shell";
@@ -15,7 +16,7 @@ import { fmtMoney, fmtMoneyDiff, fmtShare } from "./_components/format";
 import { PayrollFiltersBar } from "./_components/payroll-filters";
 import { PayrollFreshness } from "./_components/payroll-freshness";
 import { hasActiveFilters, parseFilters } from "./_data/filters";
-import { detailHref, filtersQuery } from "./_data/hrefs";
+import { conceptsHref, detailHref, filtersQuery } from "./_data/hrefs";
 import { loadPayroll } from "./_data/queries";
 import { getCurrentUserRole } from "../settings/_lib/role";
 import { MIN_PERSONS } from "./_data/types";
@@ -88,6 +89,13 @@ export default async function PayrollPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <PayrollFreshness {...freshness} />
+          <Link
+            href={conceptsHref(filters)}
+            className="inline-flex items-center gap-1 rounded-md border bg-card px-2.5 py-1 text-xs font-medium hover:bg-muted"
+          >
+            <ListTree className="h-3.5 w-3.5" aria-hidden />
+            Detalle por concepto
+          </Link>
           <ExportMenu xlsxHref={exportHref("xlsx")} pdfHref={exportHref("pdf")} />
         </div>
       </div>
@@ -204,10 +212,10 @@ export default async function PayrollPage({
               <div className={`grid min-h-0 flex-1 grid-cols-1 gap-3 ${COLS[rowCols] ?? "lg:grid-cols-4"}`}>
                 {panels.map((d) => (
                   <ChartCard key={d.code} title={`Costo medio por ${d.name.toLowerCase()}`} subtitle={subtitle}>
-                    <CostBarsChart dim={d} currency={currency} />
+                    <CostBarsChart dim={d} currency={currency} valueLabel="Costo medio por persona" />
                   </ChartCard>
                 ))}
-                {tabbed.length > 0 && <TabbedCostDimensions dimensions={tabbed} currency={currency} subtitle={subtitle} />}
+                {tabbed.length > 0 && <TabbedCostDimensions dimensions={tabbed} currency={currency} subtitle={subtitle} valueLabel="Costo medio por persona" />}
               </div>
             )}
           </div>

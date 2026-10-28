@@ -9,7 +9,7 @@
 **WinLabs Analytics (wlA)** es una plataforma SaaS de People Analytics multi-tenant para LATAM.
 Dos apps: `cmp` (console interna de WinLabs para gestionar tenants) y `cliente` (app que usa cada empresa).
 
-**Estado actual:** M0, M1 y M2 cerrados. M3 (dashboards) en curso: el Dashboard 1 (Headcount) está en producción el Dashboard 2 (Ausentismos) está completo (con sus dos reportes anexos: resumen por fecha y unidad y cuadro por tipo y unidad) el Dashboard 3 (Horas extras, por tiempo) está en producción y el Dashboard 4 (Rotación) está en producción; el Dashboard 5 (Payroll): modelo, administración y carga de archivo (E1 y E2) están en producción y el dashboard (E3) está completo en local; falta el detalle por concepto (E4).
+**Estado actual:** M0, M1 y M2 cerrados. M3 (dashboards) en curso: el Dashboard 1 (Headcount) está en producción el Dashboard 2 (Ausentismos) está completo (con sus dos reportes anexos: resumen por fecha y unidad y cuadro por tipo y unidad) el Dashboard 3 (Horas extras, por tiempo) está en producción y el Dashboard 4 (Rotación) está en producción; el Dashboard 5 (Payroll): modelo, administración y carga de archivo (E1 y E2) están en producción y el dashboard (E3) también está en producción; el detalle por concepto (E4) está completo en local.
 **Roadmap detallado:** ver `BACKLOG.md` en la raíz.
 **Docs de producto:** ver `proyecto/` — especialmente `07-roadmap.md` y `05-modelo-datos.md`.
 **Docs técnicas:** `docs/modules/` (un doc por módulo), `docs/runbooks/` (procedimientos: deploy, pruebas locales, limpieza de datos) y `docs/database/` (DBML y changelog).
@@ -251,7 +251,7 @@ Ver `jobs/worker/.env.example`. La variable crítica es `DATABASE_URL` que debe 
 
 ## Lo que NO está implementado todavía
 
-- Dashboard 5 (Payroll): falta el detalle por concepto (E4) (M3)
+- Dashboard 5 (Payroll): E4 (detalle por concepto) pendiente de pasar a producción; el desfasaje entre lo pagado y lo ocurrido (Open-18) queda para después (M3)
 - Etapa M3.5 (entre M3 y M4): mejoras generales de UI/UX (pantallas de 15,6", grillas paginadas, fichas), hubs de dashboards y de configuración, menú de configuración en el CMP, herramientas de limpieza de tablas y documentación de tablas por módulo (ver `BACKLOG.md`)
 - Forgot password / reset password (stubs existen, falta implementar con Resend)
 - APIs Manú y Geovictoria (M4)

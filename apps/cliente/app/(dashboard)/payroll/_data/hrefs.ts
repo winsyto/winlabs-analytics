@@ -29,3 +29,10 @@ export function detailHref(f: PayrollFilters, scope: DetailScope, ...segments: s
   const path = `/payroll/${scope}${segments.map((s) => `/${encodeURIComponent(s)}`).join("")}`;
   return withQs(path, filtersQuery(f));
 }
+
+/** Detalle por concepto (/payroll/conceptos), con el concepto elegido si lo hay; conserva período y filtros. */
+export function conceptsHref(f: PayrollFilters, conceptId?: number): string {
+  const q = filtersQuery(f);
+  if (conceptId !== undefined) q.set("c", String(conceptId));
+  return withQs("/payroll/conceptos", q);
+}

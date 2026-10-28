@@ -12,7 +12,17 @@ import { fmtMoney, fmtMoneyCompact } from "./format";
 const MAX_BARS = 8;
 
 /** Costo medio mensual por persona de cada unidad de una dimensión. Las unidades con menos de 3 personas no muestran importe. */
-export function CostBarsChart({ dim, currency }: { dim: DimensionData; currency: string }) {
+export function CostBarsChart({
+  dim,
+  currency,
+  valueLabel = "Costo medio",
+  totalLabel = "Masa bruta",
+}: {
+  dim: DimensionData;
+  currency: string;
+  valueLabel?: string;
+  totalLabel?: string;
+}) {
   const router = useRouter();
   const items = dim.items;
   const shown = items.length > MAX_BARS ? items.slice(0, MAX_BARS) : items;
@@ -26,7 +36,7 @@ export function CostBarsChart({ dim, currency }: { dim: DimensionData; currency:
   return (
     <figure className="flex h-full w-full flex-col">
       <figcaption className="sr-only">
-        {`Costo medio por persona por ${dim.name}: ${items.map((d) => `${d.label} ${d.cost === null ? "reservado" : fmtMoney(d.cost, currency)}`).join(", ")}.`}
+        {`${valueLabel} por ${dim.name}: ${items.map((d) => `${d.label} ${d.cost === null ? "reservado" : fmtMoney(d.cost, currency)}`).join(", ")}.`}
       </figcaption>
       <div className="min-h-0 flex-1">
         <ResponsiveContainer width="100%" height="100%">
@@ -46,9 +56,9 @@ export function CostBarsChart({ dim, currency }: { dim: DimensionData; currency:
                     ) : (
                       <>
                         <p>
-                          Costo medio: <strong>{fmtMoney(p.cost ?? 0, currency)}</strong>
+                          {valueLabel}: <strong>{fmtMoney(p.cost ?? 0, currency)}</strong>
                         </p>
-                        <p>Masa bruta: {fmtMoney(p.total ?? 0, currency)}</p>
+                        <p>{totalLabel}: {fmtMoney(p.total ?? 0, currency)}</p>
                         <p>Personas: {fmtInt(p.persons)}</p>
                       </>
                     )}
@@ -82,8 +92,8 @@ export function CostBarsChart({ dim, currency }: { dim: DimensionData; currency:
       {rest > 0 && <p className="text-[10px] text-muted-foreground">Se muestran las {MAX_BARS} unidades de mayor costo; hay {rest} más en el detalle.</p>}
       {anyHidden && <p className="text-[10px] text-muted-foreground">* Menos de {MIN_PERSONS} personas: el importe se reserva por privacidad.</p>}
       <ChartDataTable
-        caption={`Costo medio por persona por ${dim.name}`}
-        columns={[dim.name, "Costo medio", "Personas"]}
+        caption={`${valueLabel} por ${dim.name}`}
+        columns={[dim.name, valueLabel, "Personas"]}
         rows={items.map((i) => [
           i.href ? <Link key={i.key} href={i.href}>{i.label}</Link> : i.label,
           i.cost === null ? "reservado" : fmtMoney(i.cost, currency),
@@ -95,6 +105,24 @@ export function CostBarsChart({ dim, currency }: { dim: DimensionData; currency:
 }
 
 /** Panel único con pestañas para las dimensiones que no entran como panel propio. */
-export function TabbedCostDimensions({ dimensions, currency, subtitle }: { dimensions: DimensionData[]; currency: string; subtitle: string }) {
-  return <TabbedDimensions dimensions={dimensions} subtitle={subtitle} renderChart={(dim) => <CostBarsChart dim={dim} currency={currency} />} />;
+export function TabbedCostDimensions({
+  dimensions,
+  currency,
+  subtitle,
+  valueLabel,
+  totalLabel,
+}: {
+  dimensions: DimensionData[];
+  currency: string;
+  subtitle: string;
+  valueLabel?: string;
+  totalLabel?: string;
+}) {
+  return (
+    <TabbedDimensions
+      dimensions={dimensions}
+      subtitle={subtitle}
+      renderChart={(dim) => <CostBarsChart dim={dim} currency={currency} valueLabel={valueLabel} totalLabel={totalLabel} />}
+    />
+  );
 }
