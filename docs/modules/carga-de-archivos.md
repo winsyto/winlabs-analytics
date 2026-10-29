@@ -5,7 +5,7 @@
 
 ## Resumen
 
-El cliente sube archivos CSV o Excel desde Integraciones. La app los guarda en un bucket R2 y crea un job; el worker (Fly.io) los descarga, valida fila por fila, carga los datos y, cuando corresponde, regenera los cierres mensuales que alimentan los dashboards. Los errores se informan en la pantalla de la integración, con fila, empleado, campo y mensaje; las filas válidas se cargan igual.
+El cliente sube archivos CSV o Excel desde Integraciones. La app los guarda en un bucket R2 y crea un job; el worker (Fly.io) los descarga, valida fila por fila, carga los datos y, cuando corresponde, regenera los cierres mensuales que alimentan los dashboards. Los errores se informan en la pantalla de la integración (en el resultado de la carga, que aparece ahí mismo sin refrescar, y en el historial), con fila, empleado, campo y mensaje; las filas válidas se cargan igual.
 
 ## Arquitectura
 
@@ -41,7 +41,9 @@ sequenceDiagram
 Los templates se registran con `db:seed:prod-catalog` y se asignan a cada tenant en el CMP (Integraciones). La pantalla de la integración muestra las columnas del archivo y descarga un ejemplo (`apps/cliente/public/examples/`).
 
 ### Archivos clave
-- Subida: `apps/cliente/app/(dashboard)/integrations/_actions/upload.actions.ts`, `_components/file-upload.tsx`, `jobs-table.tsx`, `template-info.tsx`.
+- Subida: `apps/cliente/app/(dashboard)/integrations/_actions/upload.actions.ts` y `_components/upload-panel.tsx` (arrastrar y soltar, validación de formato y tamaño antes de subir, pasos Subiendo / Procesando / Listo y resultado inline con seguimiento de la carga cada 2 s).
+- Pantallas (D-148): la lista (`page.tsx`) agrupa los archivos por tipo de dato y muestra la última carga y su estado (reusa `loadDataStatus` del Inicio) con el orden recomendado de carga; el detalle (`[id]/page.tsx`) tiene la carga, las 2 últimas cargas y dos ventanas: «Ver formato del archivo» (`format-dialog.tsx` + `template-info.tsx`) y «Ver historial completo» (`history-dialog.tsx`: de a 12, filtro por estado, errores colapsados y descarga en CSV).
+- Lectura del resultado del worker: `_data/job-result.ts` (puro) y `_data/queries.ts` (historial paginado y carga puntual); las ventanas leen por las server actions de `_actions/history.actions.ts`. El worker guarda el detalle de las **primeras 100 filas con error** de cada archivo: el CSV y las tablas muestran solo esas (se avisa); guardar todas queda para más adelante.
 - Worker: `jobs/worker/src/handlers/<template>/` (`parser.ts`, `upsert.ts`, `index.ts`), `handlers/shared/` (contexto de tenant, unidades, integraciones) y `src/snapshots/peopleSnapshots.ts`.
 - Ejemplos regenerables: `jobs/worker/scripts/generate-examples.ts`.
 

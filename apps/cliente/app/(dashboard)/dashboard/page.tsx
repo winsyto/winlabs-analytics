@@ -1,20 +1,21 @@
 import Link from "next/link";
 import { auth } from "@/auth";
-import { AlertTriangle, CheckCircle2, Clock, Database, Loader2, Upload, XCircle } from "lucide-react";
+import { Database, Upload } from "lucide-react";
 import { PageHeader } from "@wla/ui";
 import { fmtInt, monthLabel } from "../_dashboard-kit/format";
+import { StatusPill, type PillKind } from "../integrations/_components/status-pill";
 import { loadDataStatus, type SourceState } from "./_data/data-status";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Inicio" };
 
-const STATE: Record<SourceState, { label: string; cls: string; icon: React.ReactNode }> = {
-  ok: { label: "Al día", cls: "border-green-300 bg-green-50 text-green-900", icon: <CheckCircle2 className="h-3.5 w-3.5" aria-hidden /> },
-  stale: { label: "Desactualizado", cls: "border-amber-300 bg-amber-50 text-amber-900", icon: <Clock className="h-3.5 w-3.5" aria-hidden /> },
-  errors: { label: "Cargado con errores", cls: "border-amber-300 bg-amber-50 text-amber-900", icon: <AlertTriangle className="h-3.5 w-3.5" aria-hidden /> },
-  failed: { label: "Falló la última carga", cls: "border-red-300 bg-red-50 text-red-900", icon: <XCircle className="h-3.5 w-3.5" aria-hidden /> },
-  running: { label: "Procesando", cls: "border-blue-300 bg-blue-50 text-blue-900", icon: <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden /> },
-  never: { label: "Sin cargas", cls: "bg-muted text-muted-foreground", icon: <Database className="h-3.5 w-3.5" aria-hidden /> },
+const STATE: Record<SourceState, { kind: PillKind; label: string }> = {
+  ok: { kind: "ok", label: "Al día" },
+  stale: { kind: "stale", label: "Desactualizado" },
+  errors: { kind: "errors", label: "Cargado con errores" },
+  failed: { kind: "failed", label: "Falló la última carga" },
+  running: { kind: "running", label: "Procesando" },
+  never: { kind: "never", label: "Sin cargas" },
 };
 
 const when = new Intl.DateTimeFormat("es-AR", { dateStyle: "short", timeStyle: "short", timeZone: "America/Argentina/Buenos_Aires" });
@@ -77,10 +78,7 @@ export default async function HomePage() {
                         {s.coverage ? `${monthLabel(s.coverage.from)} – ${monthLabel(s.coverage.to)}` : <span className="text-muted-foreground">Sin datos</span>}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${st.cls}`}>
-                          {st.icon}
-                          {st.label}
-                        </span>
+                        <StatusPill kind={st.kind} label={st.label} />
                       </td>
                       <td className="px-4 py-3 text-right">
                         <Link

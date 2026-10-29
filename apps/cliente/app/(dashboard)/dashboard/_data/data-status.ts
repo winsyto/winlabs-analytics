@@ -8,6 +8,8 @@ export interface SourceStatus {
   integrationId: number;
   name: string;
   templateName: string;
+  /** Código del template (file_people, file_time…) */
+  templateCode: string;
   state: SourceState;
   /** Último archivo cargado */
   lastJob: { at: Date; rows: number | null; errorRows: number } | null;
@@ -81,6 +83,7 @@ export async function loadDataStatus(tenantId: string): Promise<SourceStatus[]> 
         integrationId: i.id,
         name: i.name,
         templateName: i.template.name,
+        templateCode: i.integrationTemplateCode,
         state,
         lastJob: job ? { at: job.finishedAt ?? job.createdAt, rows: typeof result?.rows_read === "number" ? result.rows_read : null, errorRows } : null,
         coverage,

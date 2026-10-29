@@ -1,12 +1,16 @@
 import { auth } from "@/auth";
 import { redirect, notFound } from "next/navigation";
 import { withTenantContext } from "@wla/auth";
-import { PageHeader, Badge } from "@wla/ui";
-import Link from "next/link";
-import { ArrowLeft, Clock } from "lucide-react";
-import { FileUpload } from "../_components/file-upload";
-import { JobsTable } from "../_components/jobs-table";
+import { PageHeader } from "@wla/ui";
+import { Breadcrumb } from "../../_dashboard-kit/breadcrumb";
+import { FormatDialog } from "../_components/format-dialog";
+import { RecentRuns } from "../_components/recent-runs";
 import { TemplateInfo, type OrgTypeInfo } from "../_components/template-info";
+import { UploadPanel } from "../_components/upload-panel";
+import { loadJobHistory } from "../_data/queries";
+
+/** Cargas que se muestran en la pantalla; el resto está en el historial completo */
+const RECENT_RUNS = 2;
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -27,9 +31,6 @@ export default async function IntegrationDetailPage({ params }: Props) {
         id: true,
         name: true,
         integrationTemplateCode: true,
-        status: true,
-        lastRunAt: true,
-        lastSuccessAt: true,
         template: { select: { name: true } },
       },
     })
@@ -52,86 +53,33 @@ export default async function IntegrationDetailPage({ params }: Props) {
     return { orgTypes, terminationReasonCodes: reasons.map((r) => r.code) };
   });
 
-  // Últimos 10 jobs de esta integración
-  const recentJobs = await withTenantContext(tenantId, (tx) =>
-    tx.job.findMany({
-      where: { tenantId, integrationId: integrationId },
-      select: {
-        id: true,
-        status: true,
-        createdAt: true,
-        finishedAt: true,
-        result: true,
-        lastError: true,
-      },
-      orderBy: { createdAt: "desc" },
-      take: 10,
-    })
-  );
+  const recent = await loadJobHistory(tenantId, integrationId, { page: 1, pageSize: RECENT_RUNS });
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <Link
-          href="/integrations"
-          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-4"
-        >
-          <ArrowLeft className="h-3 w-3" />
-          Volver a integraciones
-        </Link>
-        <PageHeader
-          eyebrow={integration.template.name}
-          title={integration.name}
-          description="Subí un archivo para iniciar el procesamiento de datos."
-        />
-      </div>
+    <div className="space-y-4 p-6">
+      <Breadcrumb
+        items={[
+          { label: "Data", href: "/data" },
+          { label: "Integraciones manuales", href: "/integrations" },
+          { label: integration.name },
+        ]}
+      />
+      <PageHeader eyebrow={integration.template.name} title={integration.name} />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Upload */}
-        <FileUpload
-          integrationId={integration.id}
-          integrationName={integration.name}
-        />
-
-        {/* Info */}
-        <div className="rounded-lg border bg-card p-6 space-y-4">
-          <h3 className="font-medium text-sm">Estado de la integración</h3>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Estado</span>
-              <Badge variant={integration.status === "active" ? "default" : "secondary"}>
-                {integration.status === "active" ? "Activo" : integration.status}
-              </Badge>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Último procesamiento</span>
-              <span className="text-foreground">
-                {integration.lastRunAt
-                  ? new Date(integration.lastRunAt).toLocaleString("es-AR")
-                  : "—"}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Último éxito</span>
-              <span className="text-foreground">
-                {integration.lastSuccessAt
-                  ? new Date(integration.lastSuccessAt).toLocaleString("es-AR")
-                  : "—"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Columnas requeridas + descarga de ejemplo */}
-      <TemplateInfo
-        templateCode={integration.integrationTemplateCode}
-        orgTypes={orgTypes}
-        terminationReasonCodes={terminationReasonCodes}
+      <UploadPanel
+        integrationId={integration.id}
+        formatButton={
+          <FormatDialog integrationName={integration.name}>
+            <TemplateInfo
+              templateCode={integration.integrationTemplateCode}
+              orgTypes={orgTypes}
+              terminationReasonCodes={terminationReasonCodes}
+            />
+          </FormatDialog>
+        }
       />
 
-      {/* Historial de jobs */}
-      <JobsTable jobs={recentJobs} />
+      <RecentRuns integrationId={integration.id} integrationName={integration.name} jobs={recent.items} />
     </div>
   );
 }

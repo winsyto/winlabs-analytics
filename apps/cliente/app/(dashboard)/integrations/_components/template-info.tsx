@@ -143,16 +143,16 @@ export function TemplateInfo({ templateCode, orgTypes, terminationReasonCodes }:
   if (!spec) return null;
 
   return (
-    <div className="rounded-lg border bg-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="font-medium text-sm">Columnas del archivo</h3>
+    <div className="space-y-4 p-5">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">Columnas del archivo de {spec.label.toLowerCase()}</h3>
         <a
           href={spec.exampleFile}
           download
-          className="inline-flex items-center gap-1.5 text-xs text-primary hover:underline"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-foreground underline-offset-2 hover:underline"
         >
-          <Download className="h-3.5 w-3.5" />
-          Descargar ejemplo CSV
+          <Download className="h-3.5 w-3.5" aria-hidden />
+          Descargar ejemplo (XLSX)
         </a>
       </div>
 

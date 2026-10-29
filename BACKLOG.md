@@ -338,7 +338,7 @@
 **Cliente**
 - UI/UX:
   - [ ] Dashboard de inicio
-  - [ ] Integraciones por archivo
+  - [x] Integraciones por archivo (D-148): lista agrupada con estado de la última carga, carga con arrastrar y soltar y resultado inline, formato e historial en ventanas; falta validar en producción
   - [x] **Hub de dashboards**, en lugar de una opción de menú por cada dashboard — en producción (2026-10-30): menú Inicio / Analítica / Data / Reportes / Configuración, hubs agrupados, Inicio con estado de datos y breadcrumb desde Analítica
   - [ ] **Hub de configuración**: tipos de ausencia, turnos, tipos de hora, metas y usuarios
 

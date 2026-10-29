@@ -31,8 +31,8 @@ Muestra dashboards de People Analytics, gestión de usuarios, configuración de 
 /headcount                      → Dashboard 1 (Headcount): KPIs, gráficos por dimensión, filtros
 /headcount/[scope]/[[...id]]    → Drill-down: activos, altas, bajas, dim/<tipo>/<id>
 /headcount/export               → Descarga Excel/PDF (?format=xlsx|pdf)
-/integrations                   → Integraciones manuales (carga de archivos): lista de integraciones del tenant
-/integrations/[id]              → Subida de archivo, columnas del template y resultados de cada job
+/integrations                   → Integraciones manuales (carga de archivos): archivos agrupados por tipo de dato, última carga y su estado, orden recomendado
+/integrations/[id]              → Carga de archivo (arrastrar y soltar, resultado inline), últimas 2 cargas y ventanas de formato del archivo e historial completo (12 por página, filtro, CSV de errores)
 /absenteeism                    → Dashboard 2 (Ausentismos): tasa vs meta, evolución, clase y tipo, tasa por dimensión
 /absenteeism/[scope]/[[...id]]  → Drill-down: eventos, personas, clase/<código>, tipo/<código>, dim/<tipo>/<id>
 /absenteeism/export             → Descarga Excel/PDF (?format=xlsx|pdf)
