@@ -11,6 +11,7 @@ import { TenantDashboardsCard } from "./_components/tenant-dashboards-card";
 import { TenantOrgConfigCard } from "./_components/tenant-org-config-card";
 import { TenantAttendanceCard, type AttendanceSettings } from "./_components/tenant-attendance-card";
 import { DASHBOARD_CATALOG, DASHBOARD_CODES, TENANT_SETTINGS_DEFAULTS } from "@wla/db";
+import { Breadcrumb } from "../../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -106,13 +107,7 @@ export default async function TenantDetailPage({
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/tenants/list" className="hover:text-foreground transition-colors">
-          Tenants
-        </Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground">{tenant.name}</span>
-      </div>
+      <Breadcrumb items={[{ label: "Tenants", href: "/tenants" }, { label: "Tenants", href: "/tenants/list" }, { label: tenant.name }]} />
 
       <div className="flex items-start justify-between">
         <div>

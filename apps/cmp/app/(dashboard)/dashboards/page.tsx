@@ -5,6 +5,7 @@ import { DASHBOARD_CATALOG, DASHBOARD_CODES, DATA_MODULES, missingModules, type 
 import { prisma } from "@wla/db/client";
 import { PageHeader } from "@wla/ui";
 import { DashboardToggle } from "./_components/dashboard-toggle";
+import { Breadcrumb } from "../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboards por tenant" };
@@ -56,6 +57,7 @@ export default async function DashboardsPage({
 
   return (
     <div className="flex min-h-0 flex-col gap-4 p-8">
+      <Breadcrumb items={[{ label: "Configuración", href: "/settings" }, { label: "Dashboards" }]} />
       <PageHeader
         title="Dashboards por tenant"
         description="Qué dashboards ve cada empresa. Para activar uno, el tenant tiene que tener activos los módulos de datos que requiere."

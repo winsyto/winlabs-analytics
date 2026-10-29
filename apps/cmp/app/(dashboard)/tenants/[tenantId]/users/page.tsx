@@ -6,6 +6,7 @@ import { PageHeader } from "@wla/ui";
 import { ChevronRight } from "lucide-react";
 import { UsersTable } from "./_components/users-table";
 import { CreateUserDialog } from "./_components/create-user-dialog";
+import { Breadcrumb } from "../../../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -63,13 +64,7 @@ export default async function TenantUsersPage({
 
   return (
     <div className="p-8 space-y-6">
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Link href="/tenants/list" className="hover:text-foreground transition-colors">Tenants</Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <Link href={`/tenants/${tenantId}`} className="hover:text-foreground transition-colors">{tenant.name}</Link>
-        <ChevronRight className="h-3.5 w-3.5" />
-        <span className="text-foreground">Usuarios</span>
-      </div>
+      <Breadcrumb items={[{ label: "Tenants", href: "/tenants" }, { label: "Tenants", href: "/tenants/list" }, { label: tenant.name, href: `/tenants/${tenantId}` }, { label: "Usuarios" }]} />
 
       <PageHeader
         title={`Usuarios — ${tenant.name}`}

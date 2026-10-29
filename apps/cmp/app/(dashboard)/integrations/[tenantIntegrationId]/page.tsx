@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { withTenantContext } from "@wla/auth";
 import { prisma } from "@wla/db/client";
 import { IntegrationDetail } from "./_components/integration-detail";
+import { Breadcrumb } from "../../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -79,7 +80,14 @@ export default async function IntegrationDetailPage({ params, searchParams }: Pr
   if (!integration) notFound();
 
   return (
-    <div className="p-8">
+    <div className="space-y-6 p-8">
+      <Breadcrumb
+        items={[
+          { label: "Integraciones", href: "/integrations" },
+          { label: "Integraciones activas", href: "/integrations/active" },
+          { label: `${tenant.name} · ${integration.name}` },
+        ]}
+      />
       <IntegrationDetail
         integration={{
           ...integration,

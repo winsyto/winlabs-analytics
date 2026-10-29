@@ -1,6 +1,7 @@
 import { prisma } from "@wla/db/client";
 import { PageHeader } from "@wla/ui";
 import { TemplatesTable } from "./_components/templates-table";
+import { Breadcrumb } from "../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,7 @@ export default async function TemplatesPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <Breadcrumb items={[{ label: "Configuración", href: "/settings" }, { label: "Templates de integración" }]} />
       <PageHeader
         title="Templates de integración"
         description="Catálogo global de templates disponibles para los tenants."

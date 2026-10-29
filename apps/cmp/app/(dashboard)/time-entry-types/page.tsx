@@ -2,6 +2,7 @@ import { prisma } from "@wla/db/client";
 import { TIME_ENTRY_CATEGORIES } from "@wla/db";
 import { PageHeader } from "@wla/ui";
 import { TimeEntryTypesTable } from "./_components/time-entry-types-table";
+import { Breadcrumb } from "../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export default async function TimeEntryTypesPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <Breadcrumb items={[{ label: "Configuración", href: "/settings" }, { label: "Tipos de hora" }]} />
       <PageHeader
         title="Tipos de hora por defecto"
         description="Catálogo global que reciben los tenants nuevos. Cada tenant puede ajustar luego la categoría de sus propios tipos desde el portal del cliente. Los cambios acá no modifican a los tenants existentes."

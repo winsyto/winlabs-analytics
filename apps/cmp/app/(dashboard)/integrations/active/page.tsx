@@ -3,6 +3,7 @@ import { withTenantContext } from "@wla/auth";
 import { PageHeader } from "@wla/ui";
 import { IntegrationsTable } from "../_components/integrations-table";
 import { NewIntegrationDialog } from "../_components/new-integration-dialog";
+import { Breadcrumb } from "../../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -63,6 +64,7 @@ export default async function IntegrationsPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <Breadcrumb items={[{ label: "Integraciones", href: "/integrations" }, { label: "Integraciones activas" }]} />
       <div className="flex items-start justify-between">
         <PageHeader
           title="Integraciones"

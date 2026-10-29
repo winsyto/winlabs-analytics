@@ -2,6 +2,7 @@ import { prisma } from "@wla/db/client";
 import { ABSENTEEISM_CLASSES } from "@wla/db";
 import { PageHeader } from "@wla/ui";
 import { AbsenceTypesTable } from "./_components/absence-types-table";
+import { Breadcrumb } from "../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,7 @@ export default async function AbsenceTypesPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <Breadcrumb items={[{ label: "Configuración", href: "/settings" }, { label: "Tipos de ausencia" }]} />
       <PageHeader
         title="Tipos de ausencia por defecto"
         description="Catálogo global que reciben los tenants nuevos. Cada tenant puede ajustar luego sus propios tipos desde el portal del cliente. Los cambios acá no modifican a los tenants existentes."

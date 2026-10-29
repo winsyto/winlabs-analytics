@@ -1,6 +1,7 @@
 import { prisma } from "@wla/db/client";
 import { PageHeader } from "@wla/ui";
 import { DataModelsTable } from "./_components/data-models-table";
+import { Breadcrumb } from "../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -30,6 +31,7 @@ export default async function DataModelsPage() {
 
   return (
     <div className="p-8 space-y-6">
+      <Breadcrumb items={[{ label: "Configuración", href: "/settings" }, { label: "Módulos analíticos" }]} />
       <PageHeader
         title="Modelos de datos"
         description="Activá los módulos analíticos disponibles para cada tenant"
