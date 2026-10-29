@@ -57,7 +57,7 @@ export async function updateTenantModulesAction(
         });
       }
     });
-    revalidatePath("/dashboards");
+    revalidatePath("/settings/dashboards");
     revalidatePath(`/tenants/${tenantId}`);
 
     revalidatePath("/tenants/list");

@@ -31,6 +31,8 @@ interface Template {
 interface NewIntegrationDialogProps {
   tenants: Tenant[];
   templates: Template[];
+  /** Tenant preseleccionado (cuando se abre desde la página de un tenant) */
+  defaultTenantId?: string;
 }
 
 const initialState: CreateIntegrationState = {};
@@ -49,7 +51,7 @@ const TARGET_LABELS: Record<string, string> = {
   org_history: "Unidades organizativas (historial)",
 };
 
-export function NewIntegrationDialog({ tenants, templates }: NewIntegrationDialogProps) {
+export function NewIntegrationDialog({ tenants, templates, defaultTenantId }: NewIntegrationDialogProps) {
   const [open, setOpen] = useState(false);
   const [state, formAction, isPending] = useActionState(
     createTenantIntegrationAction,
@@ -92,6 +94,7 @@ export function NewIntegrationDialog({ tenants, templates }: NewIntegrationDialo
               <select
                 name="tenantId"
                 required
+                defaultValue={defaultTenantId ?? ""}
                 disabled={isPending}
                 className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               >

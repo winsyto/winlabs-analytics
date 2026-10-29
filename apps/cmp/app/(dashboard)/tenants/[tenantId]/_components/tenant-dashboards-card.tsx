@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { DASHBOARD_CATALOG, DASHBOARD_CODES, DATA_MODULES, missingModules } from "@wla/db";
-import { DashboardToggle } from "../../../dashboards/_components/dashboard-toggle";
+import { DashboardToggle } from "../../../settings/dashboards/_components/dashboard-toggle";
 
 const moduleName = (code: string) => DATA_MODULES.find((m) => m.code === code)?.name ?? code;
 
@@ -21,7 +21,7 @@ export function TenantDashboardsCard({
     <div className="rounded-xl border bg-card p-5">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Dashboards</h3>
-        <Link href="/dashboards" className="text-xs text-primary hover:underline">
+        <Link href="/settings/dashboards" className="text-xs text-primary hover:underline">
           Ver todos los tenants →
         </Link>
       </div>

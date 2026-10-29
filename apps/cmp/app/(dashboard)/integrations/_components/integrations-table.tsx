@@ -24,14 +24,10 @@ interface Integration {
   lastSuccessAt: Date | null;
 }
 
-interface Tenant {
-  id: string;
-  name: string;
-}
-
 interface IntegrationsTableProps {
   integrations: Integration[];
-  tenants: Tenant[];
+  /** Muestra la columna Tenant (se oculta en la página de un tenant) */
+  showTenant?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -59,6 +55,8 @@ function formatDate(date: Date | null): string {
     year: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+    timeZone: "America/Argentina/Buenos_Aires",
   }).format(new Date(date));
 }
 
@@ -214,93 +212,52 @@ function RowActions({ integration }: { integration: Integration }) {
 
 // ─── Main table ───────────────────────────────────────────────────────────────
 
-export function IntegrationsTable({ integrations, tenants }: IntegrationsTableProps) {
-  const [filterTenantId, setFilterTenantId] = useState<string>("");
-
-  const filtered = filterTenantId
-    ? integrations.filter((i) => i.tenantId === filterTenantId)
-    : integrations;
-
+export function IntegrationsTable({ integrations, showTenant = true }: IntegrationsTableProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <label className="text-sm font-medium text-muted-foreground shrink-0">
-          Filtrar por tenant:
-        </label>
-        <select
-          value={filterTenantId}
-          onChange={(e) => setFilterTenantId(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-        >
-          <option value="">Todos</option>
-          {tenants.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <caption className="sr-only">Integraciones</caption>
+        <thead>
+          <tr className="border-b bg-muted/50">
+            {showTenant && <th scope="col" className="h-10 px-4 text-left font-medium text-muted-foreground">Tenant</th>}
+            <th scope="col" className="h-10 px-4 text-left font-medium text-muted-foreground">Integración</th>
+            <th scope="col" className="h-10 px-4 text-left font-medium text-muted-foreground">Template</th>
+            <th scope="col" className="h-10 px-4 text-center font-medium text-muted-foreground">Estado</th>
+            <th scope="col" className="h-10 px-4 text-left font-medium text-muted-foreground">Último run</th>
+            <th scope="col" className="h-10 px-4 text-right font-medium text-muted-foreground">Acciones</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y">
+          {integrations.map((integration) => (
+            <tr key={integration.id}>
+              {showTenant && (
+                <td className="h-14 px-4">
+                  <p className="font-medium">{integration.tenantName}</p>
+                  <p className="text-xs text-muted-foreground font-mono">{integration.tenantSlug}</p>
+                </td>
+              )}
+              <td className="h-14 px-4">
+                <p className="font-medium">{integration.name}</p>
+              </td>
+              <td className="h-14 px-4">
+                <p>{integration.templateName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {CATEGORY_LABELS[integration.templateCategory] ?? integration.templateCategory}
+                </p>
+              </td>
+              <td className="h-14 px-4 text-center">
+                <Badge variant={STATUS_VARIANTS[integration.status] ?? "secondary"} className="text-xs">
+                  {STATUS_LABELS[integration.status] ?? integration.status}
+                </Badge>
+              </td>
+              <td className="h-14 px-4 text-sm text-muted-foreground">{formatDate(integration.lastRunAt)}</td>
+              <td className="h-14 px-4 text-right">
+                <RowActions integration={integration} />
+              </td>
+            </tr>
           ))}
-        </select>
-      </div>
-
-      {filtered.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center rounded-md border">
-          <p className="text-muted-foreground text-sm">
-            No hay integraciones configuradas.
-          </p>
-        </div>
-      ) : (
-        <div className="rounded-md border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b bg-muted/50">
-                <th className="h-10 px-4 text-left font-medium text-muted-foreground">Tenant</th>
-                <th className="h-10 px-4 text-left font-medium text-muted-foreground">Integración</th>
-                <th className="h-10 px-4 text-left font-medium text-muted-foreground">Template</th>
-                <th className="h-10 px-4 text-center font-medium text-muted-foreground">Estado</th>
-                <th className="h-10 px-4 text-left font-medium text-muted-foreground">Último run</th>
-                <th className="h-10 px-4 text-right font-medium text-muted-foreground">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((integration, idx) => (
-                <tr
-                  key={integration.id}
-                  className={idx < filtered.length - 1 ? "border-b" : ""}
-                >
-                  <td className="h-14 px-4">
-                    <p className="font-medium">{integration.tenantName}</p>
-                    <p className="text-xs text-muted-foreground font-mono">
-                      {integration.tenantSlug}
-                    </p>
-                  </td>
-                  <td className="h-14 px-4">
-                    <p className="font-medium">{integration.name}</p>
-                  </td>
-                  <td className="h-14 px-4">
-                    <p>{integration.templateName}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {CATEGORY_LABELS[integration.templateCategory] ?? integration.templateCategory}
-                    </p>
-                  </td>
-                  <td className="h-14 px-4 text-center">
-                    <Badge
-                      variant={STATUS_VARIANTS[integration.status] ?? "secondary"}
-                      className="text-xs"
-                    >
-                      {STATUS_LABELS[integration.status] ?? integration.status}
-                    </Badge>
-                  </td>
-                  <td className="h-14 px-4 text-sm text-muted-foreground">
-                    {formatDate(integration.lastRunAt)}
-                  </td>
-                  <td className="h-14 px-4 text-right">
-                    <RowActions integration={integration} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+        </tbody>
+      </table>
     </div>
   );
 }

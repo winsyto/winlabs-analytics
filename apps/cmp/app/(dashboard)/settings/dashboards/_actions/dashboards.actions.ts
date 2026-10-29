@@ -55,7 +55,7 @@ export async function setTenantDashboardAction(input: z.infer<typeof schema>): P
         },
       });
     });
-    revalidatePath("/dashboards");
+    revalidatePath("/settings/dashboards");
     revalidatePath(`/tenants/${tenantId}`);
     return { success: true };
   } catch (err) {

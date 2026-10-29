@@ -52,6 +52,7 @@ export async function createTenantIntegrationAction(
     );
 
     revalidatePath("/integrations/active");
+    revalidatePath(`/tenants/${tenantId}/integrations`);
     revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
@@ -90,6 +91,7 @@ export async function deleteIntegrationAction(
     );
 
     revalidatePath("/integrations/active");
+    revalidatePath(`/tenants/${tenantId}/integrations`);
     revalidatePath("/dashboard");
     return { success: true };
   } catch (err) {
@@ -133,6 +135,7 @@ export async function toggleIntegrationStatusAction(
     );
 
     revalidatePath("/integrations/active");
+    revalidatePath(`/tenants/${tenantId}/integrations`);
     revalidatePath("/dashboard");
     revalidatePath(`/integrations/${integrationId}`);
     return { success: true };

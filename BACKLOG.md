@@ -322,14 +322,17 @@
 **CMP**
 - UI/UX:
   - [x] Dashboard de inicio (tenants activos, usuarios de tenants e integraciones activas por tipo) y **menú reorganizado en hubs** (Inicio, Tenants, Integraciones, Configuración) — completo en local (2026-10-30); `docs/modules/navegacion-cmp.md`
-  - [ ] Edición de tenants
-  - [ ] Integraciones
-  - [ ] Templates de integración
+  - [x] Edición de tenants (D-149): ficha con información, módulos y dashboards; unidades, asistencia, usuarios e integraciones en páginas propias desde el menú de acciones de la lista — falta validar en producción
+  - [x] Integraciones activas con búsqueda, filtros por tenant y estado y 12 por página; integraciones del tenant en su sección
+  - [x] Templates de integración agrupados por categoría, con las integraciones en uso, búsqueda y paginación
   - [x] **Hub de dashboards, modelo y CMP** (catálogo, activación por tenant, guardia de acceso, matriz con búsqueda y paginación, tarjeta en el tenant, auditoría) — en producción (2026-10-29); `docs/modules/hub-de-dashboards.md`. Falta el hub visual del cliente (bloque 3) y los permisos por rol
   - [ ] (original) **Hub de dashboards** y su configuración por tenant (qué dashboards están activos en cada uno; posible matriz de permisos por opción de menú; modelo de datos: catálogo de dashboards + activación por tenant + permisos, y su impacto en `dsh_dimensions` y en la navegación)
 - Configuración (nueva opción de menú):
-  - [ ] Mover la configuración de **tipos de ausencia** (hoy `/absence-types`) y mejorar su UI
-  - [ ] Mover la configuración de **tipos de hora** (hoy `/time-entry-types`) y mejorar su UI
+  - [x] Mover la configuración de **tipos de ausencia** a `/settings/absence-types` y mejorar su UI (búsqueda, filtro, 12 por página, alta en ventana)
+  - [x] Mover la configuración de **tipos de hora** a `/settings/time-entry-types` y mejorar su UI (ídem); también dashboards, templates y módulos analíticos bajo `/settings`
+- Login del portal del cliente (Open-19, pendiente):
+  - [ ] No pedir el slug de la empresa: resolver el tenant por el usuario; con acceso a varios tenants pedir cuál, con uno solo entrar directo
+  - [ ] Selector de tenant en la barra superior del portal para usuarios con acceso a varios tenants
 - Herramientas (en el menú de configuración o una opción nueva):
   - [ ] Hub de **limpieza de tablas por módulo**, para datos planos y/o snapshots (hoy solo existe el script `db:cleanup:tenant` por línea de comandos)
 - Documentación:

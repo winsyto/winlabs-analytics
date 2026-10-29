@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { Tenant } from "@wla/db";
 import { Badge } from "@wla/ui";
-import { MoreHorizontal, PowerOff, Power, Trash2, AlertTriangle, Pencil } from "lucide-react";
+import { MoreHorizontal, PowerOff, Power, Trash2, AlertTriangle, Pencil, Network, Clock, Users, Plug } from "lucide-react";
 import {
   toggleTenantStatusAction,
   deleteTenantAction,
@@ -103,6 +103,14 @@ function DeleteTenantModal({
   );
 }
 
+/** Páginas de sección de un tenant (cada una muestra y edita solo lo suyo) */
+const TENANT_SECTIONS = [
+  { path: "org-units", label: "Unidades organizativas y dimensiones", icon: Network },
+  { path: "attendance", label: "Asistencia", icon: Clock },
+  { path: "users", label: "Usuarios", icon: Users },
+  { path: "integrations", label: "Integraciones", icon: Plug },
+] as const;
+
 function TenantActions({ tenant }: { tenant: Tenant }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -126,6 +134,9 @@ function TenantActions({ tenant }: { tenant: Tenant }) {
       <div className="relative">
         <button
           onClick={() => setOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={`Acciones de ${tenant.name}`}
           className="p-1.5 rounded hover:bg-muted text-muted-foreground"
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -134,7 +145,7 @@ function TenantActions({ tenant }: { tenant: Tenant }) {
         {open && (
           <>
             <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <div className="absolute right-0 z-20 mt-1 w-48 rounded-md border bg-popover shadow-md">
+            <div role="menu" className="absolute right-0 z-20 mt-1 w-72 rounded-md border bg-popover text-left shadow-md">
               <Link
                 href={`/tenants/${tenant.id}`}
                 onClick={() => setOpen(false)}
@@ -144,18 +155,31 @@ function TenantActions({ tenant }: { tenant: Tenant }) {
                 <span>Editar tenant</span>
               </Link>
               <div className="border-t" />
+              <p className="px-3 pb-1 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Secciones</p>
+              {TENANT_SECTIONS.map(({ path, label, icon: Icon }) => (
+                <Link
+                  key={path}
+                  href={`/tenants/${tenant.id}/${path}`}
+                  onClick={() => setOpen(false)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
+                >
+                  <Icon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+                  <span>{label}</span>
+                </Link>
+              ))}
+              <div className="border-t" />
               <button
                 onClick={handleToggle}
                 className="flex w-full items-center gap-2 px-3 py-2 text-sm hover:bg-muted"
               >
                 {tenant.isActive ? (
                   <>
-                    <PowerOff className="h-3.5 w-3.5 text-amber-500" />
+                    <PowerOff className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>Inactivar tenant</span>
                   </>
                 ) : (
                   <>
-                    <Power className="h-3.5 w-3.5 text-green-600" />
+                    <Power className="h-3.5 w-3.5 text-muted-foreground" />
                     <span>Activar tenant</span>
                   </>
                 )}
@@ -195,7 +219,7 @@ export function TenantsTable({ tenants }: TenantsTableProps) {
   }
 
   return (
-    <div className="rounded-md border">
+    <div>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">

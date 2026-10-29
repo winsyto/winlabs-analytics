@@ -1,7 +1,7 @@
 import { prisma } from "@wla/db/client";
 import { PageHeader } from "@wla/ui";
 import { DataModelsTable } from "./_components/data-models-table";
-import { Breadcrumb } from "../_components/breadcrumb";
+import { Breadcrumb } from "../../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 

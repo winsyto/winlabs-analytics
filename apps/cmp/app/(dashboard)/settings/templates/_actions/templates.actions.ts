@@ -26,7 +26,7 @@ export async function toggleTemplateAction(
       where: { code: parsed.data.code },
       data: { isActive: parsed.data.isActive },
     });
-    revalidatePath("/templates");
+    revalidatePath("/settings/templates");
     return { success: true };
   } catch (err) {
     console.error("[toggleTemplateAction]", err);

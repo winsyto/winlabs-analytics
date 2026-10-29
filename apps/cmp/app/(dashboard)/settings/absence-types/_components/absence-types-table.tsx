@@ -2,33 +2,47 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@wla/ui";
 import {
-  createTimeEntryTypeDefaultAction,
-  updateTimeEntryTypeDefaultAction,
-  type TimeEntryTypeState,
-} from "../_actions/time-entry-types.actions";
+  createAbsenceTypeDefaultAction,
+  updateAbsenceTypeDefaultAction,
+  type AbsenceTypeState,
+} from "../_actions/absence-types.actions";
 
-interface CategoryOption {
+interface ClassOption {
   code: string;
   name: string;
 }
 
 interface Row {
+  id: number;
   code: string;
   name: string;
-  category: string;
+  class: string;
+  countsAsAbsence: boolean;
   isActive: boolean;
 }
 
-function Switch({ checked, label, onChange }: { checked: boolean; label: string; onChange: (v: boolean) => void }) {
+function Switch({
+  checked,
+  label,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  label: string;
+  onChange: (v: boolean) => void;
+  disabled?: boolean;
+}) {
   return (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-label={label}
+      disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors ${
+      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors disabled:opacity-50 ${
         checked ? "bg-primary" : "bg-input"
       }`}
     >
@@ -41,15 +55,15 @@ function Switch({ checked, label, onChange }: { checked: boolean; label: string;
   );
 }
 
-function CategorySelect({
+function ClassSelect({
   id,
   value,
-  categories,
+  classes,
   onChange,
 }: {
   id: string;
   value: string;
-  categories: CategoryOption[];
+  classes: ClassOption[];
   onChange: (v: string) => void;
 }) {
   return (
@@ -59,7 +73,7 @@ function CategorySelect({
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-md border bg-background px-2 py-1 text-sm"
     >
-      {categories.map((c) => (
+      {classes.map((c) => (
         <option key={c.code} value={c.code}>
           {c.name}
         </option>
@@ -68,23 +82,25 @@ function CategorySelect({
   );
 }
 
-function EditableRow({ row, categories }: { row: Row; categories: CategoryOption[] }) {
+function EditableRow({ row, classes }: { row: Row; classes: ClassOption[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [form, setForm] = useState(row);
   const [error, setError] = useState<string | null>(null);
   const dirty =
     form.name !== row.name ||
-    form.category !== row.category ||
+    form.class !== row.class ||
+    form.countsAsAbsence !== row.countsAsAbsence ||
     form.isActive !== row.isActive;
 
   function save() {
     setError(null);
     startTransition(async () => {
-      const res: TimeEntryTypeState = await updateTimeEntryTypeDefaultAction({
-        code: row.code,
+      const res: AbsenceTypeState = await updateAbsenceTypeDefaultAction({
+        id: row.id,
         name: form.name,
-        category: form.category,
+        class: form.class,
+        countsAsAbsence: form.countsAsAbsence,
         isActive: form.isActive,
       });
       if (res.error) setError(res.error);
@@ -110,18 +126,29 @@ function EditableRow({ row, categories }: { row: Row; categories: CategoryOption
         )}
       </td>
       <td className="px-4 py-2">
-        <label htmlFor={`cat-${row.code}`} className="sr-only">
-          Categoría de {row.code}
+        <label htmlFor={`class-${row.id}`} className="sr-only">
+          Clase de {row.code}
         </label>
-        <CategorySelect
-          id={`cat-${row.code}`}
-          value={form.category}
-          categories={categories}
-          onChange={(v) => setForm({ ...form, category: v })}
+        <ClassSelect
+          id={`class-${row.id}`}
+          value={form.class}
+          classes={classes}
+          onChange={(v) => setForm({ ...form, class: v })}
         />
       </td>
       <td className="px-4 py-2 text-center">
-        <Switch checked={form.isActive} label={`${row.code}: activo`} onChange={(v) => setForm({ ...form, isActive: v })} />
+        <Switch
+          checked={form.countsAsAbsence}
+          label={`${row.code}: cuenta como ausentismo`}
+          onChange={(v) => setForm({ ...form, countsAsAbsence: v })}
+        />
+      </td>
+      <td className="px-4 py-2 text-center">
+        <Switch
+          checked={form.isActive}
+          label={`${row.code}: activo`}
+          onChange={(v) => setForm({ ...form, isActive: v })}
+        />
       </td>
       <td className="px-4 py-2 text-right">
         <button
@@ -137,34 +164,48 @@ function EditableRow({ row, categories }: { row: Row; categories: CategoryOption
   );
 }
 
-function NewRow({ categories }: { categories: CategoryOption[] }) {
+export function NewAbsenceTypeDialog({ classes }: { classes: ClassOption[] }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const empty = { code: "", name: "", category: "overtime" };
+  const [open, setOpen] = useState(false);
+  const empty = { code: "", name: "", class: classes[0]?.code ?? "other", countsAsAbsence: true };
   const [form, setForm] = useState(empty);
   const [error, setError] = useState<string | null>(null);
 
   function create() {
     setError(null);
     startTransition(async () => {
-      const res = await createTimeEntryTypeDefaultAction({ ...form, isActive: true });
+      const res = await createAbsenceTypeDefaultAction({ ...form, isActive: true });
       if (res.error) setError(res.error);
       else {
         setForm(empty);
+        setOpen(false);
         router.refresh();
       }
     });
   }
 
   return (
-    <div className="rounded-xl border bg-card p-4 space-y-3">
-      <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Agregar tipo</h3>
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        Agregar tipo
+      </button>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Agregar tipo</DialogTitle>
+            <DialogDescription>Los tenants nuevos reciben este tipo. Los tenants existentes no se modifican.</DialogDescription>
+          </DialogHeader>
       {error && (
         <p role="alert" className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
           {error}
         </p>
       )}
-      <div className="flex flex-wrap items-end gap-3">
+      <div className="grid gap-3">
         <div>
           <label htmlFor="new-code" className="mb-1 block text-xs font-medium">
             Código
@@ -174,7 +215,7 @@ function NewRow({ categories }: { categories: CategoryOption[] }) {
             value={form.code}
             maxLength={50}
             onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })}
-            className="w-48 rounded-md border bg-background px-2 py-1.5 font-mono text-sm"
+            className="w-full rounded-md border bg-background px-2 py-1.5 font-mono text-sm"
           />
         </div>
         <div>
@@ -186,20 +227,23 @@ function NewRow({ categories }: { categories: CategoryOption[] }) {
             value={form.name}
             maxLength={100}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-64 rounded-md border bg-background px-2 py-1.5 text-sm"
+            className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
           />
         </div>
-        <div className="w-52">
-          <label htmlFor="new-category" className="mb-1 block text-xs font-medium">
-            Categoría
+        <div>
+          <label htmlFor="new-class" className="mb-1 block text-xs font-medium">
+            Clase
           </label>
-          <CategorySelect
-            id="new-category"
-            value={form.category}
-            categories={categories}
-            onChange={(v) => setForm({ ...form, category: v })}
-          />
+          <ClassSelect id="new-class" value={form.class} classes={classes} onChange={(v) => setForm({ ...form, class: v })} />
         </div>
+        <label className="flex items-center gap-2 pb-1.5 text-xs">
+          <Switch
+            checked={form.countsAsAbsence}
+            label="Cuenta como ausentismo"
+            onChange={(v) => setForm({ ...form, countsAsAbsence: v })}
+          />
+          Cuenta como ausentismo
+        </label>
         <button
           type="button"
           disabled={pending || !form.code.trim() || !form.name.trim()}
@@ -209,32 +253,32 @@ function NewRow({ categories }: { categories: CategoryOption[] }) {
           Agregar
         </button>
       </div>
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
-export function TimeEntryTypesTable({ rows, categories }: { rows: Row[]; categories: CategoryOption[] }) {
+export function AbsenceTypesTable({ rows, classes }: { rows: Row[]; classes: ClassOption[] }) {
   return (
-    <div className="space-y-6">
-      <div className="rounded-md border overflow-x-auto">
+    <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b bg-muted/50">
               <th className="h-10 px-4 text-left font-medium text-muted-foreground">Código</th>
               <th className="h-10 px-4 text-left font-medium text-muted-foreground">Nombre</th>
-              <th className="h-10 px-4 text-left font-medium text-muted-foreground">Categoría</th>
+              <th className="h-10 px-4 text-left font-medium text-muted-foreground">Clase</th>
+              <th className="h-10 px-4 text-center font-medium text-muted-foreground">Cuenta como ausentismo</th>
               <th className="h-10 px-4 text-center font-medium text-muted-foreground">Activo</th>
               <th className="h-10 px-4" />
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <EditableRow key={`${r.code}-${r.name}-${r.category}-${r.isActive}`} row={r} categories={categories} />
+              <EditableRow key={`${r.id}-${r.name}-${r.class}-${r.countsAsAbsence}-${r.isActive}`} row={r} classes={classes} />
             ))}
           </tbody>
         </table>
-      </div>
-      <NewRow categories={categories} />
     </div>
   );
 }

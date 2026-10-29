@@ -3,14 +3,12 @@ import Link from "next/link";
 import { prisma } from "@wla/db/client";
 import { withTenantContext } from "@wla/auth";
 import { Badge } from "@wla/ui";
-import { ChevronRight, Users } from "lucide-react";
 import { TenantModulesCard } from "./_components/tenant-modules-card";
 import { TenantActionsHeader } from "./_components/tenant-actions-header";
 import { TenantInfoCard } from "./_components/tenant-info-card";
 import { TenantDashboardsCard } from "./_components/tenant-dashboards-card";
-import { TenantOrgConfigCard } from "./_components/tenant-org-config-card";
-import { TenantAttendanceCard, type AttendanceSettings } from "./_components/tenant-attendance-card";
-import { DASHBOARD_CATALOG, DASHBOARD_CODES, TENANT_SETTINGS_DEFAULTS } from "@wla/db";
+import { TENANT_SECTION_LIST } from "./_components/tenant-section-header";
+import { getEnabledDashboards } from "./_data/tenant-config";
 import { Breadcrumb } from "../../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
@@ -21,58 +19,10 @@ const MODULES = [
   { key: "payroll", label: "Liquidaciones", description: "pay_periods, pay_processes, pay_entries, pay_concepts" },
 ] as const;
 
-/** Dashboards del catálogo en orden (nombre para las tarjetas de dimensiones). */
-const DASHBOARDS = [...DASHBOARD_CODES]
-  .sort((x, y) => DASHBOARD_CATALOG[x].sortOrder - DASHBOARD_CATALOG[y].sortOrder)
-  .map((code) => ({ code, label: DASHBOARD_CATALOG[code].name }));
-
 export type DataModule = typeof MODULES[number];
 
-async function getEnabledDashboards(tenantId: string): Promise<string[]> {
-  const rows = await withTenantContext(tenantId, (tx) =>
-    tx.dshTenantDashboard.findMany({ where: { tenantId, isEnabled: true }, select: { dashboardCode: true } })
-  );
-  return rows.map((r) => r.dashboardCode);
-}
-
-async function getOrgConfig(tenantId: string, enabledDashboards: string[]) {
-  const [allTypes, tenantTypes, dims] = await withTenantContext(tenantId, (tx) =>
-    Promise.all([
-      tx.cfgOrgUnitType.findMany({ orderBy: { sortOrder: "asc" } }),
-      tx.cfgTenantOrgUnitType.findMany({ where: { tenantId } }),
-      tx.dshDimension.findMany({ where: { tenantId }, orderBy: { sortOrder: "asc" } }),
-    ])
-  );
-  const enabled = new Map(tenantTypes.map((t) => [t.orgUnitTypeCode, t.isEnabled]));
-  return {
-    types: allTypes.map((t) => ({
-      code: t.code,
-      name: t.name,
-      description: t.description,
-      enabled: enabled.get(t.code) ?? false,
-    })),
-    dashboards: DASHBOARDS.filter((d) => enabledDashboards.includes(d.code)).map((d) => ({
-      ...d,
-      dimensions: dims.filter((x) => x.dashboardCode === d.code).map((x) => x.orgUnitTypeCode),
-    })),
-  };
-}
-
-async function getAttendanceSettings(tenantId: string): Promise<AttendanceSettings> {
-  const row = await withTenantContext(tenantId, (tx) => tx.cfgTenantSetting.findUnique({ where: { tenantId } }));
-  if (!row) return { ...TENANT_SETTINGS_DEFAULTS };
-  return {
-    attendanceMode: row.attendanceMode as AttendanceSettings["attendanceMode"],
-    defaultWorkWeek: row.defaultWorkWeek,
-    defaultDailyHours: Number(row.defaultDailyHours),
-    absenceDisplay: row.absenceDisplay as AttendanceSettings["absenceDisplay"],
-    overtimeBase: row.overtimeBase as AttendanceSettings["overtimeBase"],
-    currency: row.currency,
-  };
-}
-
 async function getTenant(tenantId: string) {
-  const [tenant, userCount, integrationCount] = await Promise.all([
+  const [tenant, userCount] = await Promise.all([
     prisma.tenant.findUnique({
       where: { id: tenantId },
       select: {
@@ -85,10 +35,9 @@ async function getTenant(tenantId: string) {
       },
     }),
     withTenantContext(tenantId, (tx) => tx.user.count({ where: { tenantId } })),
-    withTenantContext(tenantId, (tx) => tx.intTenantIntegration.count({ where: { tenantId, isActive: true } })),
   ]);
   if (!tenant) return null;
-  return { ...tenant, userCount, integrationCount };
+  return { ...tenant, userCount };
 }
 
 export default async function TenantDetailPage({
@@ -98,11 +47,7 @@ export default async function TenantDetailPage({
 }) {
   const { tenantId } = await params;
   const enabledDashboards = await getEnabledDashboards(tenantId);
-  const [tenant, orgConfig, attendance] = await Promise.all([
-    getTenant(tenantId),
-    getOrgConfig(tenantId, enabledDashboards),
-    getAttendanceSettings(tenantId),
-  ]);
+  const tenant = await getTenant(tenantId);
   if (!tenant) notFound();
 
   return (
@@ -122,7 +67,7 @@ export default async function TenantDetailPage({
         <TenantActionsHeader tenant={{ id: tenant.id, slug: tenant.slug, isActive: tenant.isActive }} />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid gap-6 lg:grid-cols-2">
         <TenantInfoCard
           tenant={{
             id: tenant.id,
@@ -145,52 +90,14 @@ export default async function TenantDetailPage({
         enabled={enabledDashboards}
       />
 
-      <TenantOrgConfigCard
-        tenantId={tenant.id}
-        types={orgConfig.types}
-        dashboards={orgConfig.dashboards}
-      />
-
-      <TenantAttendanceCard tenantId={tenant.id} settings={attendance} />
-
-      <div className="rounded-xl border bg-card p-5">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-            Usuarios del tenant
-          </h3>
-          <Link
-            href={`/tenants/${tenantId}/users`}
-            className="flex items-center gap-1.5 text-xs text-primary hover:underline"
-          >
-            <Users className="h-3.5 w-3.5" />
-            Gestionar usuarios
+      <nav aria-label="Secciones del tenant" className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+        <span>Otras secciones:</span>
+        {TENANT_SECTION_LIST.filter((x) => x.key !== "info").map((x) => (
+          <Link key={x.key} href={`/tenants/${tenant.id}${x.path}`} className="rounded-full border bg-card px-3 py-1 text-foreground hover:bg-muted">
+            {x.label}
           </Link>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          {tenant.userCount === 0
-            ? "Sin usuarios creados."
-            : `${tenant.userCount} usuario${tenant.userCount !== 1 ? "s" : ""} registrado${tenant.userCount !== 1 ? "s" : ""}.`}
-        </p>
-      </div>
-
-      <div className="rounded-xl border bg-card p-5">
-        <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-          Integraciones activas
-        </h3>
-        {tenant.integrationCount === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin integraciones activas.</p>
-        ) : (
-          <p className="text-sm text-foreground">
-            {tenant.integrationCount} integración{tenant.integrationCount !== 1 ? "es" : ""} activa{tenant.integrationCount !== 1 ? "s" : ""}.
-          </p>
-        )}
-        <Link
-          href="/integrations/active"
-          className="text-xs text-primary hover:underline mt-2 inline-block"
-        >
-          Gestionar en Integraciones →
-        </Link>
-      </div>
+        ))}
+      </nav>
     </div>
   );
 }

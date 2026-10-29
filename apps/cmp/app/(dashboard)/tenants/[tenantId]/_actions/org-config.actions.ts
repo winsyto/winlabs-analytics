@@ -17,7 +17,7 @@ async function requireInternalUser(): Promise<string | null> {
   return session?.user?.id ?? null;
 }
 
-const refresh = (tenantId: string) => revalidatePath(`/tenants/${tenantId}`);
+const refresh = (tenantId: string) => revalidatePath(`/tenants/${tenantId}/org-units`);
 
 // ---------------------------------------------------------------------------
 // Habilitar / deshabilitar un tipo de unidad organizativa para el tenant

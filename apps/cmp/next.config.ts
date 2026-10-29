@@ -5,6 +5,14 @@ const nextConfig: NextConfig = {
   // Los packages workspace exportan TypeScript directo (sin compilar),
   // Next.js necesita transpilárlos en el build.
   transpilePackages: ["@wla/ui", "@wla/db", "@wla/auth", "@wla/email"],
+  // Las pantallas de configuración pasaron a /settings: las URLs viejas siguen funcionando (favoritos)
+  async redirects() {
+    return ["absence-types", "time-entry-types", "dashboards", "templates", "data-models"].map((page) => ({
+      source: `/${page}`,
+      destination: `/settings/${page}`,
+      permanent: true,
+    }));
+  },
 };
 
 export default withSentryConfig(nextConfig, {

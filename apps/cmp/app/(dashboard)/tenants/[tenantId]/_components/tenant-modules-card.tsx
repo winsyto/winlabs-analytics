@@ -4,7 +4,7 @@ import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   updateTenantModulesAction,
-} from "../../../data-models/_actions/data-models.actions";
+} from "../../../settings/data-models/_actions/data-models.actions";
 import type { DataModule } from "../page";
 
 interface TenantModulesCardProps {

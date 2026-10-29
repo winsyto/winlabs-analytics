@@ -164,7 +164,7 @@ export function UsersTable({ users, tenantId }: { users: UserRow[]; tenantId: st
   }
 
   return (
-    <div className="rounded-md border">
+    <div>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b bg-muted/50">

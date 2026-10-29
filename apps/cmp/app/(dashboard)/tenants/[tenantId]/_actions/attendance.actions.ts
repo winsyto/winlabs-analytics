@@ -38,7 +38,7 @@ export async function updateAttendanceSettingsAction(
         create: { tenantId, ...data },
       })
     );
-    revalidatePath(`/tenants/${tenantId}`);
+    revalidatePath(`/tenants/${tenantId}/attendance`);
     return { success: true };
   } catch (err) {
     console.error("[updateAttendanceSettingsAction]", err);

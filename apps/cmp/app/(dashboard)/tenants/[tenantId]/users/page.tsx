@@ -1,12 +1,10 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { prisma } from "@wla/db/client";
 import { withTenantContext } from "@wla/auth";
-import { PageHeader } from "@wla/ui";
-import { ChevronRight } from "lucide-react";
 import { UsersTable } from "./_components/users-table";
 import { CreateUserDialog } from "./_components/create-user-dialog";
-import { Breadcrumb } from "../../../_components/breadcrumb";
+import { Pager, listHref, paginate } from "../../../_components/list-controls";
+import { TenantSectionHeader } from "../_components/tenant-section-header";
 
 export const dynamic = "force-dynamic";
 
@@ -53,26 +51,41 @@ async function getData(tenantId: string) {
 
 export default async function TenantUsersPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ tenantId: string }>;
+  searchParams: Promise<{ page?: string }>;
 }) {
   const { tenantId } = await params;
+  const sp = await searchParams;
   const data = await getData(tenantId);
   if (!data) notFound();
 
   const { tenant, users, roles } = data;
+  const { page, pages, skip, take } = paginate(users.length, Math.max(1, Number(sp.page) || 1));
 
   return (
-    <div className="p-8 space-y-6">
-      <Breadcrumb items={[{ label: "Tenants", href: "/tenants" }, { label: "Tenants", href: "/tenants/list" }, { label: tenant.name, href: `/tenants/${tenantId}` }, { label: "Usuarios" }]} />
-
-      <PageHeader
-        title={`Usuarios — ${tenant.name}`}
-        description={`${users.length} usuario${users.length !== 1 ? "s" : ""} registrado${users.length !== 1 ? "s" : ""}`}
+    <div className="space-y-4 p-8">
+      <TenantSectionHeader
+        tenant={tenant}
+        section="users"
+        title="Usuarios"
+        description="usuarios que acceden al portal del tenant"
         actions={<CreateUserDialog tenantId={tenantId} roles={roles} />}
       />
 
-      <UsersTable users={users} tenantId={tenantId} />
+      <div className="rounded-md border bg-card">
+        <UsersTable users={users.slice(skip, skip + take)} tenantId={tenantId} />
+        {users.length > 0 && (
+          <Pager
+            page={page}
+            pages={pages}
+            total={users.length}
+            noun={["usuario", "usuarios"]}
+            hrefFor={(p) => listHref(`/tenants/${tenantId}/users`, { page: p })}
+          />
+        )}
+      </div>
     </div>
   );
 }

@@ -5,7 +5,7 @@ import { DASHBOARD_CATALOG, DASHBOARD_CODES, DATA_MODULES, missingModules, type 
 import { prisma } from "@wla/db/client";
 import { PageHeader } from "@wla/ui";
 import { DashboardToggle } from "./_components/dashboard-toggle";
-import { Breadcrumb } from "../_components/breadcrumb";
+import { Breadcrumb } from "../../_components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Dashboards por tenant" };
@@ -52,7 +52,7 @@ export default async function DashboardsPage({
     if (q) qs.set("q", q);
     if (p > 1) qs.set("page", String(p));
     const s = qs.toString();
-    return s ? `/dashboards?${s}` : "/dashboards";
+    return s ? `/settings/dashboards?${s}` : "/settings/dashboards";
   };
 
   return (
@@ -63,7 +63,7 @@ export default async function DashboardsPage({
         description="Qué dashboards ve cada empresa. Para activar uno, el tenant tiene que tener activos los módulos de datos que requiere."
       />
 
-      <form method="get" action="/dashboards" role="search" className="flex items-center gap-2">
+      <form method="get" action="/settings/dashboards" role="search" className="flex items-center gap-2">
         <input
           type="search"
           name="q"
@@ -76,7 +76,7 @@ export default async function DashboardsPage({
           Buscar
         </button>
         {q && (
-          <Link href="/dashboards" className="text-sm text-muted-foreground hover:text-foreground">
+          <Link href="/settings/dashboards" className="text-sm text-muted-foreground hover:text-foreground">
             Limpiar
           </Link>
         )}
