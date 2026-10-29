@@ -124,7 +124,7 @@ export default async function TurnoverPage({
         <PendingRegion className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <MetricCard
-              label="Rotación"
+              label="Rotación" polarity="down-good"
               href={bajasHref}
               value={kpis.rate.value}
               prev={kpis.rate.prev}
@@ -145,7 +145,7 @@ export default async function TurnoverPage({
               )}
             </MetricCard>
             <MetricCard
-              label="Rotación voluntaria"
+              label="Rotación voluntaria" polarity="down-good"
               href={detailHref(filters, "categoria", "voluntary")}
               value={kpis.voluntary.value}
               prev={kpis.voluntary.prev}
@@ -159,10 +159,10 @@ export default async function TurnoverPage({
             >
               <p className="mt-1 text-[11px] text-muted-foreground">Renuncias y mejores ofertas</p>
             </MetricCard>
-            <MetricCard label="Bajas" href={bajasHref} value={kpis.bajas.value} prev={kpis.bajas.prev} avg={null} avgLabel="" {...common}>
+            <MetricCard label="Bajas" polarity="down-good" href={bajasHref} value={kpis.bajas.value} prev={kpis.bajas.prev} avg={null} avgLabel="" {...common}>
               {catSummary && <p className="mt-1 truncate text-[11px] text-muted-foreground">{catSummary}</p>}
             </MetricCard>
-            <MetricCard label="Bajas tempranas" href={detailHref(filters, "tempranas")} value={kpis.early.value} prev={kpis.early.prev} avg={null} avgLabel="" {...common}>
+            <MetricCard label="Bajas tempranas" polarity="down-good" href={detailHref(filters, "tempranas")} value={kpis.early.value} prev={kpis.early.prev} avg={null} avgLabel="" {...common}>
               <p className="mt-1 truncate text-[11px] text-muted-foreground">
                 {kpis.early.pct !== null ? `${fmtPct(kpis.early.pct)} de las bajas (menos de 1 año)` : "Menos de 1 año de antigüedad"}
                 {kpis.early.avgTenureMonths !== null && ` · antigüedad prom. al salir: ${fmtTenure(Math.round(kpis.early.avgTenureMonths))}`}

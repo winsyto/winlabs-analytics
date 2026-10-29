@@ -21,7 +21,8 @@ Usar esta referencia al diseñar o revisar cualquier dashboard de este proyecto.
 
 - Períodos estándar: último mes cerrado, últimos 12 meses y año en curso.
 - Comparación: contra el período equivalente anterior; referencia secundaria con el promedio de los últimos 12 meses. Si el historial no cubre la comparación, decirlo en vez de mostrar un cero.
-- Variaciones en color neutro con flecha, signo y texto. Reservar verde/rojo para cuando exista un benchmark acordado, y aun así acompañarlos de texto o forma.
+- **Color de las variaciones (D-147):** flecha, signo y texto siempre; el color solo refuerza. Cada indicador declara su polaridad en `MetricCard` (`polarity`): `up-good` (headcount, altas, variación neta), `down-good` (bajas, ausentismo, rotación) o `neutral` (por defecto; Payroll). Verde = favorable, rojo = desfavorable. Horas extras colorea la tasa según el estado contra la meta (`tone`); el resto de sus tarjetas es neutral.
+- **Paleta (D-147):** única fuente en `_dashboard-kit/palette.ts` (variables `--wla-*`, activa por `data-palette` en `<html>`; hoy la C «categórica accesible»). En gráficos usar `CHART.s1…s5`, `CHART.target` y `CHART_SERIES`, nunca hex sueltos. El ámbar (`--wla-target`) es solo de la meta.
 - Benchmarks (ausentismo, horas extra, rotación): configurables por tenant con un valor por defecto (`cfg_tenant_metric_targets`, editables en Configuración > Metas); se muestran como línea de referencia y como estado en la tarjeta con ícono y texto, sin rojo/verde por sí solos. No inventarlos en pantalla sin ese contrato.
 - Una persona o registro cuenta en la unidad que tenía **en la fecha del evento o del cierre**, no en la actual.
 - Si la meta del tenant está definida en otra unidad de tiempo que el período (rotación: anual), se **prorratea al período** y la tarjeta dice cuál usa; nunca se compara un mes contra una meta anual.

@@ -8,8 +8,9 @@ import { cn } from "@wla/ui";
 import { ChartDataTable } from "../../_dashboard-kit/chart-card";
 import type { ClassItem, Composition } from "../_data/types";
 import { fmtMoney, fmtMoneyCompact, fmtShare } from "./format";
+import { CHART } from "../../_dashboard-kit/palette";
 
-const COLORS = { earning: "#1e2530", deduction: "#6b7280", unclassified: "#b45309" } as const;
+const COLORS = { earning: CHART.s1, deduction: CHART.s2, unclassified: CHART.s3 } as const;
 
 function ClassChart({ items, name, currency }: { items: ClassItem[]; name: string; currency: string }) {
   const router = useRouter();

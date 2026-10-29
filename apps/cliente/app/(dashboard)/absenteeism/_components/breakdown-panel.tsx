@@ -9,6 +9,7 @@ import { ChartDataTable } from "../../_dashboard-kit/chart-card";
 import { fmtDec, fmtInt } from "../../_dashboard-kit/format";
 import type { AbsenceDisplay, BreakdownItem } from "../_data/types";
 import { amountFull, fmtDays, fmtHours } from "./format";
+import { CHART } from "../../_dashboard-kit/palette";
 
 const MAX_BARS = 8;
 
@@ -62,7 +63,7 @@ function BreakdownChart({ items, name, display }: { items: BreakdownItem[]; name
           />
           <Bar
             dataKey="value"
-            fill="#1e2530"
+            fill={CHART.s1}
             radius={[0, 3, 3, 0]}
             barSize={14}
             isAnimationActive={false}

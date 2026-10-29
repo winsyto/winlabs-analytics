@@ -7,6 +7,7 @@ import { ChartDataTable } from "../../_dashboard-kit/chart-card";
 import { fmtDec } from "../../_dashboard-kit/format";
 import type { TypeItem } from "../_data/types";
 import { fmtHours } from "./format";
+import { CHART } from "../../_dashboard-kit/palette";
 
 const MAX_BARS = 8;
 
@@ -64,7 +65,7 @@ export function TypePanel({ byType, unauthorized }: Props) {
                 />
                 <Bar
                   dataKey="value"
-                  fill="#1e2530"
+                  fill={CHART.s1}
                   radius={[0, 3, 3, 0]}
                   barSize={14}
                   isAnimationActive={false}

@@ -317,7 +317,7 @@
 - [ ] **Grillas paginadas.**
 - [ ] **Formularios largos en fichas** (pestañas o secciones), no en una sola columna.
 - [ ] Revisar otras prácticas estándar de diseño e incorporar una skill si hace falta.
-- [ ] **Más color en los dashboards** (hoy son casi monocromos, con barras y líneas en gris oscuro): definir una paleta de acento coherente para series, estados y destacados, sin depender solo del color (accesibilidad) y sin mezclar el significado de la meta (ámbar) con el resto. Aplica a Headcount, Ausentismos, Horas extras y los que sigan; ajustar `dashboard-ux/references/wla-conventions.md` y el kit (`_dashboard-kit/`) en un solo lugar.
+- [x] **Más color en los dashboards** (D-147, paleta C en `_dashboard-kit/palette.ts`, polaridad por indicador; falta validar en producción; los PDF de exportación siguen en gris). Original: (hoy son casi monocromos, con barras y líneas en gris oscuro): definir una paleta de acento coherente para series, estados y destacados, sin depender solo del color (accesibilidad) y sin mezclar el significado de la meta (ámbar) con el resto. Aplica a Headcount, Ausentismos, Horas extras y los que sigan; ajustar `dashboard-ux/references/wla-conventions.md` y el kit (`_dashboard-kit/`) en un solo lugar.
 
 **CMP**
 - UI/UX:

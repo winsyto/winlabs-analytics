@@ -14,6 +14,7 @@ import {
 } from "recharts";
 import { ChartDataTable } from "./chart-card";
 import { fmtDec, monthLabel, monthShort } from "./format";
+import { CHART } from "./palette";
 
 export interface TrendPoint {
   /** Primer día del mes (YYYY-MM-DD) */
@@ -66,9 +67,9 @@ export function RateTrendChart<T extends TrendPoint>({ series, target, fmtRate, 
           />
           <ReferenceLine
             y={target}
-            stroke="#b45309"
+            stroke={CHART.target}
             strokeDasharray="5 4"
-            label={{ value: `Meta ${fmtRate(target)}`, position: "insideTopRight", fontSize: 10, fill: "#b45309" }}
+            label={{ value: `Meta ${fmtRate(target)}`, position: "insideTopRight", fontSize: 10, fill: CHART.target }}
           />
           <Tooltip
             cursor={{ stroke: "#9ca3af", strokeDasharray: 3 }}
@@ -89,9 +90,9 @@ export function RateTrendChart<T extends TrendPoint>({ series, target, fmtRate, 
           <Line
             type={curve}
             dataKey="rate"
-            stroke="#1e2530"
+            stroke={CHART.s1}
             strokeWidth={2}
-            dot={{ r: 3, fill: "#1e2530" }}
+            dot={{ r: 3, fill: CHART.s1 }}
             activeDot={{ r: 5 }}
             connectNulls={false}
             isAnimationActive={false}

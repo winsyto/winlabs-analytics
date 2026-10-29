@@ -65,6 +65,10 @@
   --color-sidebar-active-fg: var(--sidebar-active-fg);
   --color-topbar: var(--topbar);
   --color-topbar-foreground: var(--topbar-foreground);
+  --color-wla-good: var(--wla-good);
+  --color-wla-bad: var(--wla-bad);
+  --color-wla-neutral: var(--wla-neutral);
+  --color-wla-target: var(--wla-target);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);

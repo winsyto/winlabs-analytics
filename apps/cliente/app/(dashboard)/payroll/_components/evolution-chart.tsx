@@ -5,6 +5,7 @@ import { ChartDataTable } from "../../_dashboard-kit/chart-card";
 import { fmtInt, monthLabel, monthShort } from "../../_dashboard-kit/format";
 import { MIN_PERSONS, type SeriesPoint } from "../_data/types";
 import { fmtMoney, fmtMoneyCompact } from "./format";
+import { CHART } from "../../_dashboard-kit/palette";
 
 const STATE_TEXT = {
   nodata: "sin datos",
@@ -56,8 +57,8 @@ export function EvolutionChart({ series, currency, hasNet }: { series: SeriesPoi
             }}
           />
           <Legend verticalAlign="top" align="right" height={20} iconType="square" wrapperStyle={{ fontSize: 11 }} />
-          <Bar dataKey="gross" name="Bruto" fill="#1e2530" radius={[2, 2, 0, 0]} isAnimationActive={false} />
-          {hasNet && <Bar dataKey="net" name="Neto" fill="#9ca3af" radius={[2, 2, 0, 0]} isAnimationActive={false} />}
+          <Bar dataKey="gross" name="Bruto" fill={CHART.s1} radius={[2, 2, 0, 0]} isAnimationActive={false} />
+          {hasNet && <Bar dataKey="net" name="Neto" fill={CHART.s4} radius={[2, 2, 0, 0]} isAnimationActive={false} />}
         </BarChart>
       </ResponsiveContainer>
       <ChartDataTable

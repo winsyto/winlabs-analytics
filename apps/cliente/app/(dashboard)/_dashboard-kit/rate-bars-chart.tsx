@@ -7,6 +7,7 @@ import { Bar, BarChart, LabelList, ReferenceLine, ResponsiveContainer, Tooltip, 
 import { cn } from "@wla/ui";
 import { ChartDataTable } from "./chart-card";
 import { fmtDec } from "./format";
+import { CHART } from "./palette";
 
 export interface RateBarItem {
   key: string;
@@ -86,7 +87,7 @@ export function RateBarsChart<T extends RateBarItem>({
           <BarChart data={data} layout="vertical" margin={{ top: 0, right: 40, bottom: 0, left: 0 }}>
             <XAxis type="number" hide domain={[0, Math.ceil(max * 1.1 * 2) / 2]} />
             <YAxis type="category" dataKey="axisLabel" width={118} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} interval={0} />
-            <ReferenceLine x={target} stroke="#b45309" strokeDasharray="4 3" />
+            <ReferenceLine x={target} stroke={CHART.target} strokeDasharray="4 3" />
             <Tooltip
               cursor={{ fill: "rgba(0,0,0,0.04)" }}
               content={({ active, payload }) => {
@@ -105,7 +106,7 @@ export function RateBarsChart<T extends RateBarItem>({
             />
             <Bar
               dataKey="value"
-              fill="#1e2530"
+              fill={CHART.s1}
               radius={[0, 3, 3, 0]}
               barSize={14}
               isAnimationActive={false}

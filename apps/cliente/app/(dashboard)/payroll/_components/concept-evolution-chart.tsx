@@ -6,6 +6,7 @@ import { fmtInt, monthLabel, monthShort } from "../../_dashboard-kit/format";
 import { MIN_PERSONS } from "../_data/types";
 import type { ConceptSeriesPoint } from "../_data/concept-queries";
 import { fmtMoney, fmtMoneyCompact } from "./format";
+import { CHART } from "../../_dashboard-kit/palette";
 
 const STATE_TEXT = { nodata: "sin datos", hidden: `reservado (menos de ${MIN_PERSONS} personas)` } as const;
 
@@ -44,7 +45,7 @@ export function ConceptEvolutionChart({ series, currency, name }: { series: Conc
               );
             }}
           />
-          <Bar dataKey="value" name={name} fill="#1e2530" radius={[2, 2, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="value" name={name} fill={CHART.s1} radius={[2, 2, 0, 0]} isAnimationActive={false} />
         </BarChart>
       </ResponsiveContainer>
       <ChartDataTable

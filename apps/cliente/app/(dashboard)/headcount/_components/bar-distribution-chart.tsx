@@ -6,6 +6,7 @@ import { Bar, BarChart, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis } 
 import { ChartDataTable } from "../../_dashboard-kit/chart-card";
 import { fmtDec, fmtInt } from "../../_dashboard-kit/format";
 import type { DistItem } from "../_data/types";
+import { CHART } from "../../_dashboard-kit/palette";
 
 const MAX_BARS = 8;
 
@@ -57,7 +58,7 @@ export function BarDistributionChart({ items, name }: { items: DistItem[]; name:
               );
             }}
           />
-          <Bar dataKey="value" fill="#1e2530" radius={[0, 3, 3, 0]} barSize={14}
+          <Bar dataKey="value" fill={CHART.s1} radius={[0, 3, 3, 0]} barSize={14}
             isAnimationActive={false}
             cursor="pointer"
             onClick={(_: unknown, i: number) => {

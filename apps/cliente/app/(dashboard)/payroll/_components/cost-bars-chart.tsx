@@ -8,6 +8,7 @@ import { fmtInt } from "../../_dashboard-kit/format";
 import { TabbedDimensions } from "../../_dashboard-kit/rate-bars-chart";
 import { MIN_PERSONS, type DimensionData, type UnitCostItem } from "../_data/types";
 import { fmtMoney, fmtMoneyCompact } from "./format";
+import { CHART } from "../../_dashboard-kit/palette";
 
 const MAX_BARS = 8;
 
@@ -68,7 +69,7 @@ export function CostBarsChart({
             />
             <Bar
               dataKey="value"
-              fill="#1e2530"
+              fill={CHART.s1}
               radius={[0, 3, 3, 0]}
               barSize={14}
               isAnimationActive={false}

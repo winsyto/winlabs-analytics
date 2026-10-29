@@ -6,8 +6,9 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { ChartDataTable } from "../../_dashboard-kit/chart-card";
 import { fmtDec, fmtInt } from "../../_dashboard-kit/format";
 import type { DistItem } from "../_data/types";
+import { CHART_SERIES } from "../../_dashboard-kit/palette";
 
-const PALETTE = ["#1e2530", "#dc2626", "#2563eb", "#d97706", "#9ca3af"];
+const PALETTE = CHART_SERIES;
 
 export function DimensionDonut({ items, name }: { items: DistItem[]; name: string }) {
   const router = useRouter();

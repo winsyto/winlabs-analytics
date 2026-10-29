@@ -1,6 +1,13 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, ChevronRight, Minus } from "lucide-react";
+import { toneOf, type Polarity, type Tone } from "./palette";
 import { fmtDec, fmtInt, fmtSigned, fmtSignedPct } from "./format";
+
+const TONE_CLASS: Record<Tone, string> = {
+  good: "text-wla-good",
+  bad: "text-wla-bad",
+  neutral: "text-foreground",
+};
 
 interface MetricCardProps {
   label: string;
@@ -21,6 +28,10 @@ interface MetricCardProps {
   formatDiff?: (n: number) => string;
   /** Formato de la referencia secundaria (por defecto, un decimal) */
   formatAvg?: (n: number) => string;
+  /** Dirección favorable del indicador; define el color de la variación (por defecto, neutral) */
+  polarity?: Polarity;
+  /** Fuerza el tono de la variación (p. ej. según el estado contra la meta); tiene prioridad sobre la polaridad */
+  tone?: Tone;
   /** Contenido adicional bajo la variación (referencias, metas, avisos) */
   children?: React.ReactNode;
 }
@@ -38,11 +49,14 @@ export function MetricCard({
   formatValue,
   formatDiff,
   formatAvg,
+  polarity = "neutral",
+  tone,
   children,
 }: MetricCardProps) {
   const diff = value !== null && prev !== null ? value - prev : null;
   const pct =
     !hidePct && diff !== null && prev !== null && prev !== 0 ? (diff / Math.abs(prev)) * 100 : null;
+  const color = TONE_CLASS[tone ?? toneOf(polarity, diff)];
   const Icon = diff === null || diff === 0 ? Minus : diff > 0 ? ArrowUp : ArrowDown;
 
   return (
@@ -65,7 +79,7 @@ export function MetricCard({
         {diff === null ? (
           <span className="text-muted-foreground">Sin comparación disponible</span>
         ) : (
-          <span className="inline-flex items-center gap-1 font-medium text-foreground">
+          <span className={`inline-flex items-center gap-1 font-medium ${color}`}>
             <Icon className="h-3.5 w-3.5" aria-hidden />
             <span className="sr-only">Variación </span>
             {formatDiff ? formatDiff(diff) : fmtSigned(diff)}

@@ -11,7 +11,7 @@ export function TargetStatus({ value, target, note }: { value: number | null; ta
   const above = diff > 0.05;
   const Icon = above ? AlertTriangle : CheckCircle2;
   return (
-    <p className={`mt-1 inline-flex items-center gap-1 text-[11px] font-medium ${above ? "text-amber-800" : "text-foreground"}`}>
+    <p className={`mt-1 inline-flex items-center gap-1 text-[11px] font-medium ${above ? "text-wla-bad" : "text-wla-good"}`}>
       <Icon className="h-3.5 w-3.5" aria-hidden />
       Meta {fmtPct(target)}{note ? ` ${note}` : ""}: {above ? `${fmtPp(diff)} sobre la meta` : `dentro de la meta (${fmtPp(diff)})`}
     </p>

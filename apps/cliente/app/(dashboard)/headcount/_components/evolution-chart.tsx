@@ -13,6 +13,7 @@ import {
 import { ChartDataTable } from "../../_dashboard-kit/chart-card";
 import { fmtInt, monthLabel, monthShort } from "../../_dashboard-kit/format";
 import type { SeriesPoint } from "../_data/types";
+import { CHART } from "../../_dashboard-kit/palette";
 
 export function EvolutionChart({ series }: { series: SeriesPoint[] }) {
   const data = series.map((s) => ({ ...s, label: monthShort(s.month) }));
@@ -57,9 +58,9 @@ export function EvolutionChart({ series }: { series: SeriesPoint[] }) {
           <Line
             type="monotone"
             dataKey="headcount"
-            stroke="#1e2530"
+            stroke={CHART.s1}
             strokeWidth={2}
-            dot={{ r: 3, fill: "#1e2530" }}
+            dot={{ r: 3, fill: CHART.s1 }}
             activeDot={{ r: 5 }}
             isAnimationActive={false}
           >

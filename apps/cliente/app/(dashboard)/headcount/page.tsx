@@ -111,10 +111,10 @@ export default async function HeadcountPage({
       ) : (
         <PendingRegion className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <MetricCard label="Headcount al cierre" href={detailHref(filters, "activos")} {...kpis.headcount} {...common} />
-            <MetricCard label="Altas del período" href={detailHref(filters, "altas")} {...kpis.altas} {...common} />
-            <MetricCard label="Bajas del período" href={detailHref(filters, "bajas")} {...kpis.bajas} {...common} />
-            <MetricCard label="Variación neta (altas − bajas)" signed hidePct {...kpis.neta} {...common} />
+            <MetricCard label="Headcount al cierre" polarity="up-good" href={detailHref(filters, "activos")} {...kpis.headcount} {...common} />
+            <MetricCard label="Altas del período" polarity="up-good" href={detailHref(filters, "altas")} {...kpis.altas} {...common} />
+            <MetricCard label="Bajas del período" polarity="down-good" href={detailHref(filters, "bajas")} {...kpis.bajas} {...common} />
+            <MetricCard label="Variación neta (altas − bajas)" polarity="up-good" signed hidePct {...kpis.neta} {...common} />
           </div>
 
           <div className="flex min-h-0 flex-1 flex-col gap-3">

@@ -8,6 +8,7 @@ import { monthLabel, monthShort } from "../../_dashboard-kit/format";
 import { RateTrendChart } from "../../_dashboard-kit/rate-trend-chart";
 import type { SeriesPoint } from "../_data/types";
 import { fmtPct } from "./format";
+import { CHART } from "../../_dashboard-kit/palette";
 
 const TABS = ["Tasa mensual", "Ingresos y egresos"] as const;
 
@@ -82,10 +83,10 @@ export function EvolutionPanel({ series, monthlyTarget, subtitle }: { series: Se
                     }}
                   />
                   <Legend verticalAlign="top" align="right" height={20} iconType="square" wrapperStyle={{ fontSize: 11 }} />
-                  <Bar dataKey="altas" name="Ingresos" fill="#9ca3af" radius={[2, 2, 0, 0]} isAnimationActive={false}>
+                  <Bar dataKey="altas" name="Ingresos" fill={CHART.s2} radius={[2, 2, 0, 0]} isAnimationActive={false}>
                     <LabelList dataKey="altas" position="top" fontSize={10} fill="#374151" />
                   </Bar>
-                  <Bar dataKey="bajas" name="Egresos" fill="#1e2530" radius={[2, 2, 0, 0]} isAnimationActive={false}>
+                  <Bar dataKey="bajas" name="Egresos" fill={CHART.s1} radius={[2, 2, 0, 0]} isAnimationActive={false}>
                     <LabelList dataKey="bajas" position="top" fontSize={10} fill="#374151" />
                   </Bar>
                 </BarChart>

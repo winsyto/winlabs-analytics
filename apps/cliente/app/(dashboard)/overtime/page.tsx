@@ -142,7 +142,7 @@ export default async function OvertimePage({
         <PendingRegion className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <MetricCard
-              label="Tasa de horas extra"
+              label="Tasa de horas extra" tone={kpis.rate.value === null ? "neutral" : kpis.rate.value - target > 0.05 ? "bad" : "good"}
               href={horasHref}
               value={kpis.rate.value}
               prev={kpis.rate.prev}

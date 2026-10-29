@@ -163,7 +163,7 @@ export default async function AbsenteeismPage({
         <PendingRegion className="flex min-h-0 flex-1 flex-col gap-3">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <MetricCard
-              label="Tasa de ausentismo"
+              label="Tasa de ausentismo" polarity="down-good"
               href={eventosHref}
               value={kpis.rate.value}
               prev={kpis.rate.prev}
@@ -178,7 +178,7 @@ export default async function AbsenteeismPage({
               <TargetStatus value={kpis.rate.value} target={target} />
             </MetricCard>
             <MetricCard
-              label="Ausencia total"
+              label="Ausencia total" polarity="down-good"
               href={eventosHref}
               value={amt(kpis.absence.cur)}
               prev={kpis.absence.prev ? amt(kpis.absence.prev) : null}
@@ -191,7 +191,7 @@ export default async function AbsenteeismPage({
               {display === "both" && <p className="mt-1 text-[11px] text-muted-foreground">{fmtHours(kpis.absence.cur.hours)} de ausencia</p>}
             </MetricCard>
             <MetricCard
-              label="Eventos"
+              label="Eventos" polarity="down-good"
               href={eventosHref}
               value={kpis.events.value}
               prev={kpis.events.prev}
@@ -206,7 +206,7 @@ export default async function AbsenteeismPage({
               )}
             </MetricCard>
             <MetricCard
-              label="Personas afectadas"
+              label="Personas afectadas" polarity="down-good"
               href={detailHref(filters, "personas")}
               value={kpis.people.value}
               prev={kpis.people.prev}
